@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --grit-bg: #0F172A;
+  --grit-card: #1E293B;
+  --grit-border: #334155;
+  --grit-sky: #38BDF8;
+  --grit-gold: #FFD700;
+  --grit-muted: #64748B;
+  --grit-text: #E2E8F0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+body {
+  background: var(--grit-bg);
+  color: var(--grit-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Live pulse animation */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.9); }
+}
+
+.live-dot {
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #38BDF8, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass card effect */
+.glass-card {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+/* Gold glow button */
+.btn-gold {
+  background: linear-gradient(135deg, #FFD700, #F59E0B);
+  color: #0F172A;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+}
+
+/* Sky blue button */
+.btn-sky {
+  background: linear-gradient(135deg, #38BDF8, #0EA5E9);
+  color: #0F172A;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-sky:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.3);
+}
+
+/* Sidebar styles */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: #94A3B8;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.sidebar-item:hover {
+  background: rgba(51, 65, 85, 0.5);
+  color: #E2E8F0;
+}
+
+.sidebar-item.active {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38BDF8;
+  border-left: 2px solid #38BDF8;
+}
+
+/* Event card hover */
+.event-card {
+  transition: all 0.2s;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Chat messages */
+.chat-message {
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Earnings ticker */
+.earnings-tick {
+  animation: ticker 0.4s ease-out;
+}
+
+@keyframes ticker {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .sidebar-desktop {
+    display: none;
+  }
+  
+  .mobile-bottom-nav {
+    display: flex;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* Video player */
+video::-webkit-media-controls {
+  display: none;
+}
+
+/* Custom checkbox */
+input[type="checkbox"] {
+  accent-color: #38BDF8;
+}
+
+/* Badge styles */
+.badge-live {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-upcoming {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.badge-host {
+  background: rgba(255, 215, 0, 0.15);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
