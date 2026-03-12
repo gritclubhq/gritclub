@@ -15,7 +15,7 @@ export default function CreateEvent() {
     price: 7,
     capacity: 100,
     start_time: '',
-    status: 'scheduled' as const,
+    status: 'scheduled' as 'draft' | 'scheduled',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
