@@ -47,7 +47,7 @@ export default function NetworkPage() {
 
         // Get profiles of co-attendees
         if (coAttendees && coAttendees.length > 0) {
-          const ids = [...new Set(coAttendees.map((c: any) => c.user_id))]
+          const ids = Array.from(new Set(coAttendees.map((c: any) => c.user_id)))
           const { data: profiles } = await supabase
             .from('users')
             .select('id, email, profile_bio, photo_url')
