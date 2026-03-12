@@ -6,7 +6,11 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
-  if (code) {
+  if (!code) {
+    return NextResponse.redirect(`${origin}/auth/login?error=no_code`)
+  }
+
+  try {
     const cookieStore = cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,39 +27,32 @@ export async function GET(request: Request) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (!error) {
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (user) {
-        // Upsert user profile
-        await supabase.from('users').upsert({
-          id: user.id,
-          email: user.email,
-          role: 'audience',
-          host_approved: false,
-        }, { onConflict: 'id', ignoreDuplicates: true })
-
-        // Get role and redirect
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-
-        const role = profile?.role || 'audience'
-        const redirectMap: Record<string, string> = {
-          admin: '/admin',
-          host: '/host',
-          audience: '/dashboard',
-        }
-
-        return NextResponse.redirect(`${origin}${redirectMap[role] || '/dashboard'}`)
-      }
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (error) {
+      console.error('Exchange error:', error)
+      return NextResponse.redirect(`${origin}/auth/login?error=exchange_failed`)
     }
-  }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`)
+    if (!data.user) {
+      return NextResponse.redirect(`${origin}/auth/login?error=no_user`)
+    }
+
+    // Check role from public.users
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+
+    const role = profile?.role || 'audience'
+    
+    if (role === 'admin') return NextResponse.redirect(`${origin}/admin`)
+    if (role === 'host') return NextResponse.redirect(`${origin}/host`)
+    return NextResponse.redirect(`${origin}/dashboard`)
+
+  } catch (err) {
+    console.error('Callback error:', err)
+    return NextResponse.redirect(`${origin}/auth/login?error=callback_error`)
+  }
 }
- 
