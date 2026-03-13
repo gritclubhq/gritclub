@@ -1,113 +1,137 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { Mic, CheckCircle, Clock, ArrowLeft } from 'lucide-react'
+import { Mic, CheckCircle, AlertCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function BecomeHostPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [existing, setExisting] = useState<any>(null)
-  const [form, setForm] = useState({ reason: '', expertise: '', social_url: '' })
+  const [form, setForm] = useState({ expertise: '', reason: '', social_url: '' })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { router.push('/auth/login'); return }
       setUser(user)
 
-      const { data } = await supabase
-        .from('host_applications')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-      setExisting(data)
+      const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single()
+      if (profile?.role === 'host' || profile?.role === 'admin') {
+        router.push('/host'); return
+      }
+
+      const { data: app } = await supabase.from('host_applications').select('*').eq('user_id', user.id).maybeSingle()
+      if (app) setExisting(app)
     }
     load()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
     setLoading(true)
+    setError('')
 
-    await supabase.from('host_applications').insert({
-      user_id: user.id,
-      email: user.email,
-      reason: form.reason,
-      expertise: form.expertise,
-      social_url: form.social_url,
-      status: 'pending',
-    })
+    try {
+      const { error: insertError } = await supabase.from('host_applications').insert({
+        user_id: user.id,
+        email: user.email,
+        expertise: form.expertise,
+        reason: form.reason,
+        social_url: form.social_url || null,
+        status: 'pending',
+      })
 
-    setSubmitted(true)
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        setError(`Failed to submit: ${insertError.message}`)
+        setLoading(false)
+        return
+      }
+
+      setSubmitted(true)
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong')
+    }
     setLoading(false)
   }
 
-  if (existing || submitted) {
+  if (submitted || existing?.status === 'pending') {
     return (
       <DashboardLayout>
-        <div className="p-6 max-w-md mx-auto">
-          <div className="glass-card rounded-2xl p-8 text-center">
+        <div className="p-6 max-w-lg mx-auto">
+          <div className="rounded-2xl p-8 text-center" style={{ background: '#1E293B' }}>
             <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(56,189,248,0.15)' }}>
-              <Clock className="w-8 h-8 text-sky-400" />
+              <CheckCircle className="w-8 h-8 text-sky-400" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Application Submitted</h2>
-            <p className="text-slate-400 text-sm mb-6">
-              Your application is under review. You'll be notified once an admin approves your host access.
-            </p>
-            <button onClick={() => router.back()} className="btn-sky px-6 py-3 rounded-xl text-sm font-semibold">
-              Back to Dashboard
-            </button>
+            <h2 className="text-xl font-bold mb-2">Application Submitted! 🎉</h2>
+            <p className="text-slate-400 text-sm">Your host application is under review. The admin will approve you shortly and you'll get instant access to the host dashboard.</p>
+            <div className="mt-4 p-3 rounded-xl text-xs text-slate-500" style={{ background: '#0F172A' }}>
+              Submitted on {existing ? new Date(existing.created_at).toLocaleDateString() : 'just now'}
+            </div>
           </div>
         </div>
       </DashboardLayout>
     )
   }
 
+  if (existing?.status === 'approved') {
+    router.push('/host')
+    return null
+  }
+
   return (
     <DashboardLayout>
       <div className="p-6 max-w-lg mx-auto">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Become a Host</h1>
+          <p className="text-slate-400 text-sm mt-1">Apply to host live events and keep 80% of every ticket</p>
+        </div>
 
-        <div className="glass-card rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,215,0,0.15)' }}>
-              <Mic className="w-6 h-6 text-yellow-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold" style={{ fontFamily: 'Space Grotesk' }}>Become a Host</h1>
-              <p className="text-slate-400 text-sm">Earn from your expertise</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* What you get */}
+        <div className="rounded-2xl p-4 mb-6" style={{ background: 'linear-gradient(135deg, rgba(255,215,0,0.08), rgba(56,189,248,0.08))', border: '1px solid rgba(255,215,0,0.2)' }}>
+          <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { value: '50%', label: 'Revenue Share' },
-              { value: '$7-99', label: 'Ticket Range' },
-              { value: '24hr', label: 'Payout Speed' },
+              { label: '80%', sub: 'Revenue Share' },
+              { label: 'Live', sub: 'Stream Tools' },
+              { label: '$5-99', sub: 'Ticket Pricing' },
             ].map(s => (
-              <div key={s.label} className="text-center p-3 rounded-xl" style={{ background: '#0F172A', border: '1px solid #334155' }}>
-                <div className="text-lg font-bold" style={{ color: '#FFD700' }}>{s.value}</div>
-                <div className="text-xs text-slate-500">{s.label}</div>
+              <div key={s.label}>
+                <div className="text-xl font-bold" style={{ color: '#FFD700' }}>{s.label}</div>
+                <div className="text-xs text-slate-400">{s.sub}</div>
               </div>
             ))}
           </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="rounded-2xl p-5 space-y-4" style={{ background: '#1E293B' }}>
             <div>
-              <label className="text-sm font-medium mb-2 block text-slate-300">Why do you want to host? *</label>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Your Expertise *</label>
+              <input
+                type="text"
+                value={form.expertise}
+                onChange={e => setForm({ ...form, expertise: e.target.value })}
+                placeholder="e.g. SaaS Growth, Fundraising, Product Strategy"
+                required
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Why do you want to host? *</label>
               <textarea
                 value={form.reason}
-                onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                placeholder="What would you teach? What's your story?"
-                rows={3}
+                onChange={e => setForm({ ...form, reason: e.target.value })}
+                placeholder="What value will you bring to founders? What events will you run?"
+                rows={4}
                 required
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500 resize-none"
                 style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
@@ -115,44 +139,35 @@ export default function BecomeHostPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block text-slate-300">Area of expertise *</label>
-              <input
-                type="text"
-                value={form.expertise}
-                onChange={(e) => setForm({ ...form, expertise: e.target.value })}
-                placeholder="e.g. SaaS growth, fundraising, product-led growth"
-                required
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
-                style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block text-slate-300">LinkedIn / Twitter (optional)</label>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">LinkedIn or Twitter (optional)</label>
               <input
                 type="url"
                 value={form.social_url}
-                onChange={(e) => setForm({ ...form, social_url: e.target.value })}
-                placeholder="https://linkedin.com/in/..."
+                onChange={e => setForm({ ...form, social_url: e.target.value })}
+                placeholder="https://linkedin.com/in/yourprofile"
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
                 style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
               />
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading || !form.reason || !form.expertise}
-              className="btn-gold w-full py-4 rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              {loading ? 'Submitting...' : 'Submit Application'}
-            </button>
-          </form>
-        </div>
+          {error && (
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !form.expertise || !form.reason}
+            className="w-full py-3 rounded-xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ background: '#FFD700', color: '#0F172A' }}
+          >
+            <Mic className="w-4 h-4" />
+            {loading ? 'Submitting...' : 'Submit Host Application'}
+          </button>
+        </form>
       </div>
     </DashboardLayout>
   )
