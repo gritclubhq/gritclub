@@ -66,16 +66,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="p-5 border-b" style={{ borderColor: '#334155' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)' }}>
-            <Mic className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk' }}>
-            Grit<span style={{ color: '#FFD700' }}>Club</span>
-          </span>
-        </div>
-      </div>
+<div className="flex items-center gap-2.5 px-4 py-5 mb-2">
+  <img 
+    src="/logo.png" 
+    alt="GritClub" 
+    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} 
+  />
+  <span style={{ fontSize: '18px', fontWeight: '800', color: 'white', letterSpacing: '-0.3px' }}>
+    Grit<span style={{ color: '#FFD700' }}>Club</span>
+  </span>
+</div>
 
       {/* Role badge */}
       {profile?.role && (
