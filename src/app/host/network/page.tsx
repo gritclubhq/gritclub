@@ -14,35 +14,26 @@ export default function HostNetworkPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
       const { data: myEvents } = await supabase.from('events').select('id, title').eq('host_id', user.id)
       if (!myEvents?.length) { setLoading(false); return }
-
-      const eventIds = myEvents.map(e => e.id)
+      const eventIds = myEvents.map((e: any) => e.id)
       const { data: tickets } = await supabase
         .from('tickets')
         .select('*, users(id, email, profile_bio, photo_url), events(title)')
         .in('event_id', eventIds)
         .eq('status', 'paid')
         .order('created_at', { ascending: false })
-
       if (tickets) {
-        const total = tickets.reduce((sum, t) => sum + t.amount, 0)
-        const userIds = tickets.map(t => t.user_id)
+        const total = tickets.reduce((sum: number, t: any) => sum + t.amount, 0)
+        const userIds = tickets.map((t: any) => t.user_id)
         const uniqueIds = Array.from(new Set(userIds))
         const repeatCount = userIds.length - uniqueIds.length
-
-        // Group by user
         const byUser: Record<string, any> = {}
-        tickets.forEach(t => {
-          if (!byUser[t.user_id]) {
-            byUser[t.user_id] = { ...t.users, tickets: 0, spent: 0, events: [] }
-          }
+        tickets.forEach((t: any) => {
+          if (!byUser[t.user_id]) byUser[t.user_id] = { ...t.users, tickets: 0, spent: 0 }
           byUser[t.user_id].tickets++
           byUser[t.user_id].spent += t.amount
-          if (t.events?.title) byUser[t.user_id].events.push(t.events.title)
         })
-
         setAttendees(Object.values(byUser))
         setStats({ total: uniqueIds.length, repeat: repeatCount, revenue: Math.floor(total * 0.5) })
       }
@@ -66,8 +57,6 @@ export default function HostNetworkPage() {
             <p className="text-slate-400 text-sm">People who attended your events</p>
           </div>
         </div>
-
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { label: 'Total Attendees', value: stats.total, icon: Users, color: '#38BDF8' },
@@ -83,8 +72,6 @@ export default function HostNetworkPage() {
             </div>
           ))}
         </div>
-
-        {/* Attendees list */}
         <h2 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-widest">Attendees</h2>
         {loading ? (
           <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: '#1E293B' }} />)}</div>
@@ -96,7 +83,7 @@ export default function HostNetworkPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {attendees.map((person, i) => (
+            {attendees.map((person: any, i: number) => (
               <div key={i} className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: '#1E293B' }}>
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
@@ -107,17 +94,12 @@ export default function HostNetworkPage() {
                     <div className="text-xs text-slate-500 truncate">{person.profile_bio || 'Founder'}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0 text-right">
-                  <div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="text-right">
                     <div className="text-sm font-semibold" style={{ color: '#4ADE80' }}>{fmt(person.spent)}</div>
                     <div className="text-xs text-slate-500">{person.tickets} ticket{person.tickets !== 1 ? 's' : ''}</div>
                   </div>
-                  
-                    href={`mailto:${person.email}`}
-                    className="p-2 rounded-lg transition-colors hover:bg-sky-400/10"
-                    style={{ color: '#38BDF8' }}
-                    title="Send email"
-                  >
+                  <a href={`mailto:${person.email}`} className="p-2 rounded-lg" style={{ color: '#38BDF8' }}>
                     <Mail className="w-4 h-4" />
                   </a>
                 </div>
