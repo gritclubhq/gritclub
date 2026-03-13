@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import {
-  Home, Calendar, Ticket, Users, LogOut,
+  Home, Calendar, Ticket, Users,
   Radio, DollarSign, BarChart2, Shield, Menu, User
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
@@ -39,32 +39,54 @@ const ADMIN_NAV: NavItem[] = [
   { href: '/admin/revenue', label: 'Revenue', icon: DollarSign },
 ]
 
+const getNavByRole = (role: string) =>
+  role === 'admin' ? ADMIN_NAV : role === 'host' ? HOST_NAV : AUDIENCE_NAV
+
+const getRoleStyle = (role: string) => ({
+  background: role === 'admin' ? 'rgba(239,68,68,0.15)' : role === 'host' ? 'rgba(255,215,0,0.15)' : 'rgba(56,189,248,0.15)',
+  color: role === 'admin' ? '#F87171' : role === 'host' ? '#FFD700' : '#38BDF8',
+})
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [roleReady, setRoleReady] = useState(false)
+
+  // Read role from localStorage instantly — no flicker ever
+  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('gc_role') || 'audience' : 'audience'
+  const [role, setRole] = useState<string>(cachedRole)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.push('/auth/login'); return }
       setUser(user)
       supabase.from('users').select('*').eq('id', user.id).single().then(({ data }) => {
-        setProfile(data)
-        setRoleReady(true)
+        if (data) {
+          setProfile(data)
+          setRole(data.role || 'audience')
+          // Cache role so next page load is instant
+          localStorage.setItem('gc_role', data.role || 'audience')
+          localStorage.setItem('gc_user_name', user.user_metadata?.full_name || user.email || '')
+          localStorage.setItem('gc_user_email', user.email || '')
+          localStorage.setItem('gc_avatar', user.user_metadata?.avatar_url || '')
+        }
       })
     })
   }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
+  const navItems = getNavByRole(role)
+  const roleStyle = getRoleStyle(role)
 
-  // Don't render nav until role is loaded — prevents flicker
-  const navItems = !roleReady ? [] : profile?.role === 'admin' ? ADMIN_NAV : profile?.role === 'host' ? HOST_NAV : AUDIENCE_NAV
+  // Cached user info for instant display
+  const cachedName = typeof window !== 'undefined' ? localStorage.getItem('gc_user_name') || '' : ''
+  const cachedEmail = typeof window !== 'undefined' ? localStorage.getItem('gc_user_email') || '' : ''
+  const cachedAvatar = typeof window !== 'undefined' ? localStorage.getItem('gc_avatar') || '' : ''
+
+  const displayName = user?.user_metadata?.full_name || cachedName || 'User'
+  const displayEmail = user?.email || cachedEmail || ''
+  const displayAvatar = user?.user_metadata?.avatar_url || cachedAvatar || ''
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -76,55 +98,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </span>
       </div>
 
-      {/* Role badge — only show when loaded */}
-      {roleReady && profile?.role && (
-        <div className="px-5 pb-2">
-          <span className="text-xs font-semibold px-2 py-1 rounded" style={{
-            background: profile.role === 'admin' ? 'rgba(239,68,68,0.15)' : profile.role === 'host' ? 'rgba(255,215,0,0.15)' : 'rgba(56,189,248,0.15)',
-            color: profile.role === 'admin' ? '#F87171' : profile.role === 'host' ? '#FFD700' : '#38BDF8',
-          }}>
-            {profile.role.toUpperCase()}
-          </span>
-        </div>
-      )}
+      {/* Role badge — instant from cache */}
+      <div className="px-5 pb-2">
+        <span className="text-xs font-semibold px-2 py-1 rounded" style={roleStyle}>
+          {role.toUpperCase()}
+        </span>
+      </div>
 
-      {/* Nav — skeleton while loading */}
+      {/* Nav — instant, no skeleton needed */}
       <nav className="flex-1 p-4 space-y-1">
-        {!roleReady ? (
-          // Skeleton nav items while role loads
-          [...Array(4)].map((_, i) => (
-            <div key={i} className="h-9 rounded-lg animate-pulse mb-1" style={{ background: '#1E293B' }} />
-          ))
-        ) : (
-          navItems.map((item) => {
-            const active = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/host' && item.href !== '/admin' && pathname.startsWith(item.href))
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`sidebar-item ${active ? 'active' : ''}`}
-              >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                {item.label}
-              </Link>
-            )
-          })
-        )}
+        {navItems.map((item) => {
+          const active = pathname === item.href ||
+            (item.href !== '/dashboard' && item.href !== '/host' && item.href !== '/admin' && pathname.startsWith(item.href))
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className={`sidebar-item ${active ? 'active' : ''}`}
+            >
+              <item.icon className="w-4 h-4 flex-shrink-0" />
+              {item.label}
+            </Link>
+          )
+        })}
       </nav>
 
-      {/* User info — NO sign out button here */}
+      {/* User info bottom */}
       <div className="p-4 border-t" style={{ borderColor: '#334155' }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
-            {user?.user_metadata?.avatar_url
-              ? <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
-              : getInitials(user?.user_metadata?.full_name || user?.email || 'U')
+            {displayAvatar
+              ? <img src={displayAvatar} alt="" className="w-full h-full object-cover" />
+              : getInitials(displayName)
             }
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}</div>
-            <div className="text-xs text-slate-500 truncate">{user?.email}</div>
+            <div className="text-sm font-medium truncate">{displayName}</div>
+            <div className="text-xs text-slate-500 truncate">{displayEmail}</div>
           </div>
         </div>
       </div>
@@ -160,9 +171,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="font-bold">Grit<span style={{ color: '#FFD700' }}>Club</span></span>
           </div>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
-            {user?.user_metadata?.avatar_url
-              ? <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
-              : getInitials(user?.user_metadata?.full_name || user?.email || 'U')
+            {displayAvatar
+              ? <img src={displayAvatar} alt="" className="w-full h-full object-cover" />
+              : getInitials(displayName)
             }
           </div>
         </div>
