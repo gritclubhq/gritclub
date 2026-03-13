@@ -3,230 +3,207 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { formatCurrency } from '@/lib/utils'
-import { Shield, DollarSign, Users, Radio, CheckCircle, XCircle, AlertCircle, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
+import { Users, Shield, Radio, DollarSign, TrendingUp, Bell } from 'lucide-react'
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState({ revenue: 0, hosts: 0, events: 0, tickets: 0 })
-  const [applications, setApplications] = useState<any[]>([])
-  const [liveEvents, setLiveEvents] = useState<any[]>([])
-  const [activity, setActivity] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+export default function AdminPage() {
+  const [stats, setStats] = useState({ users: 0, pendingHosts: 0, liveEvents: 0, revenue: 0 })
+  const [recentUsers, setRecentUsers] = useState<any[]>([])
+  const [pendingApps, setPendingApps] = useState<any[]>([])
+  const [notification, setNotification] = useState('')
+
+  const loadData = async () => {
+    const [
+      { count: userCount },
+      { data: apps },
+      { data: liveEvs },
+      { data: tickets },
+      { data: users }
+    ] = await Promise.all([
+      supabase.from('users').select('*', { count: 'exact', head: true }),
+      supabase.from('host_applications').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
+      supabase.from('events').select('*').eq('status', 'live'),
+      supabase.from('tickets').select('amount').eq('status', 'paid'),
+      supabase.from('users').select('*').order('created_at', { ascending: false }).limit(8)
+    ])
+
+    const revenue = tickets?.reduce((s, t) => s + t.amount, 0) || 0
+    setStats({ users: userCount || 0, pendingHosts: apps?.length || 0, liveEvents: liveEvs?.length || 0, revenue })
+    setPendingApps(apps || [])
+    setRecentUsers(users || [])
+  }
 
   useEffect(() => {
     loadData()
 
-    // Realtime activity feed
-    const channel = supabase
-      .channel('admin-feed')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' }, (p: any) => {
-        setActivity(prev => [{
-          type: 'ticket',
-          message: `New ticket sold — ${formatCurrency(p.new.amount)}`,
-          time: new Date().toLocaleTimeString(),
-        }, ...prev.slice(0, 19)])
-        setStats(s => ({ ...s, revenue: s.revenue + Math.floor(p.new.amount * 0.5), tickets: s.tickets + 1 }))
+    // Realtime: new user joins
+    const userChannel = supabase.channel('admin-users')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, (payload) => {
+        setNotification(`🆕 New member: ${payload.new.email}`)
+        setTimeout(() => setNotification(''), 4000)
+        loadData()
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'host_applications' }, () => {
-        loadApplications()
-      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, () => loadData())
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // Realtime: new host application
+    const appChannel = supabase.channel('admin-apps')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'host_applications' }, (payload) => {
+        setNotification(`🎤 New host application from ${payload.new.email}`)
+        setTimeout(() => setNotification(''), 4000)
+        loadData()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'host_applications' }, () => loadData())
+      .subscribe()
+
+    // Realtime: events change
+    const eventChannel = supabase.channel('admin-events-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => loadData())
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(userChannel)
+      supabase.removeChannel(appChannel)
+      supabase.removeChannel(eventChannel)
+    }
   }, [])
 
-  const loadData = async () => {
-    await Promise.all([loadStats(), loadApplications(), loadLiveEvents()])
-    setLoading(false)
+  const approve = async (app: any) => {
+    await supabase.from('users').update({ role: 'host', host_approved: true }).eq('id', app.user_id)
+    await supabase.from('host_applications').update({ status: 'approved' }).eq('id', app.id)
+    loadData()
   }
 
-  const loadStats = async () => {
-    const [tickets, hosts, events] = await Promise.all([
-      supabase.from('tickets').select('amount').eq('status', 'paid'),
-      supabase.from('users').select('id').eq('role', 'host'),
-      supabase.from('events').select('id'),
-    ])
-    const revenue = (tickets.data || []).reduce((s: number, t: any) => s + Math.floor(t.amount * 0.5), 0)
-    setStats({
-      revenue,
-      hosts: hosts.data?.length || 0,
-      events: events.data?.length || 0,
-      tickets: tickets.data?.length || 0,
-    })
-  }
-
-  const loadApplications = async () => {
-    const { data } = await supabase
-      .from('host_applications')
-      .select('*, users(*)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-    setApplications(data || [])
-  }
-
-  const loadLiveEvents = async () => {
-    const { data } = await supabase
-      .from('events')
-      .select('*')
-      .eq('status', 'live')
-    setLiveEvents(data || [])
-  }
-
-  const approveHost = async (appId: string, userId: string) => {
-    await supabase.from('users').update({ role: 'host', host_approved: true }).eq('id', userId)
-    await supabase.from('host_applications').update({ status: 'approved' }).eq('id', appId)
-    setApplications(prev => prev.filter(a => a.id !== appId))
-    setStats(s => ({ ...s, hosts: s.hosts + 1 }))
-    setActivity(prev => [{ type: 'approval', message: 'Host approved', time: new Date().toLocaleTimeString() }, ...prev])
-  }
-
-  const rejectHost = async (appId: string) => {
-    await supabase.from('host_applications').update({ status: 'rejected' }).eq('id', appId)
-    setApplications(prev => prev.filter(a => a.id !== appId))
-  }
-
-  const terminateStream = async (eventId: string) => {
-    if (confirm('Terminate this live stream?')) {
-      await supabase.from('events').update({ status: 'ended' }).eq('id', eventId)
-      setLiveEvents(prev => prev.filter(e => e.id !== eventId))
-    }
-  }
-
-  const adminStats = [
-    { label: 'Platform Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: '#FFD700', bg: 'rgba(255,215,0,0.1)' },
-    { label: 'Active Hosts', value: stats.hosts.toString(), icon: Shield, color: '#38BDF8', bg: 'rgba(56,189,248,0.1)' },
-    { label: 'Total Events', value: stats.events.toString(), icon: Radio, color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
-    { label: 'Tickets Sold', value: stats.tickets.toString(), icon: Users, color: '#A855F7', bg: 'rgba(168,85,247,0.1)' },
-  ]
+  const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`
+  const roleColor = (r: string) => r === 'admin' ? '#F87171' : r === 'host' ? '#FFD700' : '#38BDF8'
+  const roleBg = (r: string) => r === 'admin' ? 'rgba(239,68,68,0.15)' : r === 'host' ? 'rgba(255,215,0,0.15)' : 'rgba(56,189,248,0.1)'
 
   return (
     <DashboardLayout>
       <div className="p-6 max-w-6xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="w-5 h-5 text-red-400" />
-            <h1 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk' }}>Admin HQ</h1>
+
+        {/* Live notification banner */}
+        {notification && (
+          <div className="mb-4 px-4 py-3 rounded-xl flex items-center gap-3 animate-pulse"
+            style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)' }}>
+            <Bell className="w-4 h-4 text-sky-400 flex-shrink-0" />
+            <span className="text-sm text-sky-300 font-medium">{notification}</span>
           </div>
-          <p className="text-slate-400 text-sm">Platform oversight and management</p>
+        )}
+
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Admin HQ</h1>
+            <p className="text-slate-400 text-sm mt-0.5">Live platform overview</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ADE80' }}>
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
+            LIVE
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {adminStats.map(s => (
-            <div key={s.label} className="glass-card rounded-2xl p-5">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
-                <s.icon className="w-5 h-5" style={{ color: s.color }} />
+          {[
+            { label: 'Total Members', value: stats.users, icon: Users, color: '#38BDF8' },
+            { label: 'Pending Hosts', value: stats.pendingHosts, icon: Shield, color: '#FFD700', alert: stats.pendingHosts > 0 },
+            { label: 'Live Events', value: stats.liveEvents, icon: Radio, color: '#EF4444' },
+            { label: 'Total Revenue', value: fmt(stats.revenue), icon: DollarSign, color: '#4ADE80' },
+          ].map(s => (
+            <div key={s.label} className="rounded-2xl p-4 relative" style={{ background: '#1E293B', border: s.alert ? '1px solid rgba(255,215,0,0.4)' : 'none' }}>
+              {s.alert && <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-yellow-400 animate-pulse" />}
+              <div className="flex items-center gap-2 mb-2">
+                <s.icon className="w-4 h-4" style={{ color: s.color }} />
+                <span className="text-xs text-slate-400">{s.label}</span>
               </div>
-              <div className="text-2xl font-bold mb-1 earnings-tick" style={{ fontFamily: 'Space Grotesk', color: s.color }}>
-                {loading ? '...' : s.value}
-              </div>
-              <div className="text-xs text-slate-500">{s.label}</div>
+              <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Host applications */}
-          <div className="lg:col-span-2 glass-card rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold flex items-center gap-2">
-                <Shield className="w-4 h-4 text-sky-400" />
-                Host Applications
-                {applications.length > 0 && (
-                  <span className="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center" style={{ background: '#EF4444', color: 'white' }}>
-                    {applications.length}
-                  </span>
-                )}
-              </h2>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {applications.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle className="w-10 h-10 mx-auto mb-3 text-green-500 opacity-50" />
-                <p className="text-slate-400 text-sm">No pending applications</p>
+          {/* Pending Host Applications */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                Pending Host Applications ({pendingApps.length})
+              </h2>
+              <Link href="/admin/hosts" className="text-xs text-sky-400 hover:underline">View all →</Link>
+            </div>
+            {pendingApps.length === 0 ? (
+              <div className="rounded-2xl p-8 text-center" style={{ background: '#1E293B' }}>
+                <Shield className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                <p className="text-slate-500 text-sm">No pending applications</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {applications.map(app => (
-                  <div key={app.id} className="flex items-center justify-between gap-4 p-3 rounded-xl" style={{ background: '#0F172A', border: '1px solid #334155' }}>
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm">{app.users?.email || 'Unknown'}</div>
-                      <div className="text-xs text-slate-500 mt-0.5 truncate">{app.reason || 'No reason provided'}</div>
-                      <div className="text-xs text-slate-600 mt-1">{new Date(app.created_at).toLocaleDateString()}</div>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => approveHost(app.id, app.user_id)}
-                        className="p-2 rounded-lg text-green-400 hover:bg-green-400/10 transition-colors"
-                        title="Approve"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => rejectHost(app.id)}
-                        className="p-2 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
-                        title="Reject"
-                      >
-                        <XCircle className="w-4 h-4" />
+                {pendingApps.slice(0, 3).map(app => (
+                  <div key={app.id} className="rounded-xl p-4" style={{ background: '#1E293B', border: '1px solid rgba(255,215,0,0.2)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <div className="font-medium text-sm">{app.email}</div>
+                        <div className="text-xs text-slate-500">{app.expertise}</div>
+                      </div>
+                      <button onClick={() => approve(app)} className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        style={{ background: 'rgba(34,197,94,0.15)', color: '#4ADE80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                        Approve ✓
                       </button>
                     </div>
+                    <p className="text-xs text-slate-400 line-clamp-1">{app.reason}</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Right column */}
-          <div className="space-y-4">
-            {/* Live streams monitor */}
-            <div className="glass-card rounded-2xl p-5">
-              <h2 className="font-semibold mb-3 flex items-center gap-2">
-                <Radio className="w-4 h-4 text-red-400" />
-                Live Streams
-                <span className="w-2 h-2 rounded-full bg-red-400 live-dot" />
+          {/* Recent Members — live */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                Recent Members ({stats.users} total)
               </h2>
-              {liveEvents.length === 0 ? (
-                <p className="text-slate-500 text-sm">No active streams</p>
-              ) : (
-                <div className="space-y-2">
-                  {liveEvents.map(evt => (
-                    <div key={evt.id} className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{evt.title}</div>
-                        <div className="text-xs text-slate-500">{evt.viewer_peak} viewers</div>
-                      </div>
-                      <button onClick={() => terminateStream(evt.id)} className="text-xs px-2 py-1 rounded text-red-400 hover:bg-red-400/10 flex-shrink-0 transition-colors">
-                        Terminate
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <TrendingUp className="w-4 h-4 text-sky-400" />
             </div>
-
-            {/* Activity feed */}
-            <div className="glass-card rounded-2xl p-5">
-              <h2 className="font-semibold mb-3 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-sky-400" />
-                Live Activity
-              </h2>
-              {activity.length === 0 ? (
-                <p className="text-slate-500 text-sm">No recent activity</p>
+            <div className="rounded-2xl overflow-hidden" style={{ background: '#1E293B' }}>
+              {recentUsers.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-sm">No members yet</div>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {activity.map((a, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs chat-message">
-                      <AlertCircle className="w-3 h-3 text-sky-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <div className="text-slate-300">{a.message}</div>
-                        <div className="text-slate-600">{a.time}</div>
-                      </div>
+                recentUsers.map((u, i) => (
+                  <div key={u.id} className="flex items-center gap-3 px-4 py-3"
+                    style={{ borderBottom: i < recentUsers.length - 1 ? '1px solid #334155' : 'none' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
+                      {u.photo_url ? <img src={u.photo_url} alt="" className="w-full h-full object-cover" /> : u.email[0].toUpperCase()}
                     </div>
-                  ))}
-                </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{u.email.split('@')[0]}</div>
+                      <div className="text-xs text-slate-500">{new Date(u.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+                      style={{ background: roleBg(u.role), color: roleColor(u.role) }}>
+                      {u.role}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
           </div>
+        </div>
+
+        {/* Quick links */}
+        <div className="grid grid-cols-3 gap-3 mt-6">
+          {[
+            { href: '/admin/hosts', label: 'Host Approvals', icon: Shield, color: '#FFD700' },
+            { href: '/admin/events', label: 'All Events', icon: Radio, color: '#38BDF8' },
+            { href: '/admin/revenue', label: 'Revenue', icon: DollarSign, color: '#4ADE80' },
+          ].map(item => (
+            <Link key={item.href} href={item.href} className="rounded-xl p-4 flex items-center gap-3 transition-all hover:scale-105"
+              style={{ background: '#1E293B' }}>
+              <item.icon className="w-5 h-5 flex-shrink-0" style={{ color: item.color }} />
+              <span className="text-sm font-medium">{item.label}</span>
+            </Link>
+          ))}
         </div>
       </div>
     </DashboardLayout>
