@@ -20,8 +20,8 @@ const FEATURES = [
   },
   {
     icon: DollarSign,
-    title: '50/50 Revenue Split',
-    desc: 'You keep 50% of every ticket sold. Platform handles payments, security, and infrastructure.',
+    title: 'Keep 80% of Revenue',
+    desc: 'You keep 80% of every ticket sold. Platform handles payments, security, and infrastructure — we only take 20%.',
     color: '#FFD700',
   },
   {
@@ -54,7 +54,7 @@ const TESTIMONIALS = [
   {
     name: 'Jake Harris',
     role: 'Founder, Nifty50',
-    quote: 'Made $329 from my first event. The 50/50 split is genuinely fair — no other platform comes close.',
+    quote: 'Made $329 from my first event. Keeping 80% of ticket sales is genuinely fair — no other platform comes close.',
     avatar: 'JH',
   },
   {
@@ -95,9 +95,11 @@ export default function Landing() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)' }}>
-              <Mic className="w-4 h-4 text-white" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="GritClub"
+              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+            />
             <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Grit<span style={{ color: '#FFD700' }}>Club</span>
             </span>
@@ -106,10 +108,7 @@ export default function Landing() {
             <Link href="/auth/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors px-4 py-2">
               Sign In
             </Link>
-            <Link
-              href="/auth/login"
-              className="btn-gold px-5 py-2 rounded-lg text-sm"
-            >
+            <Link href="/auth/login" className="btn-gold px-5 py-2 rounded-lg text-sm">
               Get Started Free
             </Link>
           </div>
@@ -118,7 +117,6 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 overflow-hidden">
-        {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div
             className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-20"
@@ -127,23 +125,25 @@ export default function Landing() {
         </div>
 
         <div className="max-w-5xl mx-auto px-4 text-center relative">
-          {/* Live badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#F87171' }}>
             <span className="w-2 h-2 rounded-full bg-red-500 live-dot" />
             3 founders live right now
           </div>
 
           <h1 className="text-5xl sm:text-7xl font-bold mb-6 leading-tight tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            LinkedIn meets Twitch
+            Where founders come
             <br />
-            <span className="gradient-text">for founders</span>
+            <span className="gradient-text">to learn & earn</span>
           </h1>
 
-          <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Host ticketed live business events. Keep 50% of every dollar. Connect with founders who are actually building.
+          <p className="text-xl text-slate-400 mb-4 max-w-2xl mx-auto leading-relaxed">
+            Host ticketed live business events. Keep 80% of every dollar. Build real relationships with founders who are actually building.
           </p>
 
-          {/* CTA */}
+          <p className="text-sm mb-10 font-medium" style={{ color: '#FFD700' }}>
+            We only take 20% — the lowest cut in the industry.
+          </p>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/auth/login" className="btn-gold px-8 py-4 rounded-xl text-lg w-full sm:w-auto text-center">
               Start Hosting Free →
@@ -167,6 +167,14 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Revenue highlight banner */}
+      <section className="py-10 px-4">
+        <div className="max-w-4xl mx-auto rounded-2xl p-8 text-center" style={{ background: 'linear-gradient(135deg, rgba(255,215,0,0.08), rgba(56,189,248,0.08))', border: '1px solid rgba(255,215,0,0.2)' }}>
+          <div className="text-4xl font-bold mb-2" style={{ color: '#FFD700', fontFamily: 'Space Grotesk' }}>80% yours. Always.</div>
+          <p className="text-slate-400 text-lg">Host a $20 event with 50 attendees → you pocket <span style={{ color: '#FFD700', fontWeight: '700' }}>$800</span>. We take $200. Fair and transparent.</p>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
@@ -174,7 +182,7 @@ export default function Landing() {
             <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk' }}>
               Everything a founder needs
             </h2>
-            <p className="text-slate-400 text-lg">Built by studying what works on LinkedIn and Twitch — then making it better</p>
+            <p className="text-slate-400 text-lg">Built for founders who value their time and their expertise</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -199,9 +207,9 @@ export default function Landing() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Create your event', desc: 'Set topic, price ($5–$99), capacity, and time. Draft or schedule.' },
+              { step: '01', title: 'Create your event', desc: 'Set topic, price ($5–$99), capacity, and time. Draft or schedule instantly.' },
               { step: '02', title: 'Go live', desc: 'One click. Camera, screen share, whiteboard, or slides — your choice.' },
-              { step: '03', title: 'Earn 50%', desc: 'Ticket revenue auto-splits. Payouts every week to your bank.' },
+              { step: '03', title: 'Keep 80%', desc: 'Ticket revenue auto-splits. You keep 80%, we take 20%. Payouts every week.' },
             ].map((s) => (
               <div key={s.step} className="text-center">
                 <div className="text-6xl font-bold mb-4 opacity-20" style={{ fontFamily: 'Space Grotesk', color: '#38BDF8' }}>{s.step}</div>
@@ -251,8 +259,9 @@ export default function Landing() {
             <br />
             <span className="gradient-text">your expertise?</span>
           </h2>
-          <p className="text-slate-400 mb-8 text-lg">Join 2,400+ founders already hosting on GritClub</p>
-          
+          <p className="text-slate-400 mb-2 text-lg">Join 2,400+ founders already hosting on GritClub</p>
+          <p className="text-sm mb-8 font-medium" style={{ color: '#FFD700' }}>Keep 80% of every ticket you sell.</p>
+
           {!submitted ? (
             <form
               onSubmit={(e) => { e.preventDefault(); if (email) setSubmitted(true) }}
@@ -279,12 +288,14 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t py-10 px-4 text-center text-slate-500 text-sm" style={{ borderColor: '#334155' }}>
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)' }}>
-            <Mic className="w-3 h-3 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="GritClub"
+            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+          />
           <span className="font-bold" style={{ fontFamily: 'Space Grotesk' }}>GritClub</span>
         </div>
-        <p>© 2024 GritClub · gritclub.live</p>
+        <p>© 2025 GritClub · gritclub.live</p>
       </footer>
     </div>
   )
