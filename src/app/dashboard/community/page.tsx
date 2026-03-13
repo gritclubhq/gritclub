@@ -65,7 +65,7 @@ export default function CommunityPage() {
             </div>
             {members.map(m => (
               <div key={m.id} className="flex flex-col items-center gap-1.5">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold ring-2 overflow-hidden" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A', ringColor: '#38BDF8' }}>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold ring-2 overflow-hidden" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A'}}>
                   {m.photo_url ? <img src={m.photo_url} alt="" className="w-full h-full object-cover" /> : getInitials(m.email)}
                 </div>
                 <span className="text-xs text-slate-400 max-w-[56px] truncate">{m.email?.split('@')[0]}</span>
