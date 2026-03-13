@@ -43,9 +43,11 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '28px' }}>
-            🎙️
-          </div>
+          <img
+            src="/logo.png"
+            alt="GritClub"
+            style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px', display: 'block' }}
+          />
           <div style={{ fontSize: '28px', fontWeight: '800', color: 'white', letterSpacing: '-0.5px' }}>
             Grit<span style={{ color: '#FFD700' }}>Club</span>
           </div>
@@ -58,7 +60,7 @@ export default function LoginPage() {
             Sign in to GritClub
           </h2>
 
-          {/* Google Button - Twitch style */}
+          {/* Google Button */}
           <button
             onClick={handleGoogle}
             style={{ width: '100%', padding: '14px', borderRadius: '8px', background: '#FFFFFF', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '15px', fontWeight: '600', color: '#1E293B', marginBottom: '20px', transition: 'opacity 0.2s' }}
