@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import {
-  Home, Calendar, Ticket, Users,
-  Radio, DollarSign, BarChart2, Shield, Menu, User
+  Mic, Home, Calendar, Ticket, Users, Settings, LogOut,
+  Radio, DollarSign, BarChart2, Shield, Menu, X, Bell, User
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
 
@@ -39,77 +39,143 @@ const ADMIN_NAV: NavItem[] = [
   { href: '/admin/revenue', label: 'Revenue', icon: DollarSign },
 ]
 
-const getNavByRole = (role: string) =>
-  role === 'admin' ? ADMIN_NAV : role === 'host' ? HOST_NAV : AUDIENCE_NAV
+// ─── Sign Out Modal ───────────────────────────────────────────────────────────
+function SignOutModal({
+  isOpen,
+  onConfirm,
+  onCancel,
+}: {
+  isOpen: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      {/* Modal box */}
+      <div className="relative rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl border"
+        style={{ background: '#1E293B', borderColor: '#334155' }}>
+        <div className="flex flex-col items-center text-center gap-4">
+          {/* Icon */}
+          <div className="w-12 h-12 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(239,68,68,0.12)' }}>
+            <LogOut className="w-5 h-5 text-red-400" />
+          </div>
+          {/* Text */}
+          <div>
+            <h2 className="text-white font-semibold text-lg">Sign out?</h2>
+            <p className="text-slate-400 text-sm mt-1">
+              You'll need to sign back in to access your dashboard.
+            </p>
+          </div>
+          {/* Buttons */}
+          <div className="flex gap-3 w-full mt-1">
+            <button
+              onClick={onCancel}
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 border transition-colors hover:bg-white/5"
+              style={{ borderColor: '#334155' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-const getRoleStyle = (role: string) => ({
-  background: role === 'admin' ? 'rgba(239,68,68,0.15)' : role === 'host' ? 'rgba(255,215,0,0.15)' : 'rgba(56,189,248,0.15)',
-  color: role === 'admin' ? '#F87171' : role === 'host' ? '#FFD700' : '#38BDF8',
-})
+// ─── Avatar component ─────────────────────────────────────────────────────────
+function Avatar({ photoUrl, fallback, size = 8 }: { photoUrl?: string | null, fallback: string, size?: number }) {
+  const sizeClass = `w-${size} h-${size}`
+  return (
+    <div
+      className={`${sizeClass} rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden`}
+      style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}
+    >
+      {photoUrl ? (
+        <img src={photoUrl} alt="avatar" className="w-full h-full object-cover" />
+      ) : (
+        <span>{fallback}</span>
+      )}
+    </div>
+  )
+}
 
+// ─── Main Layout ──────────────────────────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  // Read role from localStorage instantly — no flicker ever
-  const cachedRole = typeof window !== 'undefined' ? localStorage.getItem('gc_role') || 'audience' : 'audience'
-  const [role, setRole] = useState<string>(cachedRole)
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.push('/auth/login'); return }
       setUser(user)
       supabase.from('users').select('*').eq('id', user.id).single().then(({ data }) => {
-        if (data) {
-          setProfile(data)
-          setRole(data.role || 'audience')
-          // Cache role so next page load is instant
-          localStorage.setItem('gc_role', data.role || 'audience')
-          localStorage.setItem('gc_user_name', user.user_metadata?.full_name || user.email || '')
-          localStorage.setItem('gc_user_email', user.email || '')
-          localStorage.setItem('gc_avatar', user.user_metadata?.avatar_url || '')
-        }
+        setProfile(data)
       })
     })
   }, [])
 
-  const navItems = getNavByRole(role)
-  const roleStyle = getRoleStyle(role)
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
 
-  // Cached user info for instant display
-  const cachedName = typeof window !== 'undefined' ? localStorage.getItem('gc_user_name') || '' : ''
-  const cachedEmail = typeof window !== 'undefined' ? localStorage.getItem('gc_user_email') || '' : ''
-  const cachedAvatar = typeof window !== 'undefined' ? localStorage.getItem('gc_avatar') || '' : ''
+  const navItems = profile?.role === 'admin' ? ADMIN_NAV : profile?.role === 'host' ? HOST_NAV : AUDIENCE_NAV
 
-  const displayName = user?.user_metadata?.full_name || cachedName || 'User'
-  const displayEmail = user?.email || cachedEmail || ''
-  const displayAvatar = user?.user_metadata?.avatar_url || cachedAvatar || ''
+  // Fallback initials — prefer DB name, then Google name, then email
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email || 'U'
+  const initials = getInitials(displayName)
+  const photoUrl = profile?.photo_url || null
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5">
-        <img src="/logo.png" alt="GritClub" style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
-        <span style={{ fontSize: '20px', fontWeight: '800', color: 'white', letterSpacing: '-0.5px' }}>
-          Grit<span style={{ color: '#FFD700' }}>Club</span>
-        </span>
+      <div className="p-5 border-b" style={{ borderColor: '#334155' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)' }}>
+            <Mic className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk' }}>
+            Grit<span style={{ color: '#FFD700' }}>Club</span>
+          </span>
+        </div>
       </div>
 
-      {/* Role badge — instant from cache */}
-      <div className="px-5 pb-2">
-        <span className="text-xs font-semibold px-2 py-1 rounded" style={roleStyle}>
-          {role.toUpperCase()}
-        </span>
-      </div>
+      {/* Role badge */}
+      {profile?.role && (
+        <div className="px-5 pt-4">
+          <span className="text-xs font-semibold px-2 py-1 rounded" style={{
+            background: profile.role === 'admin' ? 'rgba(239,68,68,0.15)' : profile.role === 'host' ? 'rgba(255,215,0,0.15)' : 'rgba(56,189,248,0.15)',
+            color: profile.role === 'admin' ? '#F87171' : profile.role === 'host' ? '#FFD700' : '#38BDF8',
+          }}>
+            {profile.role.toUpperCase()}
+          </span>
+        </div>
+      )}
 
-      {/* Nav — instant, no skeleton needed */}
+      {/* Nav */}
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const active = pathname === item.href ||
-            (item.href !== '/dashboard' && item.href !== '/host' && item.href !== '/admin' && pathname.startsWith(item.href))
+            (item.href !== '/dashboard' && item.href !== '/host' && item.href !== '/admin' &&
+              pathname.startsWith(item.href))
           return (
             <Link
               key={item.href}
@@ -124,78 +190,92 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         })}
       </nav>
 
-      {/* User info bottom */}
+      {/* User profile + sign out */}
       <div className="p-4 border-t" style={{ borderColor: '#334155' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
-            {displayAvatar
-              ? <img src={displayAvatar} alt="" className="w-full h-full object-cover" />
-              : getInitials(displayName)
-            }
-          </div>
+        <div className="flex items-center gap-3 mb-3">
+          {/* Avatar — shows photo_url from DB, falls back to initials */}
+          <Avatar photoUrl={photoUrl} fallback={initials} size={8} />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{displayName}</div>
-            <div className="text-xs text-slate-500 truncate">{displayEmail}</div>
+            <div className="text-sm font-medium truncate">
+              {profile?.full_name || user?.user_metadata?.full_name || 'User'}
+            </div>
+            <div className="text-xs text-slate-500 truncate">{user?.email}</div>
           </div>
         </div>
+        {/* Sign out — now opens modal instead of signing out immediately */}
+        <button
+          onClick={() => setShowSignOutModal(true)}
+          className="sidebar-item w-full text-red-400 hover:text-red-300 hover:bg-red-900/20"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
       </div>
     </div>
   )
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#0F172A' }}>
-      {/* Desktop Sidebar */}
-      <aside className="sidebar-desktop w-60 flex-shrink-0 border-r overflow-y-auto" style={{ background: '#0F172A', borderColor: '#1E293B' }}>
-        <SidebarContent />
-      </aside>
+    <>
+      {/* Sign out confirmation modal */}
+      <SignOutModal
+        isOpen={showSignOutModal}
+        onConfirm={handleSignOut}
+        onCancel={() => setShowSignOutModal(false)}
+      />
 
-      {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-64 flex-shrink-0 overflow-y-auto" style={{ background: '#0F172A', borderRight: '1px solid #1E293B' }}>
-            <SidebarContent />
-          </aside>
-        </div>
-      )}
+      <div className="flex h-screen overflow-hidden" style={{ background: '#0F172A' }}>
+        {/* Desktop Sidebar */}
+        <aside className="sidebar-desktop w-60 flex-shrink-0 border-r overflow-y-auto"
+          style={{ background: '#0F172A', borderColor: '#1E293B' }}>
+          <SidebarContent />
+        </aside>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile top bar */}
-        <div className="md:hidden flex items-center justify-between px-4 h-14 border-b flex-shrink-0" style={{ borderColor: '#1E293B', background: '#0F172A' }}>
-          <button onClick={() => setMobileOpen(true)}>
-            <Menu className="w-5 h-5 text-slate-400" />
-          </button>
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="" style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }} />
-            <span className="font-bold">Grit<span style={{ color: '#FFD700' }}>Club</span></span>
+        {/* Mobile sidebar overlay */}
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            <div className="fixed inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
+            <aside className="relative w-64 flex-shrink-0 overflow-y-auto"
+              style={{ background: '#0F172A', borderRight: '1px solid #1E293B' }}>
+              <SidebarContent />
+            </aside>
           </div>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
-            {displayAvatar
-              ? <img src={displayAvatar} alt="" className="w-full h-full object-cover" />
-              : getInitials(displayName)
-            }
+        )}
+
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Mobile top bar */}
+          <div className="md:hidden flex items-center justify-between px-4 h-14 border-b flex-shrink-0"
+            style={{ borderColor: '#1E293B', background: '#0F172A' }}>
+            <button onClick={() => setMobileOpen(true)}>
+              <Menu className="w-5 h-5 text-slate-400" />
+            </button>
+            <span className="font-bold" style={{ fontFamily: 'Space Grotesk' }}>
+              Grit<span style={{ color: '#FFD700' }}>Club</span>
+            </span>
+            {/* Mobile top-right avatar also uses photo_url */}
+            <Avatar photoUrl={photoUrl} fallback={initials} size={8} />
           </div>
+
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+
+          {/* Mobile bottom nav */}
+          <nav className="mobile-bottom-nav border-t flex items-center justify-around h-16 flex-shrink-0"
+            style={{ background: '#0F172A', borderColor: '#1E293B' }}>
+            {navItems.slice(0, 5).map((item) => {
+              const active = pathname === item.href
+              return (
+                <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1 py-2 px-3">
+                  <item.icon className="w-5 h-5" style={{ color: active ? '#38BDF8' : '#64748B' }} />
+                  <span className="text-xs" style={{ color: active ? '#38BDF8' : '#64748B' }}>{item.label}</span>
+                </Link>
+              )
+            })}
+          </nav>
         </div>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-
-        {/* Mobile bottom nav */}
-        <nav className="mobile-bottom-nav border-t flex items-center justify-around h-16 flex-shrink-0" style={{ background: '#0F172A', borderColor: '#1E293B' }}>
-          {navItems.slice(0, 5).map((item) => {
-            const active = pathname === item.href
-            return (
-              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1 py-2 px-3">
-                <item.icon className="w-5 h-5" style={{ color: active ? '#38BDF8' : '#64748B' }} />
-                <span className="text-xs" style={{ color: active ? '#38BDF8' : '#64748B' }}>{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
       </div>
-    </div>
+    </>
   )
 }
