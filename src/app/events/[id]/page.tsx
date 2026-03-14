@@ -1,124 +1,147 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import Link from 'next/link'
-import { Search, Lock, Radio, X, Calendar, Users, ChevronRight } from 'lucide-react'
+import { Search, Radio, Lock, Globe, X, Loader2, Calendar, Users, Tag, ChevronRight, Zap } from 'lucide-react'
 
 const C = {
-  bg: '#0A0A0F', surface: '#13131A', surfaceHover: '#1A1A24',
-  border: 'rgba(255,255,255,0.07)', borderHover: 'rgba(145,70,255,0.3)',
-  text: '#F0F0FF', textMuted: '#8888A0', textDim: '#55556A',
-  purple: '#9146FF', purpleLight: '#B07FFF', purpleDim: 'rgba(145,70,255,0.12)',
-  gold: '#FCD34D', goldDim: 'rgba(252,211,77,0.1)',
-  red: '#FF4444', redDim: 'rgba(255,68,68,0.1)',
-  sky: '#38BDF8', skyDim: 'rgba(56,189,248,0.1)',
-  green: '#4ADE80',
+  bg:         '#0A0F1E', surface:    '#0D1428', card:       '#111827', cardHover:  '#141E35',
+  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(37,99,235,0.3)',
+  text:       '#F0F4FF', textMuted:  '#7B8DB0', textDim:    '#3D4F6E',
+  blue:       '#2563EB', blueLight:  '#3B82F6', blueDim:    'rgba(37,99,235,0.12)',
+  gold:       '#F59E0B', goldDim:    'rgba(245,158,11,0.1)',
+  red:        '#EF4444', redDim:     'rgba(239,68,68,0.1)',
+  green:      '#10B981', greenDim:   'rgba(16,185,129,0.1)',
 }
 
-const CATEGORIES = ['All', 'AI & Tech', 'Growth', 'Fundraising', 'Product', 'HealthTech', 'Climate', 'SaaS']
+const CATEGORIES = ['All','AI & Tech','SaaS','FinTech','HealthTech','EdTech','E-commerce','Climate','Fundraising','Growth','Product']
 
-const MOCK_EVENTS = [
-  { id: '1', title: 'Scaling to $1M ARR: A Masterclass', description: 'Growth strategies from 0 to $1M ARR in 18 months. Acquisition, pricing, retention tactics.', host: 'David Kim', group: 'SaaS Growth Hackers', category: 'Growth', date: '2026-03-20', time: '18:00', price: 49, maxSpots: 50, spotsLeft: 18, isLinkOnly: false, live: false, tags: ['Growth', 'SaaS', 'Revenue'] },
-  { id: '2', title: 'AI Product Development Workshop', description: 'Hands-on: prompt engineering, model selection, and integration strategies for founders.', host: 'Sarah Chen', group: 'AI Founders Circle', category: 'AI & Tech', date: '2026-03-22', time: '19:00', price: 79, maxSpots: 30, spotsLeft: 12, isLinkOnly: true, live: true, tags: ['AI', 'Product', 'Workshop'] },
-  { id: '3', title: 'Pitch Deck Teardown Session', description: 'Live review of pitch decks. Learn what investors actually want to see.', host: 'Marcus Johnson', group: 'Fundraising Masters', category: 'Fundraising', date: '2026-03-25', time: '17:00', price: 99, maxSpots: 20, spotsLeft: 5, isLinkOnly: true, live: false, tags: ['Fundraising', 'Pitch', 'Investors'] },
-  { id: '4', title: 'Product-Market Fit Workshop', description: 'Finding and validating PMF. Real case studies and frameworks you can apply immediately.', host: 'Emily Rodriguez', group: 'Product Builders Guild', category: 'Product', date: '2026-03-28', time: '18:30', price: 59, maxSpots: 40, spotsLeft: 12, isLinkOnly: false, live: false, tags: ['PMF', 'Product', 'Strategy'] },
-  { id: '5', title: 'Climate Tech Investment Landscape', description: 'Where the money is going in climate. Frameworks for building fundable climate companies.', host: 'Priya Patel', group: 'Climate Tech Pioneers', category: 'Climate', date: '2026-04-01', time: '17:00', price: 39, maxSpots: 60, spotsLeft: 45, isLinkOnly: false, live: false, tags: ['Climate', 'Investment', 'Impact'] },
-  { id: '6', title: 'HealthTech Go-To-Market Strategies', description: 'Navigate hospital procurement, insurance reimbursements, and direct-to-consumer.', host: 'Marcus Johnson', group: 'HealthTech Innovators', category: 'HealthTech', date: '2026-04-03', time: '19:30', price: 69, maxSpots: 25, spotsLeft: 8, isLinkOnly: false, live: false, tags: ['HealthTech', 'GTM', 'Sales'] },
-]
+const formatDate = (d: string, t: string) => {
+  const date = new Date(d)
+  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${t}`
+}
 
-function EventCard({ event }: { event: typeof MOCK_EVENTS[0] }) {
-  const fill = Math.round(((event.maxSpots - event.spotsLeft) / event.maxSpots) * 100)
-  const almostFull = event.spotsLeft <= 5
-  const d = new Date(event.date)
+function EventCard({ event, currentUserId }: { event: any; currentUserId: string | null }) {
+  const total    = event.capacity || event.max_attendees || 50
+  const sold     = event.total_sold || event.current_attendees || 0
+  const left     = Math.max(total - sold, 0)
+  const fill     = Math.round((sold / Math.max(total, 1)) * 100)
+  const almostFull = left <= 5 && left > 0
+  const soldOut    = left === 0
+  const isLive     = event.status === 'live'
+  const isFree     = event.is_free || event.price === 0
 
   return (
     <Link href={`/events/${event.id}`}>
       <div
-        className="rounded-xl overflow-hidden transition-all duration-200 cursor-pointer"
-        style={{ background: C.surface, border: `1px solid ${event.live ? 'rgba(255,68,68,0.25)' : C.border}` }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = event.live ? 'rgba(255,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${event.live ? 'rgba(255,68,68,0.08)' : 'rgba(145,70,255,0.08)'}` }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = event.live ? 'rgba(255,68,68,0.25)' : C.border; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
+        className="rounded-2xl overflow-hidden transition-all duration-200 flex flex-col cursor-pointer"
+        style={{ background: C.card, border: `1px solid ${isLive ? 'rgba(239,68,68,0.25)' : C.border}` }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${isLive ? 'rgba(239,68,68,0.08)' : 'rgba(37,99,235,0.08)'}` }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.25)' : C.border; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
       >
-        {/* Top accent */}
-        <div className="h-0.5" style={{ background: event.live ? C.red : `linear-gradient(to right, ${C.purple}, ${C.sky}, transparent)` }} />
-
-        <div className="p-5">
-          {/* Header */}
-          <div className="flex items-start gap-4 mb-4">
-            {/* Date block */}
-            <div className="flex-shrink-0 w-14 rounded-lg py-2.5 text-center" style={{ background: event.live ? C.redDim : C.purpleDim, border: `1px solid ${event.live ? 'rgba(255,68,68,0.2)' : 'rgba(145,70,255,0.2)'}` }}>
-              {event.live ? (
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-xs font-bold tracking-widest" style={{ color: C.red }}>LIVE</span>
-                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.red }} />
-                </div>
-              ) : (
-                <>
-                  <span className="block text-xl font-bold leading-none" style={{ color: C.purpleLight }}>{d.getDate()}</span>
-                  <span className="block text-xs font-semibold tracking-wider mt-0.5" style={{ color: C.textDim }}>
-                    {d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              {/* Badges */}
-              <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                <span className="text-xs font-medium px-2 py-0.5 rounded-md" style={{ background: C.purpleDim, color: C.purpleLight }}>
-                  {event.group}
-                </span>
-                {event.isLinkOnly && (
-                  <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md" style={{ background: 'rgba(252,211,77,0.08)', color: C.gold }}>
-                    <Lock className="w-2.5 h-2.5" /> Invite only
-                  </span>
-                )}
+        {/* Banner */}
+        <div className="relative overflow-hidden" style={{ aspectRatio: '16/7' }}>
+          {event.banner_url
+            ? <img src={event.banner_url} alt={event.title} className="w-full h-full object-cover" />
+            : (
+              <div className="w-full h-full flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${C.surface}, ${C.card})` }}>
+                <Radio className="w-8 h-8" style={{ color: C.textDim }} />
               </div>
-              <h3 className="text-base font-bold leading-snug mb-1" style={{ color: C.text }}>{event.title}</h3>
-              <p className="text-xs" style={{ color: C.textMuted }}>{event.host} · {event.time}</p>
-            </div>
+            )
+          }
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-0.5"
+            style={{ background: isLive ? C.red : `linear-gradient(to right, ${C.blue}, ${C.blueLight}, transparent)` }} />
 
-            {/* Price */}
-            <div className="flex-shrink-0 text-right pl-2">
-              <p className="text-xl font-bold leading-none" style={{ color: C.gold }}>${event.price}</p>
-              <p className="text-xs mt-0.5" style={{ color: C.textDim }}>/ ticket</p>
-            </div>
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex gap-1.5">
+            {isLive && (
+              <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                style={{ background: 'rgba(0,0,0,0.75)', color: C.red }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
+              </span>
+            )}
+            {event.is_link_only && (
+              <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(0,0,0,0.75)', color: C.gold }}>
+                <Lock className="w-2.5 h-2.5" /> Invite Only
+              </span>
+            )}
           </div>
+          <div className="absolute top-2 right-2">
+            {soldOut
+              ? <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.75)', color: C.red }}>Sold Out</span>
+              : almostFull
+                ? <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.75)', color: C.gold }}>⚡ {left} left</span>
+                : null
+            }
+          </div>
+        </div>
 
-          {/* Description */}
-          <p className="text-sm leading-relaxed mb-4" style={{ color: C.textMuted, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {event.description}
-          </p>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {event.tags.map(tag => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-md" style={{ background: 'rgba(255,255,255,0.04)', color: C.textDim, border: `1px solid ${C.border}` }}>
+        {/* Content */}
+        <div className="p-4 flex flex-col gap-3 flex-1">
+          {/* Group + category */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md" style={{ background: C.blueDim, color: C.blueLight }}>
+              {event.group_name || event.category || 'General'}
+            </span>
+            {event.tags?.slice(0,2).map((tag: string) => (
+              <span key={tag} className="text-xs px-2 py-0.5 rounded-md" style={{ background: C.border, color: C.textDim }}>
                 #{tag}
               </span>
             ))}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <div className="h-full rounded-full" style={{ width: fill + '%', background: almostFull ? C.red : `linear-gradient(to right, ${C.purple}, ${C.sky})` }} />
-              </div>
-              <p className="text-xs font-medium" style={{ color: almostFull ? C.red : C.textDim }}>
-                {almostFull ? `⚡ Only ${event.spotsLeft} spots left!` : `${event.spotsLeft} of ${event.maxSpots} spots remaining`}
-              </p>
+          {/* Title + host */}
+          <div>
+            <h3 className="text-sm font-bold leading-snug mb-1" style={{ color: C.text }}>{event.title}</h3>
+            <p className="text-xs" style={{ color: C.textMuted }}>
+              {event.host_name || event.users?.full_name || event.users?.email?.split('@')[0] || 'Host'}
+              {event.start_time || event.date
+                ? ` · ${formatDate(event.start_time || event.date, event.time || '')}`
+                : ''
+              }
+            </p>
+          </div>
+
+          {/* Capacity bar */}
+          <div>
+            <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-full rounded-full transition-all"
+                style={{ width: `${fill}%`, background: soldOut ? C.red : almostFull ? `linear-gradient(to right, ${C.gold}, #FCD34D)` : `linear-gradient(to right, ${C.blue}, ${C.blueLight})` }} />
+            </div>
+            <div className="flex items-center justify-between text-xs" style={{ color: C.textDim }}>
+              <span>
+                {soldOut ? 'Sold out'
+                  : almostFull ? `Only ${left} spots left!`
+                  : `${left} of ${total} spots remaining`}
+              </span>
+              <span>{fill}% full</span>
+            </div>
+          </div>
+
+          {/* Price + CTA */}
+          <div className="flex items-center justify-between gap-3 mt-auto pt-1" style={{ borderTop: `1px solid ${C.border}` }}>
+            <div>
+              {isFree
+                ? <span className="text-base font-bold" style={{ color: C.green }}>Free</span>
+                : <span className="text-base font-bold" style={{ color: C.gold }}>
+                    ${((event.price || 0) / 100).toFixed(0)}
+                    <span className="text-xs font-normal ml-1" style={{ color: C.textDim }}>/ ticket</span>
+                  </span>
+              }
             </div>
             <div
-              className="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
               style={{
-                background: event.live ? C.red : C.purpleDim,
-                color: event.live ? '#fff' : C.purpleLight,
-                border: `1px solid ${event.live ? C.red : 'rgba(145,70,255,0.3)'}`,
-              }}
-            >
-              {event.live ? 'Join Now →' : 'Get Ticket →'}
+                background: isLive ? C.red     : soldOut ? C.border   : C.blueDim,
+                color:      isLive ? '#fff'    : soldOut ? C.textDim  : C.blueLight,
+                border:     `1px solid ${isLive ? C.red : soldOut ? C.border : 'rgba(37,99,235,0.2)'}`,
+              }}>
+              {isLive ? 'Join Now →' : soldOut ? 'Sold Out' : 'Get Ticket →'}
             </div>
           </div>
         </div>
@@ -128,37 +151,93 @@ function EventCard({ event }: { event: typeof MOCK_EVENTS[0] }) {
 }
 
 export default function EventsPage() {
-  const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('All')
-  const [liveOnly, setLiveOnly] = useState(false)
+  const [currentUser,  setCurrentUser]  = useState<any>(null)
+  const [profile,      setProfile]      = useState<any>(null)
+  const [events,       setEvents]       = useState<any[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [search,       setSearch]       = useState('')
+  const [category,     setCategory]     = useState('All')
+  const [liveOnly,     setLiveOnly]     = useState(false)
+  const [freeOnly,     setFreeOnly]     = useState(false)
 
-  const filtered = MOCK_EVENTS.filter(e => {
-    const s = e.title.toLowerCase().includes(search.toLowerCase()) || e.host.toLowerCase().includes(search.toLowerCase())
-    const c = category === 'All' || e.category === category
-    const l = !liveOnly || e.live
-    return s && c && l
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user: u } }) => {
+      if (u) {
+        setCurrentUser(u)
+        const { data: prof } = await supabase.from('users').select('*').eq('id', u.id).single()
+        setProfile(prof)
+      }
+      const { data } = await supabase
+        .from('events')
+        .select('*, users(id, email, full_name, photo_url)')
+        .in('status', ['scheduled','live'])
+        .order('start_time', { ascending: true })
+      setEvents(data || [])
+      setLoading(false)
+    })
+
+    // Realtime — new events appear
+    const ch = supabase.channel('events-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        supabase.from('events')
+          .select('*, users(id, email, full_name, photo_url)')
+          .in('status', ['scheduled','live'])
+          .order('start_time', { ascending: true })
+          .then(({ data }) => setEvents(data || []))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
+
+  const filtered = events.filter(e => {
+    const q = search.toLowerCase()
+    const matchSearch = !q ||
+      e.title?.toLowerCase().includes(q) ||
+      (e.users?.full_name || '').toLowerCase().includes(q) ||
+      (e.description || '').toLowerCase().includes(q)
+    const matchCat  = category === 'All' || e.category === category || e.group_name === category
+    const matchLive = !liveOnly || e.status === 'live'
+    const matchFree = !freeOnly || e.is_free || e.price === 0
+    return matchSearch && matchCat && matchLive && matchFree
   })
 
-  const liveCount = MOCK_EVENTS.filter(e => e.live).length
+  const liveCount = events.filter(e => e.status === 'live').length
+  const isHost    = profile?.role === 'host' || profile?.role === 'admin'
 
   return (
     <DashboardLayout>
       <div className="min-h-full" style={{ background: C.bg }}>
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-5">
 
-          {/* Header */}
+          {/* Header — NO create button for audience */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.sky }}>Discover</p>
-              <h1 className="text-2xl font-bold" style={{ color: C.text }}>Live Sessions & Workshops</h1>
-              <p className="text-sm mt-1" style={{ color: C.textMuted }}>Attend live sessions from top founders</p>
+              <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.blueLight }}>Discover</p>
+              <h1 className="text-2xl font-bold" style={{ color: C.text, fontFamily: 'Syne, sans-serif' }}>
+                Live Sessions & Events
+              </h1>
+              <p className="text-sm mt-1" style={{ color: C.textMuted }}>
+                Attend live sessions from top founders
+              </p>
             </div>
-            {liveCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0" style={{ background: C.redDim, border: '1px solid rgba(255,68,68,0.25)' }}>
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs font-bold tracking-wide" style={{ color: C.red }}>{liveCount} Live</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {liveCount > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                  style={{ background: C.redDim, border: '1px solid rgba(239,68,68,0.25)' }}>
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-xs font-bold" style={{ color: C.red }}>{liveCount} Live</span>
+                </div>
+              )}
+              {/* Only hosts see create button */}
+              {isHost && (
+                <Link href="/host/create">
+                  <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+                    style={{ background: C.gold, color: '#0A0F1E' }}>
+                    <Zap className="w-4 h-4" /> Create Event
+                  </button>
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Search */}
@@ -169,8 +248,8 @@ export default function EventsPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search events, hosts, topics..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-              style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none transition-all"
+              style={{ background: C.card, border: `1px solid ${C.border}`, color: C.text }}
               onFocus={e => (e.target.style.borderColor = C.borderHover)}
               onBlur={e => (e.target.style.borderColor = C.border)}
             />
@@ -183,50 +262,58 @@ export default function EventsPage() {
 
           {/* Filters */}
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setLiveOnly(l => !l)}
+            <button onClick={() => setLiveOnly(l => !l)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: liveOnly ? C.redDim : C.surface, color: liveOnly ? C.red : C.textMuted, border: `1px solid ${liveOnly ? 'rgba(255,68,68,0.3)' : C.border}` }}
-            >
+              style={{ background: liveOnly ? C.redDim : C.card, color: liveOnly ? C.red : C.textMuted, border: `1px solid ${liveOnly ? 'rgba(239,68,68,0.3)' : C.border}` }}>
               <Radio className="w-3 h-3" /> Live Only
             </button>
+            <button onClick={() => setFreeOnly(f => !f)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: freeOnly ? C.greenDim : C.card, color: freeOnly ? C.green : C.textMuted, border: `1px solid ${freeOnly ? 'rgba(16,185,129,0.3)' : C.border}` }}>
+              <Tag className="w-3 h-3" /> Free Only
+            </button>
             {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
+              <button key={cat} onClick={() => setCategory(cat)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{ background: category === cat ? C.purpleDim : C.surface, color: category === cat ? C.purpleLight : C.textMuted, border: `1px solid ${category === cat ? 'rgba(145,70,255,0.3)' : C.border}` }}
-              >
+                style={{ background: category === cat ? C.blue : C.card, color: category === cat ? '#fff' : C.textMuted, border: `1px solid ${category === cat ? C.blue : C.border}` }}>
                 {cat}
               </button>
             ))}
           </div>
 
-          {/* Results */}
+          {/* Results count + clear */}
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium" style={{ color: C.textDim }}>
               {filtered.length} event{filtered.length !== 1 ? 's' : ''} found
             </p>
-            {(search || category !== 'All' || liveOnly) && (
-              <button onClick={() => { setSearch(''); setCategory('All'); setLiveOnly(false) }} className="flex items-center gap-1 text-xs font-medium" style={{ color: C.red }}>
+            {(search || category !== 'All' || liveOnly || freeOnly) && (
+              <button onClick={() => { setSearch(''); setCategory('All'); setLiveOnly(false); setFreeOnly(false) }}
+                className="flex items-center gap-1 text-xs font-medium" style={{ color: C.red }}>
                 <X className="w-3 h-3" /> Clear filters
               </button>
             )}
           </div>
 
           {/* Grid */}
-          {filtered.length === 0 ? (
-            <div className="text-center py-16 rounded-xl" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+          {loading ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-80 rounded-2xl animate-pulse" style={{ background: C.card }} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl p-12 text-center" style={{ background: C.card, border: `1px solid ${C.border}` }}>
               <Calendar className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
               <p className="font-semibold" style={{ color: C.textMuted }}>No events found</p>
               <p className="text-sm mt-1" style={{ color: C.textDim }}>Try adjusting your filters</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-3">
-              {filtered.map(e => <EventCard key={e.id} event={e} />)}
+            <div className="grid md:grid-cols-2 gap-4">
+              {filtered.map(e => (
+                <EventCard key={e.id} event={e} currentUserId={currentUser?.id || null} />
+              ))}
             </div>
           )}
-
         </div>
       </div>
     </DashboardLayout>
