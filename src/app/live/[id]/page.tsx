@@ -319,7 +319,7 @@ export default function LiveRoomPage() {
           .select('id')
           .eq('user_id', u.id)
           .eq('event_id', eventId)
-          .eq('status', 'paid')
+          .in('status', ['paid', 'free', 'confirmed', 'active'])
           .maybeSingle()
         if (!ticket) { setAccessDenied(true); setLoading(false); return }
       }
