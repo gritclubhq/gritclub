@@ -318,7 +318,7 @@ export default function AdminContentPage() {
   const deletePost = async (id: string) => {
     setDeleting(id)
     await supabase.from('posts').delete().eq('id', id)
-    await supabase.from('admin_audit_log').insert({ admin_id:adminId, action:'delete_post', target_type:'post', target_id:id }).catch(()=>{})
+    try { await supabase.from('admin_audit_log').insert({ admin_id:adminId, action:'delete_post', target_type:'post', target_id:id }) } catch(_){}
     setPosts(prev => prev.filter(p => p.id !== id))
     setDeleting(null)
   }
