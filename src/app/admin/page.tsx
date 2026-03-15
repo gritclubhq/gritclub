@@ -8,7 +8,7 @@ import {
   Users, Shield, Radio, DollarSign, Bell, CheckCircle, XCircle,
   TrendingUp, Trash2, Ban, UserCheck, Activity, ChevronRight,
   AlertTriangle, Eye, Search, X, Loader2, Send, Globe, Settings,
-  BarChart2, FileText, Megaphone, Clock, Check
+  BarChart2, FileText, Clock, Check
 } from 'lucide-react'
 
 const C = {
@@ -22,7 +22,7 @@ const C = {
   purple:   '#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-type AdminTab = 'overview'|'users'|'hosts'|'events'|'revenue'|'content'|'announce'|'audit'
+type AdminTab = 'overview'|'users'|'hosts'|'events'|'revenue'|'content'|'audit'
 
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const timeAgo = (ts: string) => {
@@ -74,7 +74,7 @@ export default function AdminPage() {
   const [initialized,  setInitialized]  = useState(false)
   const [actionLoading,setActionLoading]= useState<string|null>(null)
   const [userSearch,   setUserSearch]   = useState('')
-  // Announcement form
+  // (announcements moved to Content page)
   const [annTitle,     setAnnTitle]     = useState('')
   const [annBody,      setAnnBody]      = useState('')
   const [annSaving,    setAnnSaving]    = useState(false)
@@ -267,7 +267,7 @@ export default function AdminPage() {
     { id: 'events',    label: 'Events',         icon: Radio },
     { id: 'content',   label: 'Content',        icon: FileText },
     { id: 'revenue',   label: 'Revenue',        icon: DollarSign },
-    { id: 'announce',  label: 'Announce',       icon: Megaphone },
+
     { id: 'audit',     label: 'Audit Log',      icon: Clock },
   ]
 
@@ -551,55 +551,6 @@ export default function AdminPage() {
                       <p className="text-sm font-bold" style={{ color: C.gold }}>{fmt((ev.price||0)*(ev.total_sold||0))}</p>
                       <p className="text-xs" style={{ color: C.textDim }}>gross</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── ANNOUNCEMENTS ── */}
-          {activeTab === 'announce' && (
-            <div className="space-y-4">
-              {/* Create */}
-              <div className="rounded-2xl p-5 space-y-3" style={{ background: C.card, border:`1px solid ${C.border}` }}>
-                <p className="text-sm font-bold" style={{ color: C.text }}>Send Global Announcement</p>
-                <input type="text" value={annTitle} onChange={e=>setAnnTitle(e.target.value.slice(0,200))}
-                  placeholder="Title..."
-                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                  style={{ background: C.surface, border:`1px solid ${C.border}`, color: C.text }} />
-                <textarea value={annBody} onChange={e=>setAnnBody(e.target.value.slice(0,1000))}
-                  placeholder="Message body..."
-                  rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none resize-none"
-                  style={{ background: C.surface, border:`1px solid ${C.border}`, color: C.text }} />
-                <div className="flex items-center justify-between">
-                  <p className="text-xs" style={{ color: C.textDim }}>{annBody.length}/1000</p>
-                  <button onClick={sendAnnouncement} disabled={!annTitle.trim()||!annBody.trim()||annSaving}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-40"
-                    style={{ background: annSaved ? C.green : C.blue, color: '#fff' }}>
-                    {annSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : annSaved ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                    {annSaved ? 'Sent!' : 'Send to All Users'}
-                  </button>
-                </div>
-              </div>
-              {/* Active announcements */}
-              <div className="space-y-2">
-                {announcements.map(ann => (
-                  <div key={ann.id} className="flex items-start gap-3 p-4 rounded-xl"
-                    style={{ background: ann.is_active ? C.blueDim : C.card, border:`1px solid ${ann.is_active?'rgba(37,99,235,0.2)':C.border}` }}>
-                    <Bell className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: ann.is_active ? C.blueLight : C.textDim }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: C.text }}>{ann.title}</p>
-                      <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>{ann.body}</p>
-                      <p className="text-xs mt-1" style={{ color: C.textDim }}>{timeAgo(ann.created_at)}</p>
-                    </div>
-                    {ann.is_active && (
-                      <button onClick={() => deactivateAnn(ann.id)}
-                        className="text-xs px-2.5 py-1 rounded-lg flex-shrink-0"
-                        style={{ background: C.redDim, color: C.red }}>
-                        Deactivate
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
