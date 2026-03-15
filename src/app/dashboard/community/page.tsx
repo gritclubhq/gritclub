@@ -366,12 +366,18 @@ function PostCard({ post, currentUserId, onDelete }: any) {
       {/* Header */}
       <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Avatar u={{ ...author, id: post.user_id }} size={40} />
+          <a href={`/profile/${post.user_id}`} style={{ textDecoration: 'none' }}>
+            <Avatar u={{ ...author, id: post.user_id }} size={40} />
+          </a>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif' }}>
-                {getDisplayName(author)}
-              </p>
+              <a href={`/profile/${post.user_id}`} style={{ textDecoration: 'none' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.blueL}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.text}>
+                  {getDisplayName(author)}
+                </p>
+              </a>
               {author.role === 'host' && (
                 <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 5, background: C.goldDim, color: C.gold, fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>HOST</span>
               )}
@@ -411,14 +417,23 @@ function PostCard({ post, currentUserId, onDelete }: any) {
         </p>
       )}
 
-      {/* Images */}
+      {/* Images — with error fallback + proper container */}
       {imgs.length > 0 && (
         <div style={{ display: 'grid', gap: 3, margin: '4px 0',
           gridTemplateColumns: imgs.length === 1 ? '1fr' : '1fr 1fr',
         }}>
           {imgs.slice(0, 4).map((url: string, i: number) => (
-            <img key={i} src={url} alt="" loading="lazy"
-              style={{ width: '100%', objectFit: 'cover', display: 'block', aspectRatio: imgs.length === 1 ? '16/9' : '1/1' }} />
+            <div key={i} style={{ position: 'relative', overflow: 'hidden', background: C.surface, aspectRatio: imgs.length === 1 ? '16/9' : '1/1' }}>
+              <img src={url} alt="" loading="lazy"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={e => {
+                  const el = e.target as HTMLImageElement
+                  el.style.display = 'none'
+                  if (el.parentElement) {
+                    el.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#3D4F6E;font-size:12px;font-family:DM Sans,sans-serif">Image unavailable</div>'
+                  }
+                }} />
+            </div>
           ))}
         </div>
       )}
