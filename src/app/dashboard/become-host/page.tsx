@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { Mic, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { Mic, CheckCircle, AlertCircle, Clock, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function BecomeHostPage() {
@@ -54,8 +54,6 @@ export default function BecomeHostPage() {
       status: 'pending',
     }
 
-    console.log('Submitting application:', payload)
-
     const { data, error: insertErr } = await supabase
       .from('host_applications')
       .insert(payload)
@@ -63,13 +61,11 @@ export default function BecomeHostPage() {
       .single()
 
     if (insertErr) {
-      console.error('Insert error:', insertErr)
       setError(`Error: ${insertErr.message} (code: ${insertErr.code})`)
       setSubmitting(false)
       return
     }
 
-    console.log('Application submitted:', data)
     setDone(true)
     setSubmitting(false)
   }
@@ -118,7 +114,10 @@ export default function BecomeHostPage() {
       <DashboardLayout>
         <div className="p-6 max-w-lg mx-auto">
           <div className="rounded-2xl p-8 text-center" style={{ background: '#1E293B' }}>
-            <XCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <X className="w-6 h-6 text-red-400" />
+            </div>
             <h2 className="text-xl font-bold mb-2">Application Not Approved</h2>
             <p className="text-slate-400 text-sm">Contact the admin for more information.</p>
           </div>
