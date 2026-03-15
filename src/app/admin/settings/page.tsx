@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { Loader2, Check, Bell, Shield, Globe, DollarSign } from 'lucide-react'
+import { Save, Loader2, Check, Bell, Shield, Globe, DollarSign } from 'lucide-react'
 
 const C = { bg:'#0A0F1E', card:'#111827', surface:'#0D1428', border:'rgba(255,255,255,0.06)', text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E', blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)', gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)', red:'#EF4444', redDim:'rgba(239,68,68,0.1)', green:'#10B981', greenDim:'rgba(16,185,129,0.1)' }
 
