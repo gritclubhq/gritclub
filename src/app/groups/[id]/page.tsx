@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
+import DashboardLayout from '@/components/DashboardLayout'
 import {
   MessageSquare, Folder, Mic, Video, FileText,
   Send, Upload, Download, Trash2, Users, Crown,
