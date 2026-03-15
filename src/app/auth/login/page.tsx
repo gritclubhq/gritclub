@@ -28,18 +28,12 @@ export default function LoginPage() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        // This sets what appears in the Google consent screen
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
         },
       },
     })
     if (error) { setError(error.message); setGoogleLoad(false) }
-    // Note: to fix "lwfmptfugyzoqvnzlxma.supabase.co" showing in Google consent:
-    // Go to Supabase Dashboard → Authentication → URL Configuration
-    // Set "Site URL" to: https://gritclub.live
-    // This makes Google show "gritclub.live" instead of the Supabase URL
   }
 
   const handleMagicLink = async (e: React.FormEvent) => {
