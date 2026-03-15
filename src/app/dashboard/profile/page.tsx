@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import { useRouter } from 'next/navigation'
 import {
-  Camera, Upload, Save, Loader2, Check, AlertCircle,
+  Camera, Upload, Loader2, Check, AlertCircle,
   Mail, Phone, Eye, EyeOff, Link2, User, AtSign,
   FileText, Globe, Shield, LogOut, X, ExternalLink,
   Instagram, Twitter, Linkedin
