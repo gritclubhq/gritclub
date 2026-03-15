@@ -106,6 +106,9 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
 
+        * { box-sizing: border-box; }
+        html, body { overflow-x: hidden; max-width: 100vw; }
+
         :root {
           --red: #FF3B3B;
           --gold: #FFD700;
@@ -361,11 +364,13 @@ export default function LandingPage() {
           style={{
             fontFamily: 'Syne',
             fontWeight: 800,
-            fontSize: 'clamp(72px, 14vw, 180px)',
+            fontSize: 'clamp(48px, 14vw, 180px)',
             lineHeight: 0.9,
             letterSpacing: '-0.04em',
             color: '#E8EAF0',
             marginBottom: '0px',
+            maxWidth: '100%',
+            overflowWrap: 'break-word',
           }}
         >
           GRIT<span style={{ color: '#FF3B3B', WebkitTextStroke: '0px' }}>CLUB</span>
@@ -781,15 +786,15 @@ export default function LandingPage() {
             GRIT<span style={{ color: '#FF3B3B' }}>CLUB</span>
           </span>
           <p style={{ fontFamily: 'DM Mono', fontSize: '11px', color: 'rgba(232,234,240,0.25)', letterSpacing: '0.08em' }}>
-            © 2025 GRITCLUB · gritclub.live
+            © 2026 GRITCLUB · gritclub.live
           </p>
           <div className="flex gap-6">
-            {['Privacy', 'Terms', 'Contact'].map(l => (
-              <a key={l} href="#" style={{ fontFamily: 'DM Sans', fontSize: '13px', color: 'rgba(232,234,240,0.35)', transition: 'color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#E8EAF0')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(232,234,240,0.35)')}
-              >{l}</a>
-            ))}
+            <a href="/privacy" style={{ fontFamily: 'DM Sans', fontSize: '13px', color: 'rgba(232,234,240,0.35)', transition: 'color 0.2s', textDecoration: 'none' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#E8EAF0')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(232,234,240,0.35)')}>Privacy</a>
+            <a href="/terms" style={{ fontFamily: 'DM Sans', fontSize: '13px', color: 'rgba(232,234,240,0.35)', transition: 'color 0.2s', textDecoration: 'none' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#E8EAF0')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(232,234,240,0.35)')}>Terms</a>
           </div>
         </div>
       </footer>
