@@ -10,7 +10,7 @@ import {
   MicOff, VideoOff, PhoneOff, Monitor, MonitorOff,
   Settings, UserCheck, UserX, Check, X, Loader2,
   AlertCircle, Lock, Globe, ChevronLeft, MoreHorizontal,
-  Hand, Shield
+  Hand, Shield, Zap
 } from 'lucide-react'
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
