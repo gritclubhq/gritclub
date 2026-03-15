@@ -45,10 +45,17 @@ function SuggestionCard({ user, onConnect, onDismiss, actionState }: any) {
   return (
     <div style={{ borderRadius:16, padding:16, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:12 }}>
       <div style={{ display:'flex', gap:12 }}>
-        <Avatar u={user} size={48} />
+        <a href={`/profile/${user.id}`} style={{ textDecoration:'none', flexShrink:0 }}>
+          <Avatar u={user} size={48} />
+        </a>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{getName(user)}</p>
+            <a href={`/profile/${user.id}`} style={{ textDecoration:'none' }}>
+              <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:'pointer' }}
+                onMouseEnter={e=>(e.currentTarget.style.color=C.blueLight)} onMouseLeave={e=>(e.currentTarget.style.color=C.text)}>
+                {getName(user)}
+              </p>
+            </a>
             {user.role === 'host' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:5, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:700, flexShrink:0 }}>HOST</span>}
           </div>
           {user.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{user.username}</p>}
@@ -69,6 +76,11 @@ function SuggestionCard({ user, onConnect, onDismiss, actionState }: any) {
 
       {/* Actions */}
       <div style={{ display:'flex', gap:8 }}>
+        <a href={`/profile/${user.id}`} style={{ textDecoration:'none' }}>
+          <button style={{ padding:'9px 14px', borderRadius:10, border:`1px solid ${C.border}`, cursor:'pointer', background:'transparent', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:13 }}>
+            View Profile
+          </button>
+        </a>
         <button onClick={() => onConnect(user.id)} disabled={actionState === 'loading' || actionState === 'sent'}
           style={{ flex:1, padding:'9px', borderRadius:10, border:`1px solid ${actionState==='sent' ? C.green : C.blue}`, cursor:actionState==='sent'?'default':'pointer', background:actionState==='sent'?C.greenDim:C.blueDim, color:actionState==='sent'?C.green:C.blueLight, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:6, opacity:actionState==='loading'?0.6:1 }}>
           {actionState==='loading' ? <Loader2 style={{ width:13, height:13, animation:'spin 1s linear infinite' }} /> : actionState==='sent' ? <><Check style={{ width:13, height:13 }} /> Sent!</> : <><UserPlus style={{ width:13, height:13 }} /> Connect</>}
@@ -114,10 +126,17 @@ function PeopleCard({ user, currentUserId, onAction }: any) {
       onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor=C.borderHover}}
       onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=C.border}}>
       <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
-        <Avatar u={user} size={44} />
+        <a href={`/profile/${user.id}`} style={{ textDecoration:'none', flexShrink:0 }}>
+          <Avatar u={user} size={44} />
+        </a>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif' }}>{getName(user)}</p>
+            <a href={`/profile/${user.id}`} style={{ textDecoration:'none' }}>
+              <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', cursor:'pointer' }}
+                onMouseEnter={e=>(e.currentTarget.style.color=C.blueLight)} onMouseLeave={e=>(e.currentTarget.style.color=C.text)}>
+                {getName(user)}
+              </p>
+            </a>
             {user.role==='host' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:5, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>HOST</span>}
             {user.role==='admin' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:5, background:C.redDim, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>ADMIN</span>}
           </div>
@@ -386,9 +405,16 @@ export default function NetworkPage() {
                         const friend = c.friend || {}
                         return (
                           <div key={c.id} style={{ borderRadius:16, padding:16, background:C.card, border:`1px solid ${C.greenDim}`, display:'flex', gap:12, alignItems:'center' }}>
+                          <a href={`/profile/${friend.id}`} style={{ textDecoration:'none', flexShrink:0 }}>
                             <Avatar u={friend} size={44} />
+                          </a>
                             <div style={{ flex:1, minWidth:0 }}>
-                              <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{getName(friend)}</p>
+                            <a href={`/profile/${friend.id}`} style={{ textDecoration:'none' }}>
+                              <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:'pointer' }}
+                                onMouseEnter={e=>(e.currentTarget.style.color=C.blueLight)} onMouseLeave={e=>(e.currentTarget.style.color=C.text)}>
+                                {getName(friend)}
+                              </p>
+                            </a>
                               {friend.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{friend.username}</p>}
                               <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>Connected · {timeAgo(c.created_at)}</p>
                             </div>
@@ -413,9 +439,16 @@ export default function NetworkPage() {
                     const sender = c['users!connections_user1_id_fkey'] || c.users || {}
                     return (
                       <div key={c.id} style={{ display:'flex', alignItems:'center', gap:12, padding:16, borderRadius:16, background:C.card, border:`1px solid rgba(245,158,11,0.2)` }}>
-                        <Avatar u={sender} size={44} />
+                        <a href={`/profile/${c.user1_id}`} style={{ textDecoration:'none', flexShrink:0 }}>
+                          <Avatar u={sender} size={44} />
+                        </a>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif' }}>{getName(sender)}</p>
+                          <a href={`/profile/${c.user1_id}`} style={{ textDecoration:'none' }}>
+                            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', cursor:'pointer' }}
+                              onMouseEnter={e=>(e.currentTarget.style.color=C.blueLight)} onMouseLeave={e=>(e.currentTarget.style.color=C.text)}>
+                              {getName(sender)}
+                            </p>
+                          </a>
                           {sender.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{sender.username}</p>}
                           <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Wants to connect with you</p>
                         </div>
