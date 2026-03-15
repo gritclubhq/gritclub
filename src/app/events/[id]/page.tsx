@@ -234,8 +234,14 @@ export default function EventDetailPage() {
         <span style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{event.title}</span>
       </div>
 
-      <div style={{ maxWidth:760, margin:'0 auto', padding:'32px 20px' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
+      <div style={{ maxWidth:760, margin:'0 auto', padding:'24px 16px' }}>
+        <style>{`
+          @media (max-width: 640px) {
+            .event-grid { grid-template-columns: 1fr !important; }
+            .event-ticket-panel { position: static !important; width: 100% !important; }
+          }
+        `}</style>
+        <div className="event-grid" style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
 
           {/* Left — Event details */}
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
@@ -262,7 +268,7 @@ export default function EventDetailPage() {
                   <span style={{ fontSize:12, padding:'4px 10px', borderRadius:20, background:C.blueDim, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>{event.category}</span>
                 )}
               </div>
-              <h1 style={{ fontSize:28, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em', marginBottom:12 }}>{event.title}</h1>
+              <h1 style={{ fontSize:'clamp(20px, 5vw, 28px)', fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em', marginBottom:12 }}>{event.title}</h1>
               {event.description && (
                 <p style={{ fontSize:15, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.75 }}>{event.description}</p>
               )}
@@ -299,7 +305,7 @@ export default function EventDetailPage() {
           </div>
 
           {/* Right — Ticket box */}
-          <div style={{ position:'sticky', top:24 }}>
+          <div className="event-ticket-panel" style={{ position:'sticky', top:24 }}>
             <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${isLive?'rgba(239,68,68,0.3)':C.border}`, display:'flex', flexDirection:'column', gap:16 }}>
 
               {/* Price */}
