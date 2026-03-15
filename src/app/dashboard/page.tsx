@@ -3,789 +3,409 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import Link from 'next/link'
 import {
-  Heart, MessageCircle, Share2, Send, Trash2, MoreHorizontal,
-  Globe, Image as ImageIcon, X, Loader2, UserPlus, Check,
-  TrendingUp, Users, Radio, BookOpen, AlertCircle, ChevronDown
+  Heart, MessageCircle, Share2, Image, Send, X,
+  Loader2, MoreHorizontal, Trash2, ChevronDown
 } from 'lucide-react'
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:          '#0A0F1E',
-  surface:     '#0D1428',
-  card:        '#111827',
-  cardHover:   '#141E35',
-  border:      'rgba(255,255,255,0.06)',
-  borderHover: 'rgba(37,99,235,0.3)',
-  text:        '#F0F4FF',
-  textMuted:   '#7B8DB0',
-  textDim:     '#3D4F6E',
-  blue:        '#2563EB',
-  blueLight:   '#3B82F6',
-  blueDim:     'rgba(37,99,235,0.12)',
-  gold:        '#F59E0B',
-  goldDim:     'rgba(245,158,11,0.1)',
-  red:         '#EF4444',
-  redDim:      'rgba(239,68,68,0.1)',
-  green:       '#10B981',
-  greenDim:    'rgba(16,185,129,0.1)',
+  bg: '#0A0F1E', surface: '#0D1428', card: '#111827', cardHover: '#141E35',
+  border: 'rgba(255,255,255,0.06)', borderFocus: 'rgba(37,99,235,0.5)',
+  text: '#F0F4FF', textMuted: '#7B8DB0', textDim: '#3D4F6E',
+  blue: '#2563EB', blueLight: '#3B82F6', blueDim: 'rgba(37,99,235,0.12)',
+  gold: '#F59E0B', goldDim: 'rgba(245,158,11,0.1)',
+  red: '#EF4444', redDim: 'rgba(239,68,68,0.1)',
+  green: '#10B981', greenDim: 'rgba(16,185,129,0.1)',
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatTime = (ts: string) => {
-  const d = Date.now() - new Date(ts).getTime()
-  const m = Math.floor(d / 60000)
-  if (m < 1)  return 'Just now'
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  const days = Math.floor(h / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-const getName   = (p: any) => p?.full_name || p?.email?.split('@')[0] || 'User'
-const getInitials = (p: any) => (getName(p)).slice(0, 2).toUpperCase()
 
 const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
-const avatarColor = (id: string) =>
-  AVATAR_COLORS[id?.charCodeAt(0) % AVATAR_COLORS.length] || AVATAR_COLORS[0]
+const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
+const getName = (name: string, email: string) => name || email?.split('@')[0] || 'User'
+const getInitials = (name: string, email: string) => getName(name, email).slice(0,2).toUpperCase()
+const timeAgo = (ts: string) => {
+  const d = Date.now() - new Date(ts).getTime()
+  const m = Math.floor(d/60000)
+  if (m < 1)  return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m/60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h/24)}d ago`
+}
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-function Avatar({ profile, size = 40 }: { profile: any; size?: number }) {
-  const color = avatarColor(profile?.id || profile?.email || '')
+function Avatar({ name, email, photo, userId, size = 40 }: any) {
+  const color = avatarColor(userId || '')
   return (
-    <div
-      className="rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold"
-      style={{ width: size, height: size, minWidth: size, background: color + '25', color, fontSize: size * 0.35, border: `1.5px solid ${color}30` }}
-    >
-      {profile?.photo_url
-        ? <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
-        : getInitials(profile)
-      }
+    <div style={{ width: size, height: size, minWidth: size, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: color+'22', color, fontSize: size * 0.33, fontWeight: 700, fontFamily: 'Syne,sans-serif', border: `1.5px solid ${color}33`, flexShrink: 0 }}>
+      {photo
+        ? <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : getInitials(name, email)}
     </div>
   )
 }
 
-// ─── Image drag-drop uploader ─────────────────────────────────────────────────
-function ImageDropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
-  const [dragging, setDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+// ─── Post Composer ────────────────────────────────────────────────────────────
+function PostComposer({ currentUser, profile, onPosted }: any) {
+  const [text,       setText]       = useState('')
+  const [images,     setImages]     = useState<File[]>([])
+  const [previews,   setPreviews]   = useState<string[]>([])
+  const [uploading,  setUploading]  = useState(false)
+  const [posting,    setPosting]    = useState(false)
+  const [expanded,   setExpanded]   = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
-    if (files.length) onFiles(files)
-  }, [onFiles])
-
-  return (
-    <div
-      className="rounded-xl flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-all"
-      style={{
-        border: `2px dashed ${dragging ? C.blueLight : C.border}`,
-        background: dragging ? C.blueDim : 'transparent',
-      }}
-      onDragOver={e => { e.preventDefault(); setDragging(true) }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={handleDrop}
-      onClick={() => inputRef.current?.click()}
-    >
-      <ImageIcon className="w-6 h-6" style={{ color: dragging ? C.blueLight : C.textDim }} />
-      <p className="text-xs font-medium" style={{ color: C.textMuted }}>
-        Drag & drop images or <span style={{ color: C.blueLight }}>browse</span>
-      </p>
-      <p className="text-xs" style={{ color: C.textDim }}>JPG, PNG, WebP · Max 10MB each · Up to 4 images</p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        className="hidden"
-        onChange={e => {
-          const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'))
-          if (files.length) onFiles(files)
-          e.target.value = ''
-        }}
-      />
-    </div>
-  )
-}
-
-// ─── Post composer ────────────────────────────────────────────────────────────
-function PostComposer({ currentUser, currentProfile, onPost }: {
-  currentUser: any
-  currentProfile: any
-  onPost: () => void
-}) {
-  const [content,   setContent]   = useState('')
-  const [images,    setImages]    = useState<File[]>([])
-  const [previews,  setPreviews]  = useState<string[]>([])
-  const [showDropZone, setShowDropZone] = useState(false)
-  const [posting,   setPosting]   = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [error,     setError]     = useState<string | null>(null)
-
-  const handleFiles = (files: File[]) => {
-    const valid = files.filter(f => f.size <= 10 * 1024 * 1024).slice(0, 4 - images.length)
-    if (valid.length < files.length) setError('Some images exceed 10MB and were skipped')
-    const newImages = [...images, ...valid].slice(0, 4)
-    setImages(newImages)
-    newImages.forEach(f => {
+  const handleImages = (files: FileList | null) => {
+    if (!files) return
+    const valid = Array.from(files).filter(f => f.type.startsWith('image/') && f.size < 10*1024*1024).slice(0, 4 - images.length)
+    setImages(p => [...p, ...valid].slice(0, 4))
+    valid.forEach(f => {
       const r = new FileReader()
-      r.onload = e => setPreviews(prev => {
-        const next = [...prev]
-        next[newImages.indexOf(f)] = e.target?.result as string
-        return next
-      })
+      r.onload = e => setPreviews(p => [...p, e.target?.result as string].slice(0, 4))
       r.readAsDataURL(f)
     })
   }
 
-  const removeImage = (idx: number) => {
-    setImages(prev  => prev.filter((_, i)  => i !== idx))
-    setPreviews(prev => prev.filter((_, i) => i !== idx))
+  const removeImage = (i: number) => {
+    setImages(p => p.filter((_,idx) => idx !== i))
+    setPreviews(p => p.filter((_,idx) => idx !== i))
   }
 
-  const handleSubmit = async () => {
-    if (!content.trim() && images.length === 0) return
-    if (content.length > 1000) { setError('Post too long (max 1000 chars)'); return }
+  const handlePost = async () => {
+    if (!text.trim() && images.length === 0) return
+    if (!currentUser) return
     setPosting(true)
-    setError(null)
 
     try {
+      // Upload images
       const imageUrls: string[] = []
-
-      // Upload images to Supabase Storage
-      for (let i = 0; i < images.length; i++) {
-        setUploadProgress(Math.round((i / images.length) * 80))
-        const file = images[i]
-        const ext  = file.name.split('.').pop()
-        const path = `${currentUser.id}/${Date.now()}_${i}.${ext}`
-        const { error: upErr } = await supabase.storage
-          .from('post-images')
-          .upload(path, file, { contentType: file.type })
-        if (!upErr) {
-          const { data } = supabase.storage.from('post-images').getPublicUrl(path)
-          imageUrls.push(data.publicUrl)
+      if (images.length > 0) {
+        setUploading(true)
+        for (const img of images) {
+          const path = `posts/${currentUser.id}/${Date.now()}_${img.name}`
+          const { error } = await supabase.storage.from('post-images').upload(path, img, { contentType: img.type })
+          if (!error) {
+            const { data } = supabase.storage.from('post-images').getPublicUrl(path)
+            imageUrls.push(data.publicUrl)
+          }
         }
+        setUploading(false)
       }
 
-      setUploadProgress(90)
-
-      // Insert post — parameterized, no raw SQL
-      const { error: insertErr } = await supabase.from('posts').insert({
-        user_id:    currentUser.id,
-        content:    content.trim(),
-        image_urls: imageUrls,
+      // Insert post — visible to ALL users via RLS
+      const { error } = await supabase.from('posts').insert({
+        user_id:        currentUser.id,
+        content:        text.trim().slice(0, 2000),
+        image_urls:     imageUrls,
         likes_count:    0,
         comments_count: 0,
       })
 
-      if (insertErr) throw insertErr
+      if (error) throw error
 
-      setContent('')
+      setText('')
       setImages([])
       setPreviews([])
-      setShowDropZone(false)
-      setUploadProgress(0)
-      onPost()
+      setExpanded(false)
+      onPosted()
     } catch (err: any) {
-      setError(err.message || 'Failed to post. Please try again.')
+      alert('Failed to post: ' + err.message)
     } finally {
       setPosting(false)
-      setUploadProgress(0)
     }
   }
 
-  const charLeft = 1000 - content.length
-  const canPost  = (content.trim().length > 0 || images.length > 0) && !posting
-
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-      <div className="p-4">
-        <div className="flex gap-3">
-          <Avatar profile={currentProfile} size={40} />
+    <div style={{ borderRadius: 20, padding: 16, background: C.card, border: `1px solid ${C.border}` }}>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <Avatar name={profile?.full_name || ''} email={currentUser?.email || ''} photo={profile?.photo_url} userId={currentUser?.id} size={40} />
+        <div style={{ flex: 1 }}>
           <textarea
-            value={content}
-            onChange={e => { setContent(e.target.value); setError(null) }}
-            placeholder="Share something with the founder community..."
-            rows={3}
-            maxLength={1000}
-            className="flex-1 bg-transparent text-sm leading-relaxed resize-none outline-none"
-            style={{ color: C.text, caretColor: C.blueLight }}
+            value={text}
+            onChange={e => { setText(e.target.value); if (e.target.value) setExpanded(true) }}
+            onFocus={() => setExpanded(true)}
+            placeholder="What are you building? Share with the community..."
+            maxLength={2000}
+            rows={expanded ? 3 : 1}
+            style={{ width: '100%', background: C.surface, border: `1px solid ${expanded ? C.borderFocus : C.border}`, borderRadius: 12, padding: '10px 14px', color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 14, lineHeight: 1.6, outline: 'none', resize: 'none', transition: 'all 0.2s' }}
           />
-        </div>
 
-        {/* Image previews */}
-        {previews.length > 0 && (
-          <div className={`mt-3 grid gap-2 ${previews.length === 1 ? 'grid-cols-1' : previews.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
-            {previews.map((src, i) => (
-              <div key={i} className="relative rounded-xl overflow-hidden aspect-video">
-                <img src={src} alt="" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => removeImage(i)}
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ background: 'rgba(0,0,0,0.7)', color: '#fff' }}
-                >
-                  <X className="w-3 h-3" />
+          {/* Image previews */}
+          {previews.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: previews.length === 1 ? '1fr' : 'repeat(2, 1fr)', gap: 8, marginTop: 10 }}>
+              {previews.map((src, i) => (
+                <div key={i} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: previews.length === 1 ? '16/9' : '1/1' }}>
+                  <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                    <X style={{ width: 12, height: 12 }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {expanded && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => fileRef.current?.click()} disabled={images.length >= 4}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, cursor: images.length >= 4 ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, opacity: images.length >= 4 ? 0.4 : 1 }}>
+                  <Image style={{ width: 14, height: 14 }} /> Photo {images.length > 0 ? `(${images.length}/4)` : ''}
                 </button>
+                <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleImages(e.target.files)} />
               </div>
-            ))}
-            {previews.length < 4 && (
-              <div
-                className="rounded-xl flex items-center justify-center cursor-pointer aspect-video"
-                style={{ border: `2px dashed ${C.border}` }}
-                onClick={() => setShowDropZone(true)}
-              >
-                <span className="text-xs" style={{ color: C.textDim }}>+ Add more</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Drop zone */}
-        {showDropZone && images.length < 4 && (
-          <div className="mt-3">
-            <ImageDropZone onFiles={files => { handleFiles(files); setShowDropZone(false) }} />
-          </div>
-        )}
-
-        {/* Upload progress */}
-        {posting && uploadProgress > 0 && (
-          <div className="mt-3">
-            <div className="h-1 rounded-full overflow-hidden" style={{ background: C.border }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${uploadProgress}%`, background: `linear-gradient(to right, ${C.blue}, ${C.blueLight})` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: C.red }}>
-            <AlertCircle className="w-3 h-3" /> {error}
-          </p>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderTop: `1px solid ${C.border}` }}
-      >
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setShowDropZone(p => !p)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: showDropZone ? C.blueDim : 'transparent',
-              color:      showDropZone ? C.blueLight : C.textMuted,
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.blueDim; (e.currentTarget as HTMLElement).style.color = C.blueLight }}
-            onMouseLeave={e => { if (!showDropZone) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = C.textMuted } }}
-          >
-            <ImageIcon className="w-3.5 h-3.5" />
-            Photo
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span
-            className="text-xs font-medium"
-            style={{ color: charLeft < 50 ? C.red : C.textDim }}
-          >
-            {charLeft < 200 ? charLeft : ''}
-          </span>
-          <button
-            onClick={handleSubmit}
-            disabled={!canPost}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-            style={{ background: C.gold, color: '#0A0F1E' }}
-          >
-            {posting
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting...</>
-              : <><Send className="w-3.5 h-3.5" /> Post</>
-            }
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Comment ──────────────────────────────────────────────────────────────────
-function CommentItem({ comment }: { comment: any }) {
-  return (
-    <div className="flex gap-2.5">
-      <Avatar profile={comment.users} size={28} />
-      <div className="flex-1 px-3 py-2 rounded-xl" style={{ background: C.surface }}>
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs font-semibold" style={{ color: C.blueLight }}>
-            {getName(comment.users)}
-          </span>
-          <span className="text-xs" style={{ color: C.textDim }}>
-            {formatTime(comment.created_at)}
-          </span>
-        </div>
-        <p className="text-sm leading-relaxed" style={{ color: C.textMuted }}>{comment.content}</p>
-      </div>
-    </div>
-  )
-}
-
-// ─── Post card ────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserId, onDelete, onLike, onComment }: {
-  post: any
-  currentUserId: string | null
-  onDelete: (id: string) => void
-  onLike:   (id: string, liked: boolean) => void
-  onComment:(id: string, text: string) => Promise<void>
-}) {
-  const [showComments,  setShowComments]  = useState(false)
-  const [commentText,   setCommentText]   = useState('')
-  const [submitting,    setSubmitting]    = useState(false)
-  const [showMenu,      setShowMenu]      = useState(false)
-  const [loadingComments, setLoadingComments] = useState(false)
-  const [comments,      setComments]      = useState<any[]>(post.post_comments || [])
-  const isOwner = post.user_id === currentUserId
-
-  const loadComments = async () => {
-    if (loadingComments) return
-    setLoadingComments(true)
-    const { data } = await supabase
-      .from('post_comments')
-      .select('*, users(id, email, full_name, photo_url)')
-      .eq('post_id', post.id)
-      .order('created_at', { ascending: true })
-    if (data) setComments(data)
-    setLoadingComments(false)
-  }
-
-  const toggleComments = () => {
-    if (!showComments) loadComments()
-    setShowComments(p => !p)
-  }
-
-  const submitComment = async () => {
-    if (!commentText.trim() || submitting) return
-    setSubmitting(true)
-    await onComment(post.id, commentText.trim())
-    setCommentText('')
-    await loadComments()
-    setSubmitting(false)
-  }
-
-  const images: string[] = post.image_urls || []
-
-  return (
-    <div
-      className="rounded-2xl overflow-hidden transition-all"
-      style={{ background: C.card, border: `1px solid ${C.border}` }}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 p-5 pb-3">
-        <div className="flex items-center gap-3">
-          <Avatar profile={post.users} size={42} />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold" style={{ color: C.text }}>
-                {getName(post.users)}
-              </span>
-              {post.users?.role && post.users.role !== 'audience' && (
-                <span
-                  className="text-xs font-bold px-1.5 py-0.5 rounded"
-                  style={{
-                    background: post.users.role === 'host' ? C.goldDim : C.redDim,
-                    color:      post.users.role === 'host' ? C.gold    : C.red,
-                  }}
-                >
-                  {post.users.role === 'host' ? '⚡ Host' : '🛡 Admin'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Globe className="w-3 h-3" style={{ color: C.textDim }} />
-              <span className="text-xs" style={{ color: C.textDim }}>{formatTime(post.created_at)}</span>
-              {post.users?.username && (
-                <span className="text-xs" style={{ color: C.textDim }}>· @{post.users.username}</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Menu */}
-        <div className="relative flex-shrink-0">
-          <button
-            onClick={() => setShowMenu(p => !p)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-            style={{ color: C.textDim }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.border }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
-          {showMenu && (
-            <div
-              className="absolute right-0 top-9 w-44 rounded-xl overflow-hidden z-20 shadow-2xl"
-              style={{ background: '#1A2340', border: `1px solid ${C.border}` }}
-            >
-              {isOwner && (
-                <button
-                  onClick={() => { onDelete(post.id); setShowMenu(false) }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors"
-                  style={{ color: C.red }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.redDim }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete post
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`)
-                  setShowMenu(false)
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors"
-                style={{ color: C.textMuted }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.border }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-              >
-                <Share2 className="w-3.5 h-3.5" /> Copy link
+              <button onClick={handlePost} disabled={posting || uploading || (!text.trim() && images.length === 0)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || uploading || (!text.trim() && images.length === 0)) ? 0.5 : 1 }}>
+                {posting || uploading ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
+                {uploading ? 'Uploading...' : posting ? 'Posting...' : 'Post'}
               </button>
             </div>
           )}
         </div>
       </div>
-
-      {/* Content */}
-      {post.content && (
-        <div className="px-5 pb-3">
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#D4DBEE' }}>
-            {post.content}
-          </p>
-        </div>
-      )}
-
-      {/* Images */}
-      {images.length > 0 && (
-        <div
-          className={`mx-0 mb-0 grid gap-0.5 ${
-            images.length === 1 ? 'grid-cols-1' :
-            images.length === 2 ? 'grid-cols-2' :
-            images.length === 3 ? 'grid-cols-2' :
-            'grid-cols-2'
-          }`}
-        >
-          {images.slice(0, 4).map((url, i) => (
-            <div
-              key={i}
-              className={`relative overflow-hidden ${
-                images.length === 3 && i === 0 ? 'row-span-2' : ''
-              }`}
-              style={{ aspectRatio: images.length === 1 ? '16/9' : '1/1' }}
-            >
-              <img
-                src={url}
-                alt=""
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
-              />
-              {/* 4+ overlay */}
-              {i === 3 && images.length > 4 && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <span className="text-xl font-bold text-white">+{images.length - 4}</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Stats row */}
-      {(post.likes_count > 0 || post.comments_count > 0) && (
-        <div
-          className="flex items-center justify-between px-5 py-2 text-xs"
-          style={{ borderTop: images.length > 0 ? `1px solid ${C.border}` : 'none', color: C.textDim }}
-        >
-          {post.likes_count > 0 && (
-            <div className="flex items-center gap-1.5">
-              <div
-                className="w-4 h-4 rounded-full flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${C.red}, #F97316)` }}
-              >
-                <Heart className="w-2.5 h-2.5 text-white fill-white" />
-              </div>
-              <span>{post.likes_count}</span>
-            </div>
-          )}
-          {post.comments_count > 0 && (
-            <button
-              onClick={toggleComments}
-              className="ml-auto hover:underline transition-colors"
-              style={{ color: C.textMuted }}
-            >
-              {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex items-center px-2 py-1" style={{ borderTop: `1px solid ${C.border}` }}>
-        {/* Like */}
-        <button
-          onClick={() => onLike(post.id, !!post.liked_by_me)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ color: post.liked_by_me ? C.red : C.textMuted }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.redDim; (e.currentTarget as HTMLElement).style.color = C.red }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = post.liked_by_me ? C.red : C.textMuted }}
-        >
-          <Heart className={`w-4 h-4 ${post.liked_by_me ? 'fill-current' : ''}`} />
-          <span className="hidden sm:inline">Like</span>
-        </button>
-
-        {/* Comment */}
-        <button
-          onClick={toggleComments}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ color: C.textMuted }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.blueDim; (e.currentTarget as HTMLElement).style.color = C.blueLight }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = C.textMuted }}
-        >
-          <MessageCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">Comment</span>
-        </button>
-
-        {/* Share */}
-        <button
-          onClick={() => navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{ color: C.textMuted }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.greenDim; (e.currentTarget as HTMLElement).style.color = C.green }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = C.textMuted }}
-        >
-          <Share2 className="w-4 h-4" />
-          <span className="hidden sm:inline">Share</span>
-        </button>
-      </div>
-
-      {/* Comments section */}
-      {showComments && (
-        <div className="px-5 pb-5 space-y-3" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-          {loadingComments ? (
-            <div className="flex justify-center py-3">
-              <Loader2 className="w-4 h-4 animate-spin" style={{ color: C.textDim }} />
-            </div>
-          ) : (
-            comments.map(c => <CommentItem key={c.id} comment={c} />)
-          )}
-
-          {/* Comment input */}
-          {currentUserId && (
-            <div className="flex gap-2 pt-1">
-              <div
-                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl"
-                style={{ background: C.surface, border: `1px solid ${C.border}` }}
-              >
-                <input
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && submitComment()}
-                  placeholder="Add a comment..."
-                  maxLength={500}
-                  className="flex-1 bg-transparent text-sm outline-none"
-                  style={{ color: C.text }}
-                />
-                <button
-                  onClick={submitComment}
-                  disabled={!commentText.trim() || submitting}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center disabled:opacity-30 transition-all"
-                  style={{ background: C.blue, color: '#fff' }}
-                >
-                  {submitting
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <Send className="w-3.5 h-3.5" />
-                  }
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
 
-// ─── Suggested person card ────────────────────────────────────────────────────
-function SuggestedPerson({ person, currentUserId, onConnect }: {
-  person: any
-  currentUserId: string | null
-  onConnect: (id: string) => void
-}) {
-  const [status, setStatus] = useState<'none' | 'pending' | 'connected'>('none')
+// ─── Comments section ─────────────────────────────────────────────────────────
+function CommentsSection({ postId, currentUser }: any) {
+  const [comments, setComments] = useState<any[]>([])
+  const [text,     setText]     = useState('')
+  const [loading,  setLoading]  = useState(true)
+  const [sending,  setSending]  = useState(false)
 
   useEffect(() => {
-    if (!currentUserId) return
-    supabase
-      .from('connections')
-      .select('status')
-      .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${person.id}),and(user1_id.eq.${person.id},user2_id.eq.${currentUserId})`)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.status === 'accepted')  setStatus('connected')
-        else if (data?.status === 'requested') setStatus('pending')
-      })
-  }, [currentUserId, person.id])
+    supabase.from('post_comments')
+      .select('id, content, created_at, user_id, users(id, full_name, email, photo_url)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+      .limit(20)
+      .then(({ data }) => { setComments(data || []); setLoading(false) })
+  }, [postId])
 
-  const handleConnect = async () => {
-    if (!currentUserId || status !== 'none') return
-    setStatus('pending')
-    await supabase.from('connections').insert({
-      user1_id: currentUserId,
-      user2_id: person.id,
-      status: 'requested',
+  const sendComment = async () => {
+    if (!text.trim() || sending || !currentUser) return
+    setSending(true)
+    const { data, error } = await supabase.rpc('add_post_comment', {
+      p_post_id: postId,
+      p_user_id: currentUser.id,
+      p_content: text.trim(),
     })
-    onConnect(person.id)
+    if (!error && data?.[0]) {
+      setComments(prev => [...prev, {
+        id: data[0].comment_id,
+        content: text.trim(),
+        created_at: data[0].created_at,
+        user_id: currentUser.id,
+        users: { id: currentUser.id, full_name: data[0].author_name, photo_url: data[0].author_photo, email: currentUser.email }
+      }])
+      setText('')
+    }
+    setSending(false)
   }
 
   return (
-    <div className="flex items-center gap-3 py-3" style={{ borderBottom: `1px solid ${C.border}` }}>
-      <Avatar profile={person} size={36} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{getName(person)}</p>
-        <p className="text-xs truncate" style={{ color: C.textMuted }}>
-          {person.role || 'Founder'}
-          {person.mutual > 0 && (
-            <span style={{ color: C.blueLight }}> · {person.mutual} mutual</span>
-          )}
-        </p>
+    <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 8 }}>
+          <Loader2 style={{ width: 16, height: 16, color: C.textDim, animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : comments.map(c => (
+        <div key={c.id} style={{ display: 'flex', gap: 8 }}>
+          <Avatar name={(c.users as any)?.full_name||''} email={(c.users as any)?.email||''} photo={(c.users as any)?.photo_url} userId={c.user_id} size={28} />
+          <div style={{ flex: 1 }}>
+            <div style={{ background: C.surface, borderRadius: '4px 14px 14px 14px', padding: '8px 12px' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: C.blueLight, marginBottom: 2, fontFamily: 'DM Sans,sans-serif' }}>
+                {getName((c.users as any)?.full_name||'', (c.users as any)?.email||'')}
+              </p>
+              <p style={{ fontSize: 13, color: C.text, fontFamily: 'DM Sans,sans-serif', lineHeight: 1.5 }}>{c.content}</p>
+            </div>
+            <p style={{ fontSize: 11, color: C.textDim, marginTop: 3, paddingLeft: 4, fontFamily: 'DM Sans,sans-serif' }}>{timeAgo(c.created_at)}</p>
+          </div>
+        </div>
+      ))}
+
+      {/* Comment input */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Avatar name={''} email={currentUser?.email||''} photo={null} userId={currentUser?.id} size={28} />
+        <div style={{ flex: 1, display: 'flex', gap: 6 }}>
+          <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment()}
+            placeholder="Write a comment..."
+            maxLength={500}
+            style={{ flex: 1, padding: '8px 12px', borderRadius: 12, background: C.surface, border: `1px solid ${C.border}`, color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 13, outline: 'none' }}
+            onFocus={e => (e.target.style.borderColor = C.borderFocus)}
+            onBlur={e => (e.target.style.borderColor = C.border)} />
+          <button onClick={sendComment} disabled={!text.trim() || sending}
+            style={{ width: 34, height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !text.trim() || sending ? 0.4 : 1 }}>
+            {sending ? <Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 13, height: 13 }} />}
+          </button>
+        </div>
       </div>
-      <button
-        onClick={handleConnect}
-        disabled={status !== 'none'}
-        className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:cursor-default"
-        style={{
-          background: status === 'connected' ? C.greenDim : status === 'pending' ? C.border : C.blueDim,
-          color:      status === 'connected' ? C.green    : status === 'pending' ? C.textMuted : C.blueLight,
-          border:     `1px solid ${status === 'connected' ? C.green + '30' : status === 'pending' ? C.border : 'rgba(37,99,235,0.2)'}`,
-        }}
-      >
-        {status === 'connected' ? <><Check className="w-3 h-3" /> Connected</> :
-         status === 'pending'   ? 'Pending' :
-         <><UserPlus className="w-3 h-3" /> Connect</>}
-      </button>
     </div>
   )
 }
 
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
-function RightSidebar({ currentUserId }: { currentUserId: string | null }) {
-  const [suggested, setSuggested] = useState<any[]>([])
-  const [stats,     setStats]     = useState({ members: 0, posts: 0, live: 0 })
+// ─── Post Card ────────────────────────────────────────────────────────────────
+function PostCard({ post, currentUser, onDelete, onLikeToggle }: any) {
+  const [showComments, setShowComments] = useState(false)
+  const [liked, setLiked] = useState(post.my_like || false)
+  const [likeCount, setLikeCount] = useState(post.likes_count || 0)
+  const [likePending, setLikePending] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
 
-  useEffect(() => {
-    if (!currentUserId) return
+  const isOwn = post.user_id === currentUser?.id
 
-    // Fetch suggested connections — people not yet connected
-    supabase
-      .from('users')
-      .select('id, email, full_name, photo_url, role, username')
-      .neq('id', currentUserId)
-      .limit(5)
-      .then(({ data }) => { if (data) setSuggested(data) })
+  const handleLike = async () => {
+    if (likePending) return
+    setLikePending(true)
+    // Optimistic
+    const wasLiked = liked
+    setLiked(!wasLiked)
+    setLikeCount((c: number) => wasLiked ? c - 1 : c + 1)
 
-    // Platform stats
-    Promise.all([
-      supabase.from('users').select('*', { count: 'exact', head: true }),
-      supabase.from('posts').select('*', { count: 'exact', head: true }),
-      supabase.from('events').select('*', { count: 'exact', head: true }).eq('status', 'live'),
-    ]).then(([u, p, e]) => {
-      setStats({ members: u.count || 0, posts: p.count || 0, live: e.count || 0 })
+    const { data, error } = await supabase.rpc('toggle_post_like', {
+      p_post_id: post.id,
+      p_user_id: currentUser.id,
     })
-  }, [currentUserId])
+    if (error) {
+      // Revert on error
+      setLiked(wasLiked)
+      setLikeCount((c: number) => wasLiked ? c + 1 : c - 1)
+    } else if (data?.[0]) {
+      setLiked(data[0].liked)
+      setLikeCount(data[0].new_count)
+    }
+    setLikePending(false)
+    onLikeToggle?.()
+  }
 
-  const trending = [
-    '#AIFounders', '#SaaSGrowth', '#Fundraising', '#ProductMindset', '#BootstrappedLife'
-  ]
+  const imgGrid = post.image_urls?.filter(Boolean) || []
 
   return (
-    <div className="space-y-4">
-      {/* Suggested connections */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-        <div className="px-5 pt-5 pb-3">
-          <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.blueLight }}>Network</p>
-          <h3 className="text-sm font-bold" style={{ color: C.text }}>Suggested Connections</h3>
-        </div>
-        <div className="px-5 pb-2">
-          {suggested.length === 0 ? (
-            <p className="text-xs py-3" style={{ color: C.textDim }}>No suggestions yet</p>
-          ) : (
-            suggested.map(p => (
-              <SuggestedPerson
-                key={p.id}
-                person={p}
-                currentUserId={currentUserId}
-                onConnect={() => {}}
-              />
-            ))
-          )}
-        </div>
-        <div className="px-5 pb-4">
-          <Link href="/dashboard/network">
-            <button
-              className="w-full py-2 rounded-xl text-xs font-semibold transition-all"
-              style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
-            >
-              View all connections →
-            </button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Trending topics */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-        <div className="px-5 pt-5 pb-3 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" style={{ color: C.gold }} />
+    <div style={{ borderRadius: 20, padding: 16, background: C.card, border: `1px solid ${C.border}` }}>
+      {/* Author row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Avatar name={post.author_name||''} email={''} photo={post.author_photo} userId={post.user_id} size={40} />
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: C.gold }}>Trending</p>
+            <p style={{ fontWeight: 700, fontSize: 14, color: C.text, fontFamily: 'Syne,sans-serif' }}>
+              {post.author_name || 'User'}
+              {post.author_role === 'host' && (
+                <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', borderRadius: 5, background: C.goldDim, color: C.gold, fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>HOST</span>
+              )}
+            </p>
+            {post.author_username && <p style={{ fontSize: 12, color: C.blueLight, fontFamily: 'DM Sans,sans-serif' }}>@{post.author_username}</p>}
+            <p style={{ fontSize: 11, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>{timeAgo(post.created_at)}</p>
           </div>
         </div>
-        <div className="pb-4">
-          {trending.map((tag, i) => (
-            <div
-              key={tag}
-              className="flex items-center justify-between px-5 py-2.5 transition-colors cursor-pointer"
-              style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.cardHover }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-            >
-              <div>
-                <p className="text-sm font-semibold" style={{ color: C.blueLight }}>{tag}</p>
-                <p className="text-xs" style={{ color: C.textDim }}>{Math.floor(Math.random() * 200 + 50)} posts</p>
+        {isOwn && (
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setShowMenu(p => !p)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent', color: C.textDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MoreHorizontal style={{ width: 16, height: 16 }} />
+            </button>
+            {showMenu && (
+              <div style={{ position: 'absolute', right: 0, top: 36, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', zIndex: 20, minWidth: 130 }}>
+                <button onClick={() => { onDelete(post.id); setShowMenu(false) }}
+                  style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', color: C.red, fontFamily: 'DM Sans,sans-serif', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
+                  <Trash2 style={{ width: 13, height: 13 }} /> Delete post
+                </button>
               </div>
-              <span className="text-xs font-bold" style={{ color: C.textDim }}>#{i + 1}</span>
-            </div>
-          ))}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Community stats */}
-      <div className="rounded-2xl p-5" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-        <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: C.textDim }}>Community</p>
-        {[
-          { label: 'Founders',    value: `${stats.members.toLocaleString()}+`, icon: Users, color: C.blueLight },
-          { label: 'Posts',       value: `${stats.posts.toLocaleString()}`,    icon: BookOpen, color: C.gold },
-          { label: 'Live Now',    value: stats.live.toString(),                icon: Radio, color: C.red },
-        ].map(s => (
-          <div key={s.label} className="flex items-center justify-between py-2" style={{ borderTop: `1px solid ${C.border}` }}>
-            <div className="flex items-center gap-2">
-              <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
-              <span className="text-xs" style={{ color: C.textMuted }}>{s.label}</span>
+      {/* Content */}
+      {post.content && (
+        <p style={{ fontSize: 14, color: C.text, fontFamily: 'DM Sans,sans-serif', lineHeight: 1.7, marginBottom: imgGrid.length > 0 ? 12 : 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {post.content}
+        </p>
+      )}
+
+      {/* Images */}
+      {imgGrid.length > 0 && (
+        <div style={{ display: 'grid', gap: 4, borderRadius: 14, overflow: 'hidden', marginBottom: 4,
+          gridTemplateColumns: imgGrid.length === 1 ? '1fr' : imgGrid.length === 2 ? '1fr 1fr' : imgGrid.length === 3 ? '2fr 1fr' : '1fr 1fr',
+          gridTemplateRows: imgGrid.length === 3 ? '1fr 1fr' : undefined,
+        }}>
+          {imgGrid.slice(0,4).map((url: string, i: number) => (
+            <img key={i} src={url} alt="" loading="lazy"
+              style={{ width: '100%', objectFit: 'cover', display: 'block',
+                aspectRatio: imgGrid.length === 1 ? '16/9' : '1/1',
+                gridRow: imgGrid.length === 3 && i === 0 ? '1 / 3' : undefined,
+              }} />
+          ))}
+        </div>
+      )}
+
+      {/* Action bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+        <button onClick={handleLike}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: liked ? C.redDim : 'transparent', color: liked ? C.red : C.textMuted, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: liked ? 700 : 400, transition: 'all 0.15s' }}>
+          <Heart style={{ width: 16, height: 16, fill: liked ? C.red : 'none', stroke: liked ? C.red : 'currentColor' }} />
+          {likeCount > 0 ? likeCount : 'Like'}
+        </button>
+        <button onClick={() => setShowComments(p => !p)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: showComments ? C.blueDim : 'transparent', color: showComments ? C.blueLight : C.textMuted, fontFamily: 'DM Sans,sans-serif', fontSize: 13, transition: 'all 0.15s' }}>
+          <MessageCircle style={{ width: 16, height: 16 }} />
+          {post.comments_count > 0 ? post.comments_count : 'Comment'}
+        </button>
+        <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/post/${post.id}`) }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: C.textMuted, fontFamily: 'DM Sans,sans-serif', fontSize: 13, transition: 'all 0.15s', marginLeft: 'auto' }}>
+          <Share2 style={{ width: 16, height: 16 }} />
+          Share
+        </button>
+      </div>
+
+      {/* Comments */}
+      {showComments && <CommentsSection postId={post.id} currentUser={currentUser} />}
+    </div>
+  )
+}
+
+// ─── Connection Suggestions Sidebar ──────────────────────────────────────────
+function SuggestionsSidebar({ currentUser }: any) {
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [pending,     setPending]     = useState<Set<string>>(new Set())
+  const [sent,        setSent]        = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!currentUser?.id) return
+    supabase.rpc('get_connection_suggestions', { p_user_id: currentUser.id, p_limit: 8 })
+      .then(({ data }) => setSuggestions(data || []))
+  }, [currentUser?.id])
+
+  const sendRequest = async (targetId: string) => {
+    setPending(p => new Set([...p, targetId]))
+    await supabase.from('connections').insert({
+      user1_id: currentUser.id,
+      user2_id: targetId,
+      status: 'requested',
+    })
+    setSent(p => new Set([...p, targetId]))
+    setPending(p => { const n = new Set(p); n.delete(targetId); return n })
+  }
+
+  if (suggestions.length === 0) return null
+
+  return (
+    <div style={{ borderRadius: 20, padding: 16, background: C.card, border: `1px solid ${C.border}` }}>
+      <p style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', marginBottom: 14 }}>
+        People you may know
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {suggestions.slice(0,6).map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar name={s.full_name||''} email={s.email||''} photo={s.photo_url} userId={s.id} size={36} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.full_name || s.email?.split('@')[0]}
+              </p>
+              <p style={{ fontSize: 11, color: C.textDim, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.suggestion_reason}
+              </p>
             </div>
-            <span className="text-xs font-bold" style={{ color: s.color }}>{s.value}</span>
+            <button onClick={() => sendRequest(s.id)} disabled={sent.has(s.id) || pending.has(s.id)}
+              style={{ padding: '5px 12px', borderRadius: 8, border: `1px solid ${sent.has(s.id) ? C.green : C.blue}`, cursor: sent.has(s.id) ? 'default' : 'pointer', background: sent.has(s.id) ? C.greenDim : C.blueDim, color: sent.has(s.id) ? C.green : C.blueLight, fontFamily: 'DM Sans,sans-serif', fontSize: 12, fontWeight: 600, flexShrink: 0, opacity: pending.has(s.id) ? 0.5 : 1 }}>
+              {sent.has(s.id) ? '✓ Sent' : pending.has(s.id) ? '...' : 'Connect'}
+            </button>
           </div>
         ))}
       </div>
@@ -793,190 +413,160 @@ function RightSidebar({ currentUserId }: { currentUserId: string | null }) {
   )
 }
 
-// ─── Main feed page ───────────────────────────────────────────────────────────
+// ─── Main Feed Page ───────────────────────────────────────────────────────────
 export default function FeedPage() {
-  const [currentUser,    setCurrentUser]    = useState<any>(null)
-  const [currentProfile, setCurrentProfile] = useState<any>(null)
-  const [posts,          setPosts]          = useState<any[]>([])
-  const [loading,        setLoading]        = useState(true)
-  const [loadingMore,    setLoadingMore]    = useState(false)
-  const [hasMore,        setHasMore]        = useState(true)
-  const PAGE_SIZE = 10
-
-  const loadPosts = useCallback(async (userId: string | null, offset = 0) => {
-    const { data, error } = await supabase
-      .from('posts')
-      .select(`
-        id, content, image_urls, created_at, user_id, likes_count, comments_count,
-        users ( id, email, full_name, photo_url, role, username )
-      `)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
-
-    if (error || !data) return []
-
-    // Check which posts current user has liked
-    let likedIds = new Set<string>()
-    if (userId && data.length > 0) {
-      const { data: likes } = await supabase
-        .from('post_likes')
-        .select('post_id')
-        .eq('user_id', userId)
-        .in('post_id', data.map(p => p.id))
-      likedIds = new Set((likes || []).map((l: any) => l.post_id))
-    }
-
-    return data.map(p => ({ ...p, liked_by_me: likedIds.has(p.id) }))
-  }, [])
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [profile,     setProfile]     = useState<any>(null)
+  const [posts,       setPosts]       = useState<any[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore,     setHasMore]     = useState(true)
+  const [likedIds,    setLikedIds]    = useState<Set<string>>(new Set())
+  const offsetRef = useRef(0)
+  const PAGE_SIZE = 15
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user: u } }) => {
       if (!u) return
       setCurrentUser(u)
-
       const { data: prof } = await supabase.from('users').select('*').eq('id', u.id).single()
-      setCurrentProfile(prof)
+      setProfile(prof)
+      await loadFeed(u.id, true)
 
-      const initial = await loadPosts(u.id, 0)
-      setPosts(initial)
-      setHasMore(initial.length === PAGE_SIZE)
-      setLoading(false)
+      // Load my liked post IDs for this session
+      const { data: likes } = await supabase.from('post_likes').select('post_id').eq('user_id', u.id)
+      setLikedIds(new Set((likes||[]).map((l:any) => l.post_id)))
     })
+  }, [])
 
-    // Realtime — new posts appear instantly
-    const channel = supabase
-      .channel('feed-realtime')
+  // Realtime: new posts from anyone appear instantly
+  useEffect(() => {
+    const ch = supabase.channel('feed-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => {
-        supabase.auth.getUser().then(({ data: { user: u } }) => {
-          loadPosts(u?.id || null, 0).then(fresh => {
-            setPosts(fresh)
-          })
-        })
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, payload => {
-        setPosts(prev => prev.filter(p => p.id !== payload.old.id))
+        if (currentUser) loadFeed(currentUser.id, true)
       })
       .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [currentUser])
 
-    return () => { supabase.removeChannel(channel) }
-  }, [loadPosts])
+  const loadFeed = async (userId: string, reset = false) => {
+    if (reset) {
+      offsetRef.current = 0
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
 
-  const loadMore = async () => {
-    if (loadingMore || !hasMore) return
-    setLoadingMore(true)
-    const more = await loadPosts(currentUser?.id || null, posts.length)
-    setPosts(prev => [...prev, ...more])
-    setHasMore(more.length === PAGE_SIZE)
+    const { data, error } = await supabase.rpc('get_feed_posts', {
+      p_user_id: userId,
+      p_limit:   PAGE_SIZE,
+      p_offset:  offsetRef.current,
+    })
+
+    if (!error && data) {
+      const enriched = data.map((p: any) => ({ ...p, my_like: likedIds.has(p.id) }))
+      if (reset) {
+        setPosts(enriched)
+      } else {
+        setPosts(prev => {
+          const ids = new Set(prev.map((p: any) => p.id))
+          return [...prev, ...enriched.filter((p: any) => !ids.has(p.id))]
+        })
+      }
+      setHasMore(data.length === PAGE_SIZE)
+      offsetRef.current += data.length
+    }
+
+    setLoading(false)
     setLoadingMore(false)
   }
 
   const handleDelete = async (postId: string) => {
-    await supabase.from('posts').delete().eq('id', postId)
+    if (!confirm('Delete this post?')) return
+    await supabase.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id)
     setPosts(prev => prev.filter(p => p.id !== postId))
   }
 
-  const handleLike = async (postId: string, alreadyLiked: boolean) => {
-    if (!currentUser) return
-    // Optimistic update
-    setPosts(prev => prev.map(p => p.id === postId
-      ? { ...p, liked_by_me: !alreadyLiked, likes_count: p.likes_count + (alreadyLiked ? -1 : 1) }
-      : p
-    ))
-    if (alreadyLiked) {
-      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', currentUser.id)
-      await supabase.from('posts').update({ likes_count: Math.max(0, (posts.find(p => p.id === postId)?.likes_count || 1) - 1) }).eq('id', postId)
-    } else {
-      await supabase.from('post_likes').insert({ post_id: postId, user_id: currentUser.id })
-      await supabase.from('posts').update({ likes_count: (posts.find(p => p.id === postId)?.likes_count || 0) + 1 }).eq('id', postId)
-    }
+  const handlePosted = () => {
+    if (currentUser) loadFeed(currentUser.id, true)
   }
 
-  const handleComment = async (postId: string, content: string) => {
-    if (!currentUser) return
-    await supabase.from('post_comments').insert({ post_id: postId, user_id: currentUser.id, content })
-    await supabase.from('posts').update({ comments_count: (posts.find(p => p.id === postId)?.comments_count || 0) + 1 }).eq('id', postId)
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: p.comments_count + 1 } : p))
-  }
+  // Re-enrich liked state when likedIds changes
+  const postsWithLikes = posts.map(p => ({ ...p, my_like: likedIds.has(p.id) }))
 
   return (
     <DashboardLayout>
-      <div className="min-h-full" style={{ background: C.bg }}>
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
-          <div className="grid lg:grid-cols-3 gap-5">
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <div style={{ background: C.bg, minHeight: '100%' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
 
-            {/* ── Feed (2/3) ── */}
-            <div className="lg:col-span-2 space-y-4">
-
-              {/* Header */}
-              <div className="mb-1">
-                <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.blueLight }}>Feed</p>
-                <h1 className="text-xl font-bold" style={{ color: C.text, fontFamily: 'Syne, sans-serif' }}>
-                  Founder Community
-                </h1>
+            {/* Main feed column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.blueLight, fontFamily: 'DM Sans,sans-serif', marginBottom: 4 }}>Community</p>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: 'Syne,sans-serif', letterSpacing: '-0.02em' }}>Feed</h1>
               </div>
 
               {/* Composer */}
-              {currentUser && (
-                <PostComposer
-                  currentUser={currentUser}
-                  currentProfile={currentProfile}
-                  onPost={() => loadPosts(currentUser.id, 0).then(setPosts)}
-                />
-              )}
+              {currentUser && <PostComposer currentUser={currentUser} profile={profile} onPosted={handlePosted} />}
 
               {/* Posts */}
               {loading ? (
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-48 rounded-2xl animate-pulse" style={{ background: C.card }} />
+                    <div key={i} style={{ height: 180, borderRadius: 20, background: C.card, animation: 'pulse 1.5s ease-in-out infinite' }} />
                   ))}
                 </div>
-              ) : posts.length === 0 ? (
-                <div
-                  className="rounded-2xl p-12 text-center"
-                  style={{ background: C.card, border: `1px solid ${C.border}` }}
-                >
-                  <MessageCircle className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
-                  <p className="font-semibold mb-1" style={{ color: C.text }}>No posts yet</p>
-                  <p className="text-sm" style={{ color: C.textMuted }}>Be the first to share something!</p>
+              ) : postsWithLikes.length === 0 ? (
+                <div style={{ borderRadius: 20, padding: 48, textAlign: 'center', background: C.card, border: `1px solid ${C.border}` }}>
+                  <p style={{ fontSize: 16, fontWeight: 600, color: C.textMuted, marginBottom: 8 }}>No posts yet</p>
+                  <p style={{ fontSize: 13, color: C.textDim }}>Be the first to post — your post will appear for everyone!</p>
                 </div>
               ) : (
                 <>
-                  <div className="space-y-3">
-                    {posts.map(post => (
-                      <PostCard
-                        key={post.id}
-                        post={post}
-                        currentUserId={currentUser?.id || null}
-                        onDelete={handleDelete}
-                        onLike={handleLike}
-                        onComment={handleComment}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Load more */}
+                  {postsWithLikes.map(post => (
+                    <PostCard key={post.id} post={post} currentUser={currentUser} onDelete={handleDelete}
+                      onLikeToggle={() => {
+                        setLikedIds(prev => {
+                          const n = new Set(prev)
+                          n.has(post.id) ? n.delete(post.id) : n.add(post.id)
+                          return n
+                        })
+                      }} />
+                  ))}
                   {hasMore && (
-                    <button
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all"
-                      style={{ background: C.card, color: C.textMuted, border: `1px solid ${C.border}` }}
-                    >
-                      {loadingMore
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</>
-                        : <><ChevronDown className="w-4 h-4" /> Load more posts</>
-                      }
+                    <button onClick={() => currentUser && loadFeed(currentUser.id, false)} disabled={loadingMore}
+                      style={{ padding: '12px', borderRadius: 14, border: `1px solid ${C.border}`, background: C.card, color: C.textMuted, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loadingMore ? 0.6 : 1 }}>
+                      {loadingMore ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <ChevronDown style={{ width: 16, height: 16 }} />}
+                      {loadingMore ? 'Loading...' : 'Load more posts'}
                     </button>
                   )}
                 </>
               )}
             </div>
 
-            {/* ── Right sidebar (1/3) ── */}
-            <div className="hidden lg:block">
-              <RightSidebar currentUserId={currentUser?.id || null} />
+            {/* Sidebar — connection suggestions */}
+            <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {currentUser && <SuggestionsSidebar currentUser={currentUser} />}
+              {/* Community stats */}
+              <div style={{ borderRadius: 20, padding: 16, background: C.card, border: `1px solid ${C.border}` }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', marginBottom: 12 }}>Community</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { label: 'Active founders', value: '2,400+' },
+                    { label: 'Live sessions', value: 'Weekly' },
+                    { label: 'Cities', value: '40+' },
+                  ].map(s => (
+                    <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: C.textMuted, fontFamily: 'DM Sans,sans-serif' }}>{s.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.blueLight, fontFamily: 'Syne,sans-serif' }}>{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
