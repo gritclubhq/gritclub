@@ -226,7 +226,7 @@ export default function PricingPage() {
                 <div style={{ padding: '0 20px 24px' }}>
                   <Link href={plan.ctaLink} style={{ textDecoration: 'none' }}>
                     <button style={{
-                      width: '100%', padding: '13px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      width: '100%', padding: '13px', borderRadius: 12, cursor: 'pointer',
                       background: plan.highlight ? `linear-gradient(135deg, ${C.gold}, #F97316)` : plan.id === 'enterprise' ? 'rgba(167,139,250,0.15)' : C.blueDim,
                       color: plan.highlight ? '#0A0F1E' : plan.id === 'enterprise' ? '#A78BFA' : C.blueL,
                       fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14,
