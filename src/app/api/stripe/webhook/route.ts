@@ -49,16 +49,18 @@ export async function POST(req: NextRequest) {
       .single()
 
     // 2. Increment event attendee count
-    await supabase.rpc('increment_event_attendees', { p_event_id: eventId }).catch(() => {
+    try {
+      await supabase.rpc('increment_event_attendees', { p_event_id: eventId })
+    } catch {
       // Fallback if RPC doesn't exist
-      supabase.from('events').select('current_attendees, total_sold').eq('id', eventId).single()
-        .then(({ data: ev }) => {
-          if (ev) supabase.from('events').update({
-            current_attendees: (ev.current_attendees || 0) + 1,
-            total_sold:        (ev.total_sold || 0) + 1,
-          }).eq('id', eventId)
-        })
-    })
+      const { data: ev } = await supabase.from('events').select('current_attendees, total_sold').eq('id', eventId).single()
+      if (ev) {
+        await supabase.from('events').update({
+          current_attendees: (ev.current_attendees || 0) + 1,
+          total_sold:        (ev.total_sold || 0) + 1,
+        }).eq('id', eventId)
+      }
+    }
 
     // 3. Send confirmation email
     if (userEmail) {
