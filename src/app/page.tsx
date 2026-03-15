@@ -109,6 +109,13 @@ export default function LandingPage() {
         * { box-sizing: border-box; }
         html, body { overflow-x: hidden; max-width: 100vw; }
 
+        @media (max-width: 480px) {
+          section { padding-left: 16px !important; padding-right: 16px !important; }
+          .px-6 { padding-left: 16px !important; padding-right: 16px !important; }
+          .px-12 { padding-left: 16px !important; padding-right: 16px !important; }
+          .md\\:px-12 { padding-left: 16px !important; padding-right: 16px !important; }
+        }
+
         :root {
           --red: #FF3B3B;
           --gold: #FFD700;
@@ -364,13 +371,14 @@ export default function LandingPage() {
           style={{
             fontFamily: 'Syne',
             fontWeight: 800,
-            fontSize: 'clamp(48px, 14vw, 180px)',
-            lineHeight: 0.9,
-            letterSpacing: '-0.04em',
+            fontSize: 'clamp(36px, 11vw, 180px)',
+            lineHeight: 0.95,
+            letterSpacing: '-0.02em',
             color: '#E8EAF0',
             marginBottom: '0px',
-            maxWidth: '100%',
-            overflowWrap: 'break-word',
+            whiteSpace: 'nowrap',
+            width: '100%',
+            textAlign: 'center',
           }}
         >
           GRIT<span style={{ color: '#FF3B3B', WebkitTextStroke: '0px' }}>CLUB</span>
@@ -383,8 +391,8 @@ export default function LandingPage() {
           style={{
             fontFamily: 'Syne',
             fontWeight: 600,
-            fontSize: 'clamp(14px, 2vw, 18px)',
-            letterSpacing: '0.25em',
+            fontSize: 'clamp(11px, 3vw, 18px)',
+            letterSpacing: '0.2em',
             color: 'rgba(232,234,240,0.5)',
             textTransform: 'uppercase',
             marginBottom: '16px',
@@ -396,11 +404,12 @@ export default function LandingPage() {
           style={{
             fontFamily: 'Syne',
             fontWeight: 700,
-            fontSize: 'clamp(16px, 2.5vw, 22px)',
-            letterSpacing: '0.2em',
+            fontSize: 'clamp(14px, 4vw, 22px)',
+            letterSpacing: '0.15em',
             color: '#FFD700',
             textTransform: 'uppercase',
             marginBottom: '40px',
+            padding: '0 16px',
           }}
         >
           You talk about your success.
@@ -410,7 +419,7 @@ export default function LandingPage() {
           style={{
             fontFamily: 'DM Sans',
             fontWeight: 300,
-            fontSize: 'clamp(15px, 1.5vw, 18px)',
+            fontSize: 'clamp(15px, 4vw, 18px)',
             color: 'rgba(232,234,240,0.55)',
             maxWidth: '540px',
             lineHeight: 1.7,
