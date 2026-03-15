@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import { useRouter } from 'next/navigation'
 import {
-  Camera, Upload, Loader2, Check, AlertCircle,
+  Camera, Upload, Save, Loader2, Check, AlertCircle,
   Mail, Phone, Eye, EyeOff, Link2, User, AtSign,
   FileText, Globe, Shield, LogOut, X, ExternalLink,
   Instagram, Twitter, Linkedin
@@ -465,9 +465,4 @@ export default function ProfilePage() {
       </div>
     </DashboardLayout>
   )
-}
-
-// Missing icon
-function Save({ className, style }: any) {
-  return <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
 }
