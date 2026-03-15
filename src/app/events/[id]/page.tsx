@@ -2,320 +2,384 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import DashboardLayout from '@/components/DashboardLayout'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Radio, Lock, Globe, X, Loader2, Calendar, Users, Tag, ChevronRight, Zap } from 'lucide-react'
+import {
+  Calendar, Users, Radio, Lock, Globe,
+  Check, Loader2, ChevronLeft, Tag,
+  Clock, MapPin, Zap, Crown, Share2
+} from 'lucide-react'
 
 const C = {
-  bg:         '#0A0F1E', surface:    '#0D1428', card:       '#111827', cardHover:  '#141E35',
-  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(37,99,235,0.3)',
-  text:       '#F0F4FF', textMuted:  '#7B8DB0', textDim:    '#3D4F6E',
-  blue:       '#2563EB', blueLight:  '#3B82F6', blueDim:    'rgba(37,99,235,0.12)',
-  gold:       '#F59E0B', goldDim:    'rgba(245,158,11,0.1)',
-  red:        '#EF4444', redDim:     'rgba(239,68,68,0.1)',
-  green:      '#10B981', greenDim:   'rgba(16,185,129,0.1)',
+  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
+  border:'rgba(255,255,255,0.06)',
+  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
+  blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
+  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
+  red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
+  green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
 }
 
-const CATEGORIES = ['All','AI & Tech','SaaS','FinTech','HealthTech','EdTech','E-commerce','Climate','Fundraising','Growth','Product']
+const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669']
+const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
+const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'Host'
+const fmt = (cents: number) => cents === 0 ? 'Free' : `$${(cents/100).toFixed(0)}`
 
-const formatDate = (d: string, t: string) => {
-  const date = new Date(d)
-  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${t}`
-}
-
-function EventCard({ event, currentUserId }: { event: any; currentUserId: string | null }) {
-  const total    = event.capacity || event.max_attendees || 50
-  const sold     = event.total_sold || event.current_attendees || 0
-  const left     = Math.max(total - sold, 0)
-  const fill     = Math.round((sold / Math.max(total, 1)) * 100)
-  const almostFull = left <= 5 && left > 0
-  const soldOut    = left === 0
-  const isLive     = event.status === 'live'
-  const isFree     = event.is_free || event.price === 0
-
+function ConfirmModal({ event, onClose }: { event: any; onClose: () => void }) {
   return (
-    <Link href={`/events/${event.id}`}>
-      <div
-        className="rounded-2xl overflow-hidden transition-all duration-200 flex flex-col cursor-pointer"
-        style={{ background: C.card, border: `1px solid ${isLive ? 'rgba(239,68,68,0.25)' : C.border}` }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${isLive ? 'rgba(239,68,68,0.08)' : 'rgba(37,99,235,0.08)'}` }}
-        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.25)' : C.border; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
-      >
-        {/* Banner */}
-        <div className="relative overflow-hidden" style={{ aspectRatio: '16/7' }}>
-          {event.banner_url
-            ? <img src={event.banner_url} alt={event.title} className="w-full h-full object-cover" />
-            : (
-              <div className="w-full h-full flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${C.surface}, ${C.card})` }}>
-                <Radio className="w-8 h-8" style={{ color: C.textDim }} />
-              </div>
-            )
-          }
-          {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-0.5"
-            style={{ background: isLive ? C.red : `linear-gradient(to right, ${C.blue}, ${C.blueLight}, transparent)` }} />
-
-          {/* Badges */}
-          <div className="absolute top-2 left-2 flex gap-1.5">
-            {isLive && (
-              <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(0,0,0,0.75)', color: C.red }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
-              </span>
-            )}
-            {event.is_link_only && (
-              <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(0,0,0,0.75)', color: C.gold }}>
-                <Lock className="w-2.5 h-2.5" /> Invite Only
-              </span>
-            )}
+    <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)' }} onClick={onClose} />
+      <div style={{ position:'relative', width:'100%', maxWidth:400, margin:'0 16px', borderRadius:24, padding:28, background:C.card, border:`1px solid ${C.greenDim}`, boxShadow:'0 20px 60px rgba(16,185,129,0.15)' }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ width:64, height:64, borderRadius:'50%', background:C.greenDim, border:`2px solid ${C.green}`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
+            <Check style={{ width:30, height:30, color:C.green }} />
           </div>
-          <div className="absolute top-2 right-2">
-            {soldOut
-              ? <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.75)', color: C.red }}>Sold Out</span>
-              : almostFull
-                ? <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.75)', color: C.gold }}>⚡ {left} left</span>
-                : null
-            }
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 flex flex-col gap-3 flex-1">
-          {/* Group + category */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium px-2 py-0.5 rounded-md" style={{ background: C.blueDim, color: C.blueLight }}>
-              {event.group_name || event.category || 'General'}
-            </span>
-            {event.tags?.slice(0,2).map((tag: string) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-md" style={{ background: C.border, color: C.textDim }}>
-                #{tag}
-              </span>
-            ))}
-          </div>
-
-          {/* Title + host */}
-          <div>
-            <h3 className="text-sm font-bold leading-snug mb-1" style={{ color: C.text }}>{event.title}</h3>
-            <p className="text-xs" style={{ color: C.textMuted }}>
-              {event.host_name || event.users?.full_name || event.users?.email?.split('@')[0] || 'Host'}
-              {event.start_time || event.date
-                ? ` · ${formatDate(event.start_time || event.date, event.time || '')}`
-                : ''
-              }
-            </p>
-          </div>
-
-          {/* Capacity bar */}
-          <div>
-            <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <div className="h-full rounded-full transition-all"
-                style={{ width: `${fill}%`, background: soldOut ? C.red : almostFull ? `linear-gradient(to right, ${C.gold}, #FCD34D)` : `linear-gradient(to right, ${C.blue}, ${C.blueLight})` }} />
-            </div>
-            <div className="flex items-center justify-between text-xs" style={{ color: C.textDim }}>
-              <span>
-                {soldOut ? 'Sold out'
-                  : almostFull ? `Only ${left} spots left!`
-                  : `${left} of ${total} spots remaining`}
-              </span>
-              <span>{fill}% full</span>
-            </div>
-          </div>
-
-          {/* Price + CTA */}
-          <div className="flex items-center justify-between gap-3 mt-auto pt-1" style={{ borderTop: `1px solid ${C.border}` }}>
-            <div>
-              {isFree
-                ? <span className="text-base font-bold" style={{ color: C.green }}>Free</span>
-                : <span className="text-base font-bold" style={{ color: C.gold }}>
-                    ${((event.price || 0) / 100).toFixed(0)}
-                    <span className="text-xs font-normal ml-1" style={{ color: C.textDim }}>/ ticket</span>
-                  </span>
-              }
-            </div>
-            <div
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
-              style={{
-                background: isLive ? C.red     : soldOut ? C.border   : C.blueDim,
-                color:      isLive ? '#fff'    : soldOut ? C.textDim  : C.blueLight,
-                border:     `1px solid ${isLive ? C.red : soldOut ? C.border : 'rgba(37,99,235,0.2)'}`,
-              }}>
-              {isLive ? 'Join Now →' : soldOut ? 'Sold Out' : 'Get Ticket →'}
-            </div>
+          <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:8 }}>Seat Confirmed! 🎉</h2>
+          <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.6, marginBottom:20 }}>
+            You're registered for <strong style={{ color:C.text }}>{event?.title}</strong>. See you there!
+          </p>
+          <div style={{ display:'flex', gap:10 }}>
+            <Link href="/dashboard/tickets" style={{ flex:1, textDecoration:'none' }}>
+              <button style={{ width:'100%', padding:'11px', borderRadius:12, border:`1px solid ${C.border}`, background:C.surface, color:C.textMuted, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:14 }}>
+                My Tickets
+              </button>
+            </Link>
+            <button onClick={onClose} style={{ flex:1, padding:'11px', borderRadius:12, border:'none', background:C.green, color:'#fff', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14 }}>
+              Done
+            </button>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
 
-export default function EventsPage() {
-  const [currentUser,  setCurrentUser]  = useState<any>(null)
-  const [profile,      setProfile]      = useState<any>(null)
-  const [events,       setEvents]       = useState<any[]>([])
-  const [loading,      setLoading]      = useState(true)
-  const [search,       setSearch]       = useState('')
-  const [category,     setCategory]     = useState('All')
-  const [liveOnly,     setLiveOnly]     = useState(false)
-  const [freeOnly,     setFreeOnly]     = useState(false)
+export default function EventDetailPage() {
+  const { id }  = useParams()
+  const router  = useRouter()
+  const eventId = id as string
+
+  const [event,       setEvent]       = useState<any>(null)
+  const [user,        setUser]        = useState<any>(null)
+  const [hasTicket,   setHasTicket]   = useState(false)
+  const [loading,     setLoading]     = useState(true)
+  const [claiming,    setClaiming]    = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [error,       setError]       = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user: u } }) => {
-      if (u) {
-        setCurrentUser(u)
-        const { data: prof } = await supabase.from('users').select('*').eq('id', u.id).single()
-        setProfile(prof)
-      }
-      const { data } = await supabase
+    const init = async () => {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      setUser(u)
+
+      const { data: ev } = await supabase
         .from('events')
-        .select('*, users(id, email, full_name, photo_url)')
-        .in('status', ['scheduled','live'])
-        .order('start_time', { ascending: true })
-      setEvents(data || [])
+        .select('*, users(id, full_name, email, photo_url, role)')
+        .eq('id', eventId)
+        .single()
+      setEvent(ev)
+
+      if (u && ev) {
+        const { data: ticket } = await supabase
+          .from('tickets')
+          .select('id')
+          .eq('user_id', u.id)
+          .eq('event_id', eventId)
+          .maybeSingle()
+        setHasTicket(!!ticket)
+      }
       setLoading(false)
-    })
+    }
+    init()
+  }, [eventId])
 
-    // Realtime — new events appear
-    const ch = supabase.channel('events-list')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
-        supabase.from('events')
-          .select('*, users(id, email, full_name, photo_url)')
-          .in('status', ['scheduled','live'])
-          .order('start_time', { ascending: true })
-          .then(({ data }) => setEvents(data || []))
+  // ── Send confirmation email (fire-and-forget, never blocks UI) ──
+  const sendConfirmationEmail = async (type: 'free_ticket' | 'paid_ticket', ticketId: string, amount?: number) => {
+    try {
+      const { data: prof } = await supabase.from('users').select('full_name').eq('id', user.id).single()
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gritclub.live'
+      const host   = event?.users || {}
+
+      await fetch('/api/email', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          to:   user.email,
+          data: {
+            eventTitle: event?.title || '',
+            eventDate:  event?.start_time ? new Date(event.start_time).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '',
+            eventTime:  event?.start_time ? new Date(event.start_time).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : '',
+            hostName:   host.full_name || host.email?.split('@')[0] || 'GritClub Host',
+            userName:   prof?.full_name || user.email?.split('@')[0] || 'there',
+            ticketId,
+            amount,
+            appUrl,
+          },
+        }),
       })
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [])
+    } catch (e) {
+      // Email is non-critical — log but never break the ticket flow
+      console.warn('Email send failed (non-critical):', e)
+    }
+  }
 
-  const filtered = events.filter(e => {
-    const q = search.toLowerCase()
-    const matchSearch = !q ||
-      e.title?.toLowerCase().includes(q) ||
-      (e.users?.full_name || '').toLowerCase().includes(q) ||
-      (e.description || '').toLowerCase().includes(q)
-    const matchCat  = category === 'All' || e.category === category || e.group_name === category
-    const matchLive = !liveOnly || e.status === 'live'
-    const matchFree = !freeOnly || e.is_free || e.price === 0
-    return matchSearch && matchCat && matchLive && matchFree
-  })
+  const claimFreeTicket = async () => {
+    if (!user) { router.push('/auth/login'); return }
+    setClaiming(true); setError('')
+    try {
+      const { data, error: rpcErr } = await supabase.rpc('claim_free_ticket', {
+        p_user_id:  user.id,
+        p_event_id: eventId,
+      })
+      if (rpcErr) throw rpcErr
+      const result = data?.[0]
+      if (result?.status === 'success' || result?.status === 'already_registered') {
+        setHasTicket(true)
+        setShowConfirm(true)
+        // Refresh event to update seat count
+        const { data: ev } = await supabase.from('events').select('*, users(id, full_name, email, photo_url, role)').eq('id', eventId).single()
+        if (ev) setEvent(ev)
+        // Send confirmation email (non-blocking)
+        sendConfirmationEmail('free_ticket', result.ticket_id || '')
+      } else {
+        setError(result?.message || 'Could not claim ticket')
+      }
+    } catch (err: any) {
+      // Fallback: direct insert if RPC not available
+      try {
+        const { data: inserted, error: insertErr } = await supabase
+          .from('tickets')
+          .insert({ user_id: user.id, event_id: eventId, amount: 0, status: 'free', ticket_type: 'general' })
+          .select('id')
+          .single()
+        if (insertErr && insertErr.code !== '23505') throw insertErr
+        setHasTicket(true)
+        setShowConfirm(true)
+        // Send confirmation email (non-blocking)
+        sendConfirmationEmail('free_ticket', inserted?.id || '')
+      } catch (e: any) {
+        setError('Failed to claim ticket: ' + e.message)
+      }
+    }
+    setClaiming(false)
+  }
 
-  const liveCount = events.filter(e => e.status === 'live').length
-  const isHost    = profile?.role === 'host' || profile?.role === 'admin'
+  const buyPaidTicket = async () => {
+    if (!user) { router.push('/auth/login'); return }
+    setClaiming(true); setError('')
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          userId:    user.id,
+          userEmail: user.email,
+          amount:    event.price,
+          eventName: event.title,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.message || 'Checkout failed')
+      }
+      const { url } = await res.json()
+      // Note: paid ticket email is sent from Stripe webhook after payment succeeds
+      // See src/app/api/stripe/webhook/route.ts
+      if (url) window.location.href = url
+    } catch (err: any) {
+      setError('Payment error: ' + err.message)
+    }
+    setClaiming(false)
+  }
+
+  const joinLive = () => { router.push(`/live/${eventId}`) }
+
+  if (loading) return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg }}>
+      <Loader2 style={{ width:32, height:32, color:C.blueLight, animation:'spin 1s linear infinite' }} />
+    </div>
+  )
+
+  if (!event) return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg }}>
+      <div style={{ textAlign:'center' }}>
+        <p style={{ fontSize:18, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Event not found</p>
+        <Link href="/dashboard" style={{ color:C.blueLight }}>← Back to Discover</Link>
+      </div>
+    </div>
+  )
+
+  const isFree     = event.is_free || event.price === 0 || !event.price
+  const isLive     = event.status === 'live'
+  const host       = event.users || {}
+  const fillPct    = event.capacity > 0 ? Math.round((COALESCE(event.current_attendees, event.total_sold, 0) / event.capacity) * 100) : 0
+  const spotsLeft  = event.capacity > 0 ? Math.max(event.capacity - (event.current_attendees || event.total_sold || 0), 0) : null
+  const soldOut    = spotsLeft !== null && spotsLeft === 0
+
+  function COALESCE(...vals: any[]) { return vals.find(v => v !== null && v !== undefined) || 0 }
 
   return (
-    <DashboardLayout>
-      <div className="min-h-full" style={{ background: C.bg }}>
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-5">
+    <div style={{ background:C.bg, minHeight:'100vh' }}>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      {showConfirm && <ConfirmModal event={event} onClose={() => setShowConfirm(false)} />}
 
-          {/* Header — NO create button for audience */}
-          <div className="flex items-start justify-between gap-4">
+      {/* Nav */}
+      <div style={{ padding:'16px 24px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:12 }}>
+        <button onClick={() => router.back()} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:14 }}>
+          <ChevronLeft style={{ width:16, height:16 }} /> Back
+        </button>
+        <span style={{ color:C.textDim }}>·</span>
+        <span style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{event.title}</span>
+      </div>
+
+      <div style={{ maxWidth:760, margin:'0 auto', padding:'32px 20px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
+
+          {/* Left — Event details */}
+          <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+
+            {/* Banner */}
+            {event.banner_url && (
+              <div style={{ borderRadius:20, overflow:'hidden', aspectRatio:'16/7' }}>
+                <img src={event.banner_url} alt={event.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+              </div>
+            )}
+
+            {/* Title + badges */}
             <div>
-              <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.blueLight }}>Discover</p>
-              <h1 className="text-2xl font-bold" style={{ color: C.text, fontFamily: 'Syne, sans-serif' }}>
-                Live Sessions & Events
-              </h1>
-              <p className="text-sm mt-1" style={{ color: C.textMuted }}>
-                Attend live sessions from top founders
-              </p>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:10 }}>
+                {isLive && (
+                  <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:20, background:C.redDim, color:C.red }}>
+                    <span style={{ width:7, height:7, borderRadius:'50%', background:C.red, animation:'pulse 1s infinite' }} /> LIVE NOW
+                  </span>
+                )}
+                {isFree && (
+                  <span style={{ fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:20, background:C.greenDim, color:C.green }}>FREE</span>
+                )}
+                {event.category && (
+                  <span style={{ fontSize:12, padding:'4px 10px', borderRadius:20, background:C.blueDim, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>{event.category}</span>
+                )}
+              </div>
+              <h1 style={{ fontSize:28, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em', marginBottom:12 }}>{event.title}</h1>
+              {event.description && (
+                <p style={{ fontSize:15, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.75 }}>{event.description}</p>
+              )}
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {liveCount > 0 && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                  style={{ background: C.redDim, border: '1px solid rgba(239,68,68,0.25)' }}>
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-xs font-bold" style={{ color: C.red }}>{liveCount} Live</span>
+
+            {/* Event meta */}
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {[
+                event.start_time && { icon: Calendar, label: new Date(event.start_time).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) },
+                event.start_time && { icon: Clock,    label: new Date(event.start_time).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) },
+                event.location   && { icon: MapPin,   label: event.location },
+                { icon: Globe, label: 'Online Event · Join from anywhere' },
+              ].filter(Boolean).map((item: any, i: number) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <item.icon style={{ width:16, height:16, color:C.blueLight, flexShrink:0 }} />
+                  <span style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Host */}
+            <div style={{ padding:16, borderRadius:16, background:C.card, border:`1px solid ${C.border}` }}>
+              <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:C.textDim, fontFamily:'DM Sans,sans-serif', marginBottom:12 }}>Hosted by</p>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', background:avatarColor(host.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:avatarColor(host.id||''), fontFamily:'Syne,sans-serif', flexShrink:0 }}>
+                  {host.photo_url ? <img src={host.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : getName(host).slice(0,2).toUpperCase()}
+                </div>
+                <div>
+                  <p style={{ fontSize:15, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif' }}>{getName(host)}</p>
+                  <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Host · GritClub</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right — Ticket box */}
+          <div style={{ position:'sticky', top:24 }}>
+            <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${isLive?'rgba(239,68,68,0.3)':C.border}`, display:'flex', flexDirection:'column', gap:16 }}>
+
+              {/* Price */}
+              <div>
+                <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:C.textDim, fontFamily:'DM Sans,sans-serif', marginBottom:6 }}>
+                  {hasTicket ? 'Your Ticket' : 'Ticket Price'}
+                </p>
+                <p style={{ fontSize:32, fontWeight:800, color:isFree?C.green:C.gold, fontFamily:'Syne,sans-serif', letterSpacing:'-0.03em' }}>
+                  {isFree ? 'Free' : fmt(event.price || 0)}
+                </p>
+                {!isFree && <p style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>per ticket · secure payment</p>}
+              </div>
+
+              {/* Capacity bar */}
+              {event.capacity > 0 && (
+                <div>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                    <span style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>
+                      {soldOut ? 'Sold out' : spotsLeft !== null ? `${spotsLeft} spots left` : 'Open registration'}
+                    </span>
+                    <span style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>{fillPct}% full</span>
+                  </div>
+                  <div style={{ height:6, borderRadius:3, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
+                    <div style={{ height:'100%', borderRadius:3, width:`${Math.min(fillPct,100)}%`, background:soldOut?C.red:fillPct>80?C.gold:`linear-gradient(to right, ${C.blue}, ${C.blueLight})`, transition:'width 0.3s' }} />
+                  </div>
                 </div>
               )}
-              {/* Only hosts see create button */}
-              {isHost && (
-                <Link href="/host/create">
-                  <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                    style={{ background: C.gold, color: '#0A0F1E' }}>
-                    <Zap className="w-4 h-4" /> Create Event
-                  </button>
-                </Link>
+
+              {/* Error */}
+              {error && (
+                <div style={{ padding:'10px 12px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.2)' }}>
+                  <p style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{error}</p>
+                </div>
               )}
-            </div>
-          </div>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.textDim }} />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search events, hosts, topics..."
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none transition-all"
-              style={{ background: C.card, border: `1px solid ${C.border}`, color: C.text }}
-              onFocus={e => (e.target.style.borderColor = C.borderHover)}
-              onBlur={e => (e.target.style.borderColor = C.border)}
-            />
-            {search && (
-              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: C.textDim }}>
-                <X className="w-4 h-4" />
+              {/* CTA button */}
+              {hasTicket ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 16px', borderRadius:12, background:C.greenDim, border:`1px solid rgba(16,185,129,0.3)` }}>
+                    <Check style={{ width:18, height:18, color:C.green }} />
+                    <span style={{ fontSize:14, fontWeight:700, color:C.green, fontFamily:'DM Sans,sans-serif' }}>Seat Confirmed ✓</span>
+                  </div>
+                  {isLive && (
+                    <button onClick={joinLive}
+                      style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:'pointer', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                      <Radio style={{ width:18, height:18 }} /> Join Live Now →
+                    </button>
+                  )}
+                </div>
+              ) : soldOut ? (
+                <button disabled style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:C.border, color:C.textDim, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:16, cursor:'not-allowed' }}>
+                  Sold Out
+                </button>
+              ) : isFree ? (
+                <button onClick={claimFreeTicket} disabled={claiming}
+                  style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:claiming?'wait':'pointer', background:`linear-gradient(135deg, ${C.green}, #059669)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:claiming?0.7:1, boxShadow:'0 4px 20px rgba(16,185,129,0.3)' }}>
+                  {claiming ? <><Loader2 style={{ width:18, height:18, animation:'spin 1s linear infinite' }} /> Confirming...</> : <><Check style={{ width:18, height:18 }} /> Confirm Seat — Free</>}
+                </button>
+              ) : (
+                <button onClick={buyPaidTicket} disabled={claiming}
+                  style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:claiming?'wait':'pointer', background:`linear-gradient(135deg, ${C.gold}, #F97316)`, color:'#0A0F1E', fontFamily:'DM Sans,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:claiming?0.7:1, boxShadow:'0 4px 20px rgba(245,158,11,0.3)' }}>
+                  {claiming ? <><Loader2 style={{ width:18, height:18, animation:'spin 1s linear infinite' }} /> Redirecting...</> : <>Get Ticket — {fmt(event.price || 0)}</>}
+                </button>
+              )}
+
+              {!hasTicket && !user && (
+                <p style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', textAlign:'center' }}>
+                  <Link href="/auth/login" style={{ color:C.blueLight }}>Sign in</Link> to register
+                </p>
+              )}
+
+              {/* Share */}
+              <button onClick={() => navigator.clipboard?.writeText(window.location.href)}
+                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px', borderRadius:12, border:`1px solid ${C.border}`, background:'transparent', color:C.textMuted, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:13 }}>
+                <Share2 style={{ width:14, height:14 }} /> Share Event
               </button>
-            )}
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => setLiveOnly(l => !l)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: liveOnly ? C.redDim : C.card, color: liveOnly ? C.red : C.textMuted, border: `1px solid ${liveOnly ? 'rgba(239,68,68,0.3)' : C.border}` }}>
-              <Radio className="w-3 h-3" /> Live Only
-            </button>
-            <button onClick={() => setFreeOnly(f => !f)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: freeOnly ? C.greenDim : C.card, color: freeOnly ? C.green : C.textMuted, border: `1px solid ${freeOnly ? 'rgba(16,185,129,0.3)' : C.border}` }}>
-              <Tag className="w-3 h-3" /> Free Only
-            </button>
-            {CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => setCategory(cat)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{ background: category === cat ? C.blue : C.card, color: category === cat ? '#fff' : C.textMuted, border: `1px solid ${category === cat ? C.blue : C.border}` }}>
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Results count + clear */}
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium" style={{ color: C.textDim }}>
-              {filtered.length} event{filtered.length !== 1 ? 's' : ''} found
-            </p>
-            {(search || category !== 'All' || liveOnly || freeOnly) && (
-              <button onClick={() => { setSearch(''); setCategory('All'); setLiveOnly(false); setFreeOnly(false) }}
-                className="flex items-center gap-1 text-xs font-medium" style={{ color: C.red }}>
-                <X className="w-3 h-3" /> Clear filters
-              </button>
-            )}
-          </div>
-
-          {/* Grid */}
-          {loading ? (
-            <div className="grid md:grid-cols-2 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-80 rounded-2xl animate-pulse" style={{ background: C.card }} />
-              ))}
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-2xl p-12 text-center" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-              <Calendar className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
-              <p className="font-semibold" style={{ color: C.textMuted }}>No events found</p>
-              <p className="text-sm mt-1" style={{ color: C.textDim }}>Try adjusting your filters</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {filtered.map(e => (
-                <EventCard key={e.id} event={e} currentUserId={currentUser?.id || null} />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   )
 }
