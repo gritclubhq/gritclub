@@ -10,6 +10,7 @@ import {
   Radio, Mic, Zap, UserCheck, BookOpen, Settings, Bell,
   ChevronRight, Crown, FileText
 } from 'lucide-react'
+import NotificationBell from '@/components/NotificationBell'
 
 const C = {
   bg: '#0A0F1E', sidebar: '#0D1428', card: '#111827',
@@ -223,6 +224,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <p style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
             <p style={{ fontSize: 11, color: C.textDim, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
           </div>
+          {user && <NotificationBell userId={user.id} />}
         </div>
         <button onClick={() => setShowSignOut(true)}
           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 12, border: 'none', cursor: 'pointer', background: 'transparent', color: C.red, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }}
@@ -281,8 +283,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 18, color: C.text }}>
               Grit<span style={{ color: C.gold }}>Club</span>
             </span>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg, #1D4ED8, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: 'Syne,sans-serif' }}>
-              {photoUrl ? <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {user && <NotificationBell userId={user.id} />}
+              <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg, #1D4ED8, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: 'Syne,sans-serif' }}>
+                {photoUrl ? <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+              </div>
             </div>
           </div>
 
