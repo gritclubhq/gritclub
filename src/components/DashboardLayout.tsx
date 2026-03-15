@@ -224,7 +224,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <p style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
             <p style={{ fontSize: 11, color: C.textDim, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
           </div>
-          {user && <NotificationBell userId={user.id} />}
         </div>
         <button onClick={() => setShowSignOut(true)}
           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 12, border: 'none', cursor: 'pointer', background: 'transparent', color: C.red, fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }}
@@ -270,11 +269,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
 
         <style>{`
-          @media (min-width: 768px) { .md-sidebar { display: flex !important; } .mobile-top { display: none !important; } .mobile-bottom { display: none !important; } }
+          @media (min-width: 768px) { .md-sidebar { display: flex !important; } .mobile-top { display: none !important; } .mobile-bottom { display: none !important; } .md-topbar { display: flex !important; } }
         `}</style>
 
         {/* Main */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        {/* Desktop top header — bell + page title area */}
+          <div className="md-topbar" style={{ display:'none', alignItems:'center', justifyContent:'flex-end', padding:'0 20px', height:52, background:C.sidebar, borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
+            {user && <NotificationBell userId={user.id} />}
+          </div>
+
           {/* Mobile top bar */}
           <div className="mobile-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 56, background: C.sidebar, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
             <button onClick={() => setMobileOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, padding: 4 }}>
