@@ -358,7 +358,7 @@ export default function AdminContentPage() {
               { id:'announce', label:'Announcements',                 color: tab==='announce' ? C.gold : undefined },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id as any)}
-                style={{ padding:'8px 16px', borderRadius:10, border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13, background:tab===t.id?(t.id==='announce'?C.goldDim:C.blue):C.card, color:tab===t.id?(t.id==='announce'?C.gold:'#fff'):C.textMuted, border:`1px solid ${tab===t.id?(t.id==='announce'?'rgba(245,158,11,0.3)':C.blue):C.border}` }}>
+                style={{ padding:'8px 16px', borderRadius:10, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13, background:tab===t.id?(t.id==='announce'?C.goldDim:C.blue):C.card, color:tab===t.id?(t.id==='announce'?C.gold:'#fff'):C.textMuted, border:`1px solid ${tab===t.id?(t.id==='announce'?'rgba(245,158,11,0.3)':C.blue):C.border}` }}>
                 {t.id==='announce' && <Megaphone style={{ width:12, height:12, display:'inline', marginRight:5 }} />}
                 {t.label}
               </button>
