@@ -1,758 +1,434 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import {
   Search, UserPlus, Check, UserCheck, Users, X,
-  MessageCircle, Loader2, ChevronDown, Bell, UserMinus
+  Loader2, ChevronDown, UserMinus, Zap, Crown,
+  MessageCircle, Star, Clock
 } from 'lucide-react'
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#0A0F1E',
-  surface:   '#0D1428',
-  card:      '#111827',
-  cardHover: '#141E35',
-  border:    'rgba(255,255,255,0.06)',
-  borderHover:'rgba(37,99,235,0.3)',
-  text:      '#F0F4FF',
-  textMuted: '#7B8DB0',
-  textDim:   '#3D4F6E',
-  blue:      '#2563EB',
-  blueLight: '#3B82F6',
-  blueDim:   'rgba(37,99,235,0.12)',
-  gold:      '#F59E0B',
-  goldDim:   'rgba(245,158,11,0.1)',
-  red:       '#EF4444',
-  redDim:    'rgba(239,68,68,0.1)',
-  green:     '#10B981',
-  greenDim:  'rgba(16,185,129,0.1)',
-  purple:    '#7C3AED',
-  purpleDim: 'rgba(124,58,237,0.1)',
+  bg:'#0A0F1E', surface:'#0D1428', card:'#111827', cardHover:'#141E35',
+  border:'rgba(255,255,255,0.06)', borderHover:'rgba(37,99,235,0.3)',
+  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
+  blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
+  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
+  red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
+  green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
+  purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-const INDUSTRIES = ['All','FinTech','HealthTech','EdTech','E-commerce','Climate Tech','SaaS','AI & Tech','Web3','Media']
-
-type ConnStatus = 'none' | 'requested_by_me' | 'requested_by_them' | 'connected'
-type FollowStatus = 'not_following' | 'following'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const getName     = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
-const getInitials = (u: any) => getName(u).slice(0, 2).toUpperCase()
 const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
-const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
+const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
+const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
+const getInitials = (u: any) => getName(u).slice(0,2).toUpperCase()
+const timeAgo = (ts: string) => {
+  const d = Date.now()-new Date(ts).getTime(), m=Math.floor(d/60000)
+  if (m<1) return 'just now'; if (m<60) return `${m}m ago`
+  const h=Math.floor(m/60); if (h<24) return `${h}h ago`
+  return `${Math.floor(h/24)}d ago`
+}
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-function Avatar({ user, size = 52 }: { user: any; size?: number }) {
-  const color = avatarColor(user?.id || '')
+function Avatar({ u, size=40 }: { u: any; size?: number }) {
+  const color = avatarColor(u?.id||'')
   return (
-    <div
-      className="rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold"
-      style={{ width: size, height: size, minWidth: size, background: color + '22', color, fontSize: size * 0.33, border: `2px solid ${color}25` }}
-    >
-      {user?.photo_url
-        ? <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
-        : getInitials(user)
-      }
+    <div style={{ width:size, height:size, minWidth:size, borderRadius:'50%', overflow:'hidden', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:color+'22', color, fontSize:size*0.33, fontWeight:700, fontFamily:'Syne,sans-serif', border:`1.5px solid ${color}33` }}>
+      {u?.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : getInitials(u)}
     </div>
   )
 }
 
-// ─── Person Card ──────────────────────────────────────────────────────────────
-function PersonCard({ person, currentUserId, onStatusChange }: {
-  person: any
-  currentUserId: string
-  onStatusChange: () => void
-}) {
-  const [connStatus,   setConnStatus]   = useState<ConnStatus>('none')
-  const [followStatus, setFollowStatus] = useState<FollowStatus>('not_following')
-  const [loading,      setLoading]      = useState(true)
-  const [actionLoading,setActionLoading]= useState<string | null>(null)
-
-  useEffect(() => {
-    const load = async () => {
-      // Check connection status
-      const { data: conn } = await supabase
-        .from('connections')
-        .select('status, user1_id, user2_id')
-        .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${person.id}),and(user1_id.eq.${person.id},user2_id.eq.${currentUserId})`)
-        .maybeSingle()
-
-      if (conn) {
-        if (conn.status === 'accepted') {
-          setConnStatus('connected')
-        } else if (conn.status === 'requested') {
-          setConnStatus(conn.user1_id === currentUserId ? 'requested_by_me' : 'requested_by_them')
-        }
-      }
-
-      // Check follow status
-      const { data: follow } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', currentUserId)
-        .eq('following_id', person.id)
-        .maybeSingle()
-
-      if (follow) setFollowStatus('following')
-      setLoading(false)
-    }
-    load()
-  }, [currentUserId, person.id])
-
-  // Send connection request
-  const handleConnect = async () => {
-    setActionLoading('connect')
-    await supabase.from('connections').insert({
-      user1_id: currentUserId,
-      user2_id: person.id,
-      status:   'requested',
-    })
-    setConnStatus('requested_by_me')
-    setActionLoading(null)
-    onStatusChange()
-  }
-
-  // Accept incoming connection request
-  const handleAccept = async () => {
-    setActionLoading('accept')
-    await supabase
-      .from('connections')
-      .update({ status: 'accepted' })
-      .eq('user1_id', person.id)
-      .eq('user2_id', currentUserId)
-    setConnStatus('connected')
-    setActionLoading(null)
-    onStatusChange()
-  }
-
-  // Remove/withdraw connection
-  const handleRemoveConnection = async () => {
-    setActionLoading('remove')
-    await supabase
-      .from('connections')
-      .delete()
-      .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${person.id}),and(user1_id.eq.${person.id},user2_id.eq.${currentUserId})`)
-    setConnStatus('none')
-    setActionLoading(null)
-    onStatusChange()
-  }
-
-  // Toggle follow
-  const handleFollow = async () => {
-    setActionLoading('follow')
-    if (followStatus === 'following') {
-      await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', currentUserId)
-        .eq('following_id', person.id)
-      setFollowStatus('not_following')
-    } else {
-      await supabase.from('follows').insert({
-        follower_id:  currentUserId,
-        following_id: person.id,
-      })
-      setFollowStatus('following')
-    }
-    setActionLoading(null)
-  }
-
-  const renderConnectButton = () => {
-    if (loading) return <div className="w-20 h-7 rounded-lg animate-pulse" style={{ background: C.border }} />
-
-    if (connStatus === 'connected') {
-      return (
-        <div className="flex items-center gap-1.5">
-          <span
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
-            style={{ background: C.greenDim, color: C.green, border: `1px solid ${C.green}25` }}
-          >
-            <Check className="w-3 h-3" /> Connected
-          </span>
-          <button
-            onClick={handleRemoveConnection}
-            disabled={actionLoading === 'remove'}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-            style={{ background: C.redDim, color: C.red }}
-            title="Remove connection"
-          >
-            {actionLoading === 'remove' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserMinus className="w-3 h-3" />}
-          </button>
-        </div>
-      )
-    }
-
-    if (connStatus === 'requested_by_me') {
-      return (
-        <button
-          onClick={handleRemoveConnection}
-          disabled={!!actionLoading}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-          style={{ background: C.border, color: C.textMuted }}
-        >
-          {actionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-          Pending
-        </button>
-      )
-    }
-
-    if (connStatus === 'requested_by_them') {
-      return (
-        <button
-          onClick={handleAccept}
-          disabled={actionLoading === 'accept'}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-          style={{ background: C.green, color: '#fff' }}
-        >
-          {actionLoading === 'accept' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-          Accept
-        </button>
-      )
-    }
-
-    // none
-    return (
-      <button
-        onClick={handleConnect}
-        disabled={actionLoading === 'connect'}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-        style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
-      >
-        {actionLoading === 'connect' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
-        Connect
-      </button>
-    )
-  }
-
+// ─── Connection Suggestion Card ───────────────────────────────────────────────
+function SuggestionCard({ user, onConnect, onDismiss, actionState }: any) {
   return (
-    <div
-      className="rounded-2xl p-5 flex flex-col gap-4 transition-all"
-      style={{ background: C.card, border: `1px solid ${C.border}` }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderHover }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border }}
-    >
-      {/* Top: avatar + info */}
-      <div className="flex items-start gap-3">
-        <Avatar user={person} size={48} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold truncate" style={{ color: C.text }}>{getName(person)}</p>
-          {person.username && (
-            <p className="text-xs" style={{ color: C.blueLight }}>@{person.username}</p>
-          )}
-          <p className="text-xs mt-0.5 truncate" style={{ color: C.textMuted }}>
-            {person.role === 'host' ? '⚡ Host' : person.role === 'admin' ? '🛡 Admin' : '🧠 Founder'}
-          </p>
+    <div style={{ borderRadius:16, padding:16, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{ display:'flex', gap:12 }}>
+        <Avatar u={user} size={48} />
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{getName(user)}</p>
+            {user.role === 'host' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:5, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:700, flexShrink:0 }}>HOST</span>}
+          </div>
+          {user.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{user.username}</p>}
+          {user.bio && <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:2 }}>{user.bio}</p>}
         </div>
+        <button onClick={() => onDismiss(user.id)} style={{ width:24, height:24, borderRadius:6, border:'none', cursor:'pointer', background:'transparent', color:C.textDim, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <X style={{ width:13, height:13 }} />
+        </button>
       </div>
 
-      {/* Bio */}
-      {person.bio && (
-        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: C.textMuted }}>
-          {person.bio}
-        </p>
+      {/* Reason */}
+      {user.suggestion_reason && (
+        <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:8, background:C.blueDim, border:'1px solid rgba(37,99,235,0.15)' }}>
+          <Zap style={{ width:12, height:12, color:C.blueLight, flexShrink:0 }} />
+          <p style={{ fontSize:11, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>{user.suggestion_reason}</p>
+        </div>
       )}
 
-      {/* Mutual + industry */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {person.mutual > 0 && (
-          <span
-            className="text-xs px-2 py-0.5 rounded-md font-medium"
-            style={{ background: C.blueDim, color: C.blueLight }}
-          >
-            {person.mutual} mutual
-          </span>
-        )}
-        {person.industry && (
-          <span
-            className="text-xs px-2 py-0.5 rounded-md font-medium"
-            style={{ background: C.border, color: C.textMuted }}
-          >
-            {person.industry}
-          </span>
-        )}
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex items-center gap-2 pt-1" style={{ borderTop: `1px solid ${C.border}` }}>
-        {renderConnectButton()}
-
-        {/* Follow */}
-        <button
-          onClick={handleFollow}
-          disabled={actionLoading === 'follow'}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-          style={{
-            background: followStatus === 'following' ? C.purpleDim : C.border,
-            color:      followStatus === 'following' ? '#A78BFA'   : C.textMuted,
-            border:     `1px solid ${followStatus === 'following' ? 'rgba(124,58,237,0.2)' : 'transparent'}`,
-          }}
-        >
-          {actionLoading === 'follow' ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : followStatus === 'following' ? (
-            <><Bell className="w-3 h-3" /> Following</>
-          ) : (
-            <>+ Follow</>
-          )}
-        </button>
-
-        {/* Message (future) */}
-        <button
-          className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-          style={{ background: C.border, color: C.textDim }}
-          title="Message (coming soon)"
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.blueDim; (e.currentTarget as HTMLElement).style.color = C.blueLight }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C.border; (e.currentTarget as HTMLElement).style.color = C.textDim }}
-        >
-          <MessageCircle className="w-3.5 h-3.5" />
+      {/* Actions */}
+      <div style={{ display:'flex', gap:8 }}>
+        <button onClick={() => onConnect(user.id)} disabled={actionState === 'loading' || actionState === 'sent'}
+          style={{ flex:1, padding:'9px', borderRadius:10, border:`1px solid ${actionState==='sent' ? C.green : C.blue}`, cursor:actionState==='sent'?'default':'pointer', background:actionState==='sent'?C.greenDim:C.blueDim, color:actionState==='sent'?C.green:C.blueLight, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:6, opacity:actionState==='loading'?0.6:1 }}>
+          {actionState==='loading' ? <Loader2 style={{ width:13, height:13, animation:'spin 1s linear infinite' }} /> : actionState==='sent' ? <><Check style={{ width:13, height:13 }} /> Sent!</> : <><UserPlus style={{ width:13, height:13 }} /> Connect</>}
         </button>
       </div>
     </div>
   )
 }
 
-// ─── Pending request card ──────────────────────────────────────────────────────
-function PendingCard({ request, currentUserId, onAction }: {
-  request: any
-  currentUserId: string
-  onAction: () => void
-}) {
+// ─── People Card (Discover tab) ───────────────────────────────────────────────
+function PeopleCard({ user, currentUserId, onAction }: any) {
+  const [status, setStatus] = useState(user.connection_status || 'none')
   const [loading, setLoading] = useState(false)
-  const isSender = request.user1_id === currentUserId
-  const otherUser = isSender ? request.user2 : request.user1
 
-  const handleAccept = async () => {
+  const handleConnect = async () => {
+    if (loading) return
     setLoading(true)
-    await supabase.from('connections').update({ status: 'accepted' }).eq('id', request.id)
+    if (status === 'none') {
+      const { error } = await supabase.from('connections').insert({ user1_id: currentUserId, user2_id: user.id, status: 'requested' })
+      if (!error) setStatus('requested')
+    } else if (status === 'requested') {
+      await supabase.from('connections').delete().match({ user1_id: currentUserId, user2_id: user.id })
+      setStatus('none')
+    }
     setLoading(false)
-    onAction()
+    onAction?.()
   }
 
-  const handleIgnore = async () => {
+  const handleFollow = async () => {
+    if (loading) return
     setLoading(true)
-    await supabase.from('connections').delete().eq('id', request.id)
+    if (!user.is_following) {
+      await supabase.from('follows').insert({ follower_id: currentUserId, following_id: user.id })
+    } else {
+      await supabase.from('follows').delete().match({ follower_id: currentUserId, following_id: user.id })
+    }
     setLoading(false)
-    onAction()
+    onAction?.()
   }
 
   return (
-    <div
-      className="flex items-center gap-3 p-3 rounded-xl transition-all"
-      style={{ background: C.card, border: `1px solid ${C.border}` }}
-    >
-      <Avatar user={otherUser} size={40} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{getName(otherUser)}</p>
-        <p className="text-xs" style={{ color: C.textMuted }}>
-          {isSender ? 'Awaiting their response' : 'Wants to connect with you'}
-        </p>
-      </div>
-      {!isSender && (
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            onClick={handleAccept}
-            disabled={loading}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-            style={{ background: C.blue, color: '#fff' }}
-          >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Accept'}
-          </button>
-          <button
-            onClick={handleIgnore}
-            disabled={loading}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-            style={{ background: C.border, color: C.textMuted }}
-          >
-            Ignore
-          </button>
+    <div style={{ borderRadius:16, padding:16, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:12, transition:'all 0.2s' }}
+      onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor=C.borderHover}}
+      onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=C.border}}>
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+        <Avatar u={user} size={44} />
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif' }}>{getName(user)}</p>
+            {user.role==='host' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:5, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>HOST</span>}
+            {user.role==='admin' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:5, background:C.redDim, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>ADMIN</span>}
+          </div>
+          {user.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{user.username}</p>}
+          {user.bio && <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginTop:3, lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{user.bio}</p>}
+          {user.mutual_events > 0 && (
+            <p style={{ fontSize:11, color:C.gold, fontFamily:'DM Sans,sans-serif', marginTop:4, display:'flex', alignItems:'center', gap:4 }}>
+              <Star style={{ width:10, height:10 }} /> {user.mutual_events} shared event{user.mutual_events>1?'s':''}
+            </p>
+          )}
         </div>
-      )}
-      {isSender && (
-        <button
-          onClick={handleIgnore}
-          disabled={loading}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex-shrink-0"
-          style={{ background: C.border, color: C.textMuted }}
-        >
-          Withdraw
+      </div>
+      <div style={{ display:'flex', gap:8 }}>
+        <button onClick={handleConnect} disabled={loading || status==='accepted'}
+          style={{ flex:2, padding:'8px', borderRadius:10, border:`1px solid ${status==='accepted'?C.green:status==='requested'?C.border:C.blue}`, cursor:status==='accepted'?'default':'pointer', background:status==='accepted'?C.greenDim:status==='requested'?C.surface:C.blueDim, color:status==='accepted'?C.green:status==='requested'?C.textMuted:C.blueLight, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+          {loading?<Loader2 style={{ width:13, height:13, animation:'spin 1s linear infinite' }}/>:status==='accepted'?<><Check style={{ width:13, height:13 }}/>Connected</>:status==='requested'?'Pending':'Connect'}
         </button>
-      )}
+        <button onClick={handleFollow}
+          style={{ flex:1, padding:'8px', borderRadius:10, border:`1px solid ${user.is_following?C.purple:C.border}`, cursor:'pointer', background:user.is_following?C.purpleDim:'transparent', color:user.is_following?C.purple:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:13 }}>
+          {user.is_following?'Following':'Follow'}
+        </button>
+      </div>
     </div>
   )
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NetworkPage() {
-  const [currentUser,  setCurrentUser]  = useState<any>(null)
-  const [activeTab,    setActiveTab]    = useState<'discover'|'connections'|'following'|'pending'>('discover')
-  const [search,       setSearch]       = useState('')
-  const [industry,     setIndustry]     = useState('All')
-  const [people,       setPeople]       = useState<any[]>([])
-  const [connections,  setConnections]  = useState<any[]>([])
-  const [following,    setFollowing]    = useState<any[]>([])
-  const [pending,      setPending]      = useState<any[]>([])
-  const [loading,      setLoading]      = useState(true)
-  const [loadingMore,  setLoadingMore]  = useState(false)
-  const [hasMore,      setHasMore]      = useState(true)
-  const [connCount,    setConnCount]    = useState(0)
-  const [pendingCount, setPendingCount] = useState(0)
-  const PAGE_SIZE = 12
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [tab,         setTab]         = useState<'suggestions'|'discover'|'connections'|'pending'>('suggestions')
+  const [search,      setSearch]      = useState('')
+  const [people,      setPeople]      = useState<any[]>([])
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [connections, setConnections] = useState<any[]>([])
+  const [pending,     setPending]     = useState<any[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [dismissed,   setDismissed]   = useState<Set<string>>(new Set())
+  const [actionStates, setActionStates] = useState<Record<string, string>>({})
+  const debounce = useRef<NodeJS.Timeout>()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      if (u) { setCurrentUser(u); loadAll(u.id) }
+    supabase.auth.getUser().then(async ({ data: { user: u } }) => {
+      if (!u) return
+      setCurrentUser(u)
+      await Promise.all([
+        loadSuggestions(u.id),
+        loadConnections(u.id),
+        loadPending(u.id),
+        loadDiscover(u.id, ''),
+      ])
+      setLoading(false)
     })
   }, [])
 
-  const loadAll = async (uid: string) => {
-    setLoading(true)
-    await Promise.all([
-      loadDiscover(uid, 0),
-      loadConnections(uid),
-      loadFollowing(uid),
-      loadPending(uid),
-    ])
-    setLoading(false)
-  }
+  // ── Suggestions: shared events + 2nd degree + everyone else ──
+  const loadSuggestions = async (uid: string) => {
+    // Try RPC first (requires feed_algorithm.sql to have been run)
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('get_connection_suggestions', { p_user_id: uid, p_limit: 20 })
+    if (!rpcErr && rpcData && rpcData.length > 0) {
+      setSuggestions(rpcData)
+      return
+    }
 
-  const loadDiscover = async (uid: string, offset: number) => {
-    const { data } = await supabase
+    // Fallback: simple query — all users not yet connected
+    const { data: connected } = await supabase
+      .from('connections')
+      .select('user1_id, user2_id')
+      .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
+    const connectedIds = new Set((connected||[]).flatMap((c:any) => [c.user1_id, c.user2_id]).filter((id:string) => id !== uid))
+    connectedIds.add(uid)
+
+    const { data: users } = await supabase
       .from('users')
-      .select('id, email, full_name, photo_url, role, username, bio')
-      .neq('id', uid)
-      .neq('is_suspended', true)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
+      .select('id, full_name, email, photo_url, username, role, bio')
+      .not('id', 'in', `(${[...connectedIds].join(',')})`)
+      .limit(20)
 
-    const enriched = (data || []).map(u => ({ ...u, mutual: Math.floor(Math.random() * 6), industry: 'SaaS' }))
-    if (offset === 0) setPeople(enriched)
-    else setPeople(prev => [...prev, ...enriched])
-    setHasMore((data || []).length === PAGE_SIZE)
+    const enriched = (users||[]).map((u:any) => ({ ...u, suggestion_reason: 'New member on GritClub' }))
+    setSuggestions(enriched)
   }
 
   const loadConnections = async (uid: string) => {
     const { data } = await supabase
       .from('connections')
-      .select(`
-        id, status, user1_id, user2_id,
-        user1:users!connections_user1_id_fkey(id, email, full_name, photo_url, username, role),
-        user2:users!connections_user2_id_fkey(id, email, full_name, photo_url, username, role)
-      `)
-      .eq('status', 'accepted')
+      .select('id, user1_id, user2_id, status, created_at, users!connections_user1_id_fkey(id, full_name, email, photo_url, username, role, bio), users!connections_user2_id_fkey(id, full_name, email, photo_url, username, role, bio)')
       .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
-
-    setConnections(data || [])
-    setConnCount((data || []).length)
-  }
-
-  const loadFollowing = async (uid: string) => {
-    const { data } = await supabase
-      .from('follows')
-      .select('id, following_id, users!follows_following_id_fkey(id, email, full_name, photo_url, username, role)')
-      .eq('follower_id', uid)
-
-    setFollowing(data || [])
+      .eq('status', 'accepted')
+    const enriched = (data||[]).map((c:any) => {
+      const other = c.user1_id === uid ? c.users_connections_user2_id_fkey || c.users : c.users_connections_user1_id_fkey || c.users
+      // Handle both possible join key names from Supabase
+      const u1 = Array.isArray(c.users) ? c.users[0] : c.users
+      const friend = c.user1_id === uid ? (c['users!connections_user2_id_fkey'] || u1) : (c['users!connections_user1_id_fkey'] || u1)
+      return { ...c, friend: friend || {} }
+    })
+    setConnections(enriched)
   }
 
   const loadPending = async (uid: string) => {
     const { data } = await supabase
       .from('connections')
-      .select(`
-        id, status, user1_id, user2_id,
-        user1:users!connections_user1_id_fkey(id, email, full_name, photo_url, username),
-        user2:users!connections_user2_id_fkey(id, email, full_name, photo_url, username)
-      `)
+      .select('id, user1_id, status, users!connections_user1_id_fkey(id, full_name, email, photo_url, username, bio, role)')
+      .eq('user2_id', uid)
       .eq('status', 'requested')
+    setPending(data||[])
+  }
+
+  const loadDiscover = async (uid: string, q: string) => {
+    const { data: connected } = await supabase
+      .from('connections')
+      .select('user1_id, user2_id')
       .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
+    const connectedIds = new Set((connected||[]).flatMap((c:any) => [c.user1_id, c.user2_id]))
+    connectedIds.add(uid)
 
-    setPending(data || [])
-    setPendingCount((data || []).filter(r => r.user2_id === uid).length)
+    let query = supabase.from('users').select('id, full_name, email, photo_url, username, role, bio').neq('id', uid).limit(50)
+    if (q.trim()) {
+      query = query.or(`full_name.ilike.%${q}%,username.ilike.%${q}%,email.ilike.%${q}%`)
+    }
+    const { data: users } = await query
+
+    // Check follows
+    const { data: follows } = await supabase.from('follows').select('following_id').eq('follower_id', uid)
+    const followingIds = new Set((follows||[]).map((f:any) => f.following_id))
+
+    const enriched = (users||[]).map((u:any) => ({
+      ...u,
+      connection_status: connectedIds.has(u.id) ? 'accepted' : 'none',
+      is_following: followingIds.has(u.id),
+    }))
+    setPeople(enriched)
   }
 
-  const handleLoadMore = async () => {
-    if (!currentUser || loadingMore || !hasMore) return
-    setLoadingMore(true)
-    await loadDiscover(currentUser.id, people.length)
-    setLoadingMore(false)
+  const handleSearch = (val: string) => {
+    setSearch(val)
+    clearTimeout(debounce.current)
+    debounce.current = setTimeout(() => { if (currentUser) loadDiscover(currentUser.id, val) }, 400)
   }
 
-  const filtered = people.filter(p => {
-    const q = search.toLowerCase()
-    const matchSearch = !q ||
-      getName(p).toLowerCase().includes(q) ||
-      (p.username || '').toLowerCase().includes(q) ||
-      (p.bio || '').toLowerCase().includes(q)
-    const matchIndustry = industry === 'All' || p.industry === industry
-    return matchSearch && matchIndustry
-  })
+  const handleConnect = async (targetId: string) => {
+    if (!currentUser) return
+    setActionStates(p => ({ ...p, [targetId]: 'loading' }))
+    await supabase.from('connections').insert({ user1_id: currentUser.id, user2_id: targetId, status: 'requested' })
+    setActionStates(p => ({ ...p, [targetId]: 'sent' }))
+  }
 
-  const tabs = [
-    { id: 'discover',     label: 'Discover',     count: null },
-    { id: 'connections',  label: 'Connections',   count: connCount || null },
-    { id: 'following',    label: 'Following',     count: following.length || null },
-    { id: 'pending',      label: 'Pending',       count: pendingCount || null },
-  ] as const
+  const handleDismiss = (id: string) => setDismissed(p => new Set([...p, id]))
+
+  const handleAccept = async (connectionId: string, senderId: string) => {
+    await supabase.from('connections').update({ status: 'accepted' }).eq('id', connectionId)
+    setPending(p => p.filter(c => c.id !== connectionId))
+    if (currentUser) { loadConnections(currentUser.id); loadSuggestions(currentUser.id) }
+  }
+
+  const handleDecline = async (connectionId: string) => {
+    await supabase.from('connections').delete().eq('id', connectionId)
+    setPending(p => p.filter(c => c.id !== connectionId))
+  }
+
+  const visibleSuggestions = suggestions.filter(s => !dismissed.has(s.id))
+
+  const TABS = [
+    { id: 'suggestions', label: 'Suggestions', count: visibleSuggestions.length },
+    { id: 'discover',    label: 'Find People', count: null },
+    { id: 'connections', label: 'Connections', count: connections.length },
+    { id: 'pending',     label: 'Requests',    count: pending.length },
+  ]
 
   return (
     <DashboardLayout>
-      <div className="min-h-full" style={{ background: C.bg }}>
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-5">
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <div style={{ background:C.bg, minHeight:'100%' }}>
+        <div style={{ maxWidth:900, margin:'0 auto', padding:'24px 16px', display:'flex', flexDirection:'column', gap:20 }}>
 
           {/* Header */}
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.blueLight }}>Network</p>
-            <h1 className="text-2xl font-bold" style={{ color: C.text, fontFamily: 'Syne, sans-serif' }}>
-              Your Network
-            </h1>
-            <p className="text-sm mt-1" style={{ color: C.textMuted }}>
-              Connect with founders who share your mindset
-            </p>
+            <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueLight, fontFamily:'DM Sans,sans-serif', marginBottom:4 }}>Network</p>
+            <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em', marginBottom:4 }}>Your Network</h1>
+            <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Connect and follow anyone on GritClub — not just founders</p>
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-                style={{
-                  background: activeTab === tab.id ? C.blue   : 'transparent',
-                  color:      activeTab === tab.id ? '#fff'   : C.textMuted,
-                }}
-              >
-                {tab.label}
-                {tab.count !== null && tab.count > 0 && (
-                  <span
-                    className="px-1.5 py-0.5 rounded-full text-xs font-bold"
-                    style={{
-                      background: activeTab === tab.id ? 'rgba(255,255,255,0.2)' : tab.id === 'pending' ? C.red : C.blueDim,
-                      color:      activeTab === tab.id ? '#fff' : tab.id === 'pending' ? C.red : C.blueLight,
-                    }}
-                  >
-                    {tab.count}
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id as any)}
+                style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:12, border:`1px solid ${tab===t.id?C.blue:C.border}`, cursor:'pointer', background:tab===t.id?C.blue:'transparent', color:tab===t.id?'#fff':C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:600 }}>
+                {t.label}
+                {t.count !== null && t.count > 0 && (
+                  <span style={{ padding:'1px 7px', borderRadius:10, background:tab===t.id?'rgba(255,255,255,0.2)':C.border, fontSize:11, fontWeight:700, color:tab===t.id?'#fff':t.id==='pending'?C.gold:C.textDim }}>
+                    {t.count}
                   </span>
                 )}
               </button>
             ))}
           </div>
 
-          {/* Discover tab — search + filters + grid */}
-          {activeTab === 'discover' && (
+          {loading ? (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
+              {[...Array(6)].map((_,i) => <div key={i} style={{ height:160, borderRadius:16, background:C.card }} />)}
+            </div>
+          ) : (
             <>
-              {/* Search */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.textDim }} />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Search by name, username, or bio..."
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none transition-all"
-                    style={{ background: C.card, border: `1px solid ${C.border}`, color: C.text }}
-                    onFocus={e => (e.target.style.borderColor = C.borderHover)}
-                    onBlur={e => (e.target.style.borderColor = C.border)}
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      style={{ color: C.textDim }}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+              {/* ── SUGGESTIONS TAB ── */}
+              {tab === 'suggestions' && (
+                <div>
+                  {visibleSuggestions.length === 0 ? (
+                    <div style={{ borderRadius:20, padding:48, textAlign:'center', background:C.card, border:`1px solid ${C.border}` }}>
+                      <Users style={{ width:40, height:40, color:C.textDim, margin:'0 auto 12px' }} />
+                      <p style={{ fontWeight:600, color:C.textMuted, marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>No suggestions right now</p>
+                      <p style={{ fontSize:13, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>Try the Find People tab to search for anyone</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:14 }}>
+                        People you may know — based on shared events and connections
+                      </p>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:14 }}>
+                        {visibleSuggestions.map(u => (
+                          <SuggestionCard
+                            key={u.id}
+                            user={u}
+                            onConnect={handleConnect}
+                            onDismiss={handleDismiss}
+                            actionState={actionStates[u.id] || 'idle'}
+                          />
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
-              </div>
+              )}
 
-              {/* Industry filters */}
-              <div className="flex flex-wrap gap-2">
-                {INDUSTRIES.map(ind => (
-                  <button
-                    key={ind}
-                    onClick={() => setIndustry(ind)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: industry === ind ? C.blue    : C.card,
-                      color:      industry === ind ? '#fff'    : C.textMuted,
-                      border:     `1px solid ${industry === ind ? C.blue : C.border}`,
-                    }}
-                  >
-                    {ind}
-                  </button>
-                ))}
-              </div>
-
-              {/* Results count */}
-              <p className="text-xs font-medium" style={{ color: C.textDim }}>
-                {filtered.length} founder{filtered.length !== 1 ? 's' : ''} found
-              </p>
-
-              {/* Grid */}
-              {loading ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-52 rounded-2xl animate-pulse" style={{ background: C.card }} />
-                  ))}
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="rounded-2xl p-12 text-center" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                  <Users className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
-                  <p className="font-semibold" style={{ color: C.textMuted }}>No founders found</p>
-                  <p className="text-sm mt-1" style={{ color: C.textDim }}>Try adjusting your search</p>
-                </div>
-              ) : (
-                <>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {filtered.map(p => (
-                      <PersonCard
-                        key={p.id}
-                        person={p}
-                        currentUserId={currentUser?.id || ''}
-                        onStatusChange={() => loadPending(currentUser?.id || '')}
-                      />
-                    ))}
+              {/* ── FIND PEOPLE TAB ── */}
+              {tab === 'discover' && (
+                <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                  <div style={{ position:'relative' }}>
+                    <Search style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', width:16, height:16, color:C.textDim }} />
+                    <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search by name, @handle, or email..."
+                      style={{ width:'100%', padding:'12px 14px 12px 42px', borderRadius:14, background:C.card, border:`1px solid ${C.border}`, color:C.text, fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' }}
+                      onFocus={e=>(e.target.style.borderColor='rgba(37,99,235,0.5)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
+                    {search && <button onClick={()=>{setSearch('');if(currentUser)loadDiscover(currentUser.id,'')}} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:C.textDim }}><X style={{ width:14, height:14 }} /></button>}
                   </div>
-
-                  {hasMore && (
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all"
-                      style={{ background: C.card, color: C.textMuted, border: `1px solid ${C.border}` }}
-                    >
-                      {loadingMore
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</>
-                        : <><ChevronDown className="w-4 h-4" /> Load more</>
-                      }
-                    </button>
+                  {people.length === 0 ? (
+                    <div style={{ textAlign:'center', padding:40, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>No users found</div>
+                  ) : (
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
+                      {people.map(u => (
+                        <PeopleCard key={u.id} user={u} currentUserId={currentUser?.id} onAction={() => { if(currentUser) loadDiscover(currentUser.id, search) }} />
+                      ))}
+                    </div>
                   )}
-                </>
+                </div>
+              )}
+
+              {/* ── CONNECTIONS TAB ── */}
+              {tab === 'connections' && (
+                <div>
+                  {connections.length === 0 ? (
+                    <div style={{ borderRadius:20, padding:48, textAlign:'center', background:C.card, border:`1px solid ${C.border}` }}>
+                      <UserCheck style={{ width:40, height:40, color:C.textDim, margin:'0 auto 12px' }} />
+                      <p style={{ fontWeight:600, color:C.textMuted, marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>No connections yet</p>
+                      <button onClick={() => setTab('suggestions')} style={{ marginTop:8, padding:'8px 18px', borderRadius:10, border:'none', cursor:'pointer', background:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13 }}>See Suggestions →</button>
+                    </div>
+                  ) : (
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
+                      {connections.map(c => {
+                        const friend = c.friend || {}
+                        return (
+                          <div key={c.id} style={{ borderRadius:16, padding:16, background:C.card, border:`1px solid ${C.greenDim}`, display:'flex', gap:12, alignItems:'center' }}>
+                            <Avatar u={friend} size={44} />
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{getName(friend)}</p>
+                              {friend.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{friend.username}</p>}
+                              <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>Connected · {timeAgo(c.created_at)}</p>
+                            </div>
+                            <span style={{ fontSize:11, padding:'3px 8px', borderRadius:6, background:C.greenDim, color:C.green, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>✓</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── PENDING TAB ── */}
+              {tab === 'pending' && (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {pending.length === 0 ? (
+                    <div style={{ borderRadius:20, padding:48, textAlign:'center', background:C.card, border:`1px solid ${C.border}` }}>
+                      <Clock style={{ width:40, height:40, color:C.textDim, margin:'0 auto 12px' }} />
+                      <p style={{ fontWeight:600, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>No pending requests</p>
+                    </div>
+                  ) : pending.map(c => {
+                    const sender = c['users!connections_user1_id_fkey'] || c.users || {}
+                    return (
+                      <div key={c.id} style={{ display:'flex', alignItems:'center', gap:12, padding:16, borderRadius:16, background:C.card, border:`1px solid rgba(245,158,11,0.2)` }}>
+                        <Avatar u={sender} size={44} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif' }}>{getName(sender)}</p>
+                          {sender.username && <p style={{ fontSize:12, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{sender.username}</p>}
+                          <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Wants to connect with you</p>
+                        </div>
+                        <div style={{ display:'flex', gap:8 }}>
+                          <button onClick={() => handleAccept(c.id, c.user1_id)} style={{ padding:'8px 14px', borderRadius:10, border:'none', cursor:'pointer', background:C.green, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:13 }}>Accept</button>
+                          <button onClick={() => handleDecline(c.id)} style={{ padding:'8px 14px', borderRadius:10, border:`1px solid ${C.border}`, cursor:'pointer', background:'transparent', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:13 }}>Ignore</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </>
-          )}
-
-          {/* Connections tab */}
-          {activeTab === 'connections' && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium" style={{ color: C.textMuted }}>
-                {connections.length} mutual connection{connections.length !== 1 ? 's' : ''}
-              </p>
-              {loading ? (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: C.card }} />
-                  ))}
-                </div>
-              ) : connections.length === 0 ? (
-                <div className="rounded-2xl p-12 text-center" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                  <UserCheck className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
-                  <p className="font-semibold" style={{ color: C.textMuted }}>No connections yet</p>
-                  <p className="text-sm mt-1" style={{ color: C.textDim }}>Discover founders and send connection requests</p>
-                  <button
-                    onClick={() => setActiveTab('discover')}
-                    className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold"
-                    style={{ background: C.blue, color: '#fff' }}
-                  >
-                    Discover Founders
-                  </button>
-                </div>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {connections.map(conn => {
-                    const other = conn.user1_id === currentUser?.id ? conn.user2 : conn.user1
-                    return (
-                      <div key={conn.id} className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                        <Avatar user={other} size={44} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{getName(other)}</p>
-                          {other?.username && <p className="text-xs" style={{ color: C.blueLight }}>@{other.username}</p>}
-                          <p className="text-xs mt-0.5" style={{ color: C.textDim }}>
-                            {other?.role === 'host' ? '⚡ Host' : '🧠 Founder'}
-                          </p>
-                        </div>
-                        <span className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg flex-shrink-0" style={{ background: C.greenDim, color: C.green }}>
-                          <Check className="w-3 h-3" /> Connected
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Following tab */}
-          {activeTab === 'following' && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium" style={{ color: C.textMuted }}>
-                Following {following.length} founder{following.length !== 1 ? 's' : ''}
-              </p>
-              {following.length === 0 ? (
-                <div className="rounded-2xl p-12 text-center" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                  <Bell className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
-                  <p className="font-semibold" style={{ color: C.textMuted }}>Not following anyone yet</p>
-                  <p className="text-sm mt-1" style={{ color: C.textDim }}>Follow founders to see their posts in your feed</p>
-                </div>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {following.map(f => {
-                    const u = (f as any).users
-                    return (
-                      <div key={f.id} className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                        <Avatar user={u} size={44} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{getName(u)}</p>
-                          {u?.username && <p className="text-xs" style={{ color: C.blueLight }}>@{u.username}</p>}
-                        </div>
-                        <button
-                          onClick={async () => {
-                            await supabase.from('follows').delete().eq('follower_id', currentUser?.id).eq('following_id', f.following_id)
-                            setFollowing(prev => prev.filter(x => x.id !== f.id))
-                          }}
-                          className="text-xs px-3 py-1.5 rounded-lg font-semibold flex-shrink-0"
-                          style={{ background: C.purpleDim, color: '#A78BFA' }}
-                        >
-                          Unfollow
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Pending tab */}
-          {activeTab === 'pending' && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium" style={{ color: C.textMuted }}>
-                {pending.length} pending request{pending.length !== 1 ? 's' : ''}
-              </p>
-              {pending.length === 0 ? (
-                <div className="rounded-2xl p-12 text-center" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-                  <UserPlus className="w-10 h-10 mx-auto mb-3" style={{ color: C.textDim }} />
-                  <p className="font-semibold" style={{ color: C.textMuted }}>No pending requests</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {pending.map(req => (
-                    <PendingCard
-                      key={req.id}
-                      request={req}
-                      currentUserId={currentUser?.id || ''}
-                      onAction={() => {
-                        loadConnections(currentUser?.id || '')
-                        loadPending(currentUser?.id || '')
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           )}
         </div>
       </div>
