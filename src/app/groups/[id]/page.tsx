@@ -93,7 +93,6 @@ function ChatTab({ groupId, currentUser }: { groupId: string; currentUser: any }
       .from('group_messages')
       .select('*, users(id, email, full_name, photo_url)')
       .eq('group_id', groupId)
-      .eq('msg_type', 'text')
       .order('created_at', { ascending: true })
       .limit(100)
     if (data) setMessages(data)
@@ -103,10 +102,11 @@ function ChatTab({ groupId, currentUser }: { groupId: string; currentUser: any }
     if (!text.trim() || sending || !currentUser) return
     setSending(true)
     await supabase.from('group_messages').insert({
-      group_id: groupId,
-      user_id:  currentUser.id,
-      content:  text.trim().slice(0, 2000),
-      msg_type: 'text',
+      group_id:   groupId,
+      user_id:    currentUser.id,
+      text:       text.trim().slice(0, 2000),
+      user_name:  currentUser.full_name || currentUser.email?.split('@')[0] || 'User',
+      user_avatar: currentUser.photo_url || '',
     })
     setText('')
     setSending(false)
@@ -146,7 +146,7 @@ function ChatTab({ groupId, currentUser }: { groupId: string; currentUser: any }
                     borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   }}
                 >
-                  {msg.content}
+                  {msg.text || msg.content}
                 </div>
                 <span className="text-xs px-1" style={{ color: C.textDim }}>{formatTime(msg.created_at)}</span>
               </div>
