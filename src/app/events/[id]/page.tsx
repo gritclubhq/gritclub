@@ -174,10 +174,8 @@ export default function EventDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventId,
-          userId:    user.id,
-          userEmail: user.email,
-          amount:    event.price,
-          eventName: event.title,
+          userId: user.id,
+          tier:   'general',
         }),
       })
       if (!res.ok) {
