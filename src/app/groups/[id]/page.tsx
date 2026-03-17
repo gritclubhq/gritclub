@@ -448,252 +448,332 @@ function VoiceTab({ groupId, currentUser }: { groupId: string; currentUser: any 
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TAB 4 — VIDEO MEET (WebRTC, host permission controls)
+// TAB 4 — VIDEO MEET (WebRTC mesh — real peer-to-peer video)
 // ═══════════════════════════════════════════════════════════════════════════
-function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUser: any; isHost: boolean }) {
-  const [inMeet,      setInMeet]      = useState(false)
-  const [micOn,       setMicOn]       = useState(true)
-  const [camOn,       setCamOn]       = useState(true)
-  const [screenOn,    setScreenOn]    = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [permission,  setPermission]  = useState<MeetPermission>('allow_all')
-  const [participants,setParticipants]= useState<any[]>([])
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [showSettings,setShowSettings]= useState(false)
-  const [handRaised,  setHandRaised]  = useState(false)
+const MEET_ICE: RTCIceServer[] = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+]
 
-  const localVideoRef  = useRef<HTMLVideoElement>(null)
-  const screenVideoRef = useRef<HTMLVideoElement>(null)
-  const streamRef      = useRef<MediaStream | null>(null)
-  const screenStreamRef= useRef<MediaStream | null>(null)
-  const channelRef     = useRef<any>(null)
-
+function PeerVideoTile({ peer }: { peer: { id: string; name: string; stream: MediaStream | null } }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
   useEffect(() => {
-    const ch = supabase.channel(`meet-presence-${groupId}`)
-      .on('presence', { event: 'sync' }, () => {
-        const state = ch.presenceState()
-        setParticipants(Object.values(state).flat() as any[])
+    if (videoRef.current && peer.stream) {
+      videoRef.current.srcObject = peer.stream
+      videoRef.current.play().catch(() => {})
+    }
+  }, [peer.stream])
+  const color = AVATAR_COLORS[(peer.id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
+  return (
+    <div className="relative rounded-xl overflow-hidden flex-shrink-0" style={{ background: '#111827', minHeight: 120 }}>
+      {peer.stream
+        ? <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+        : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
+              style={{ background: color + '22', color }}>
+              {(peer.name || 'U').slice(0, 2).toUpperCase()}
+            </div>
+          </div>
+        )}
+      <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded text-xs font-semibold"
+        style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>
+        {peer.name || peer.id.slice(0, 8)}
+      </div>
+    </div>
+  )
+}
+
+function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUser: any; isHost: boolean }) {
+  const [inMeet,       setInMeet]       = useState(false)
+  const [micOn,        setMicOn]        = useState(true)
+  const [camOn,        setCamOn]        = useState(true)
+  const [screenOn,     setScreenOn]     = useState(false)
+  const [loading,      setLoading]      = useState(false)
+  const [permission,   setPermission]   = useState<MeetPermission>('allow_all')
+  const [peers,        setPeers]        = useState<{ id: string; name: string; stream: MediaStream | null }[]>([])
+  const [showSettings, setShowSettings] = useState(false)
+  const [handRaised,   setHandRaised]   = useState(false)
+
+  const localVideoRef   = useRef<HTMLVideoElement>(null)
+  const localStreamRef  = useRef<MediaStream | null>(null)
+  const screenStreamRef = useRef<MediaStream | null>(null)
+  const peerConns       = useRef<Map<string, RTCPeerConnection>>(new Map())
+  const sigChannelRef   = useRef<any>(null)
+  const peerNames       = useRef<Record<string, string>>({})
+  const myId            = currentUser?.id as string
+
+  const isAllowed = isHost || permission === 'allow_all'
+
+  // ── WebRTC helpers ──────────────────────────────────────────────
+  const createPC = (peerId: string, sig: any): RTCPeerConnection => {
+    peerConns.current.get(peerId)?.close()
+    const pc = new RTCPeerConnection({ iceServers: MEET_ICE })
+    const remoteStream = new MediaStream()
+
+    pc.ontrack = (e) => {
+      e.streams[0]?.getTracks().forEach(t => remoteStream.addTrack(t))
+      setPeers(prev => {
+        const idx = prev.findIndex(p => p.id === peerId)
+        const tile = { id: peerId, name: peerNames.current[peerId] || peerId.slice(0, 8), stream: remoteStream }
+        if (idx >= 0) { const next = [...prev]; next[idx] = tile; return next }
+        return [...prev, tile]
+      })
+    }
+
+    pc.onicecandidate = ({ candidate }) => {
+      if (candidate) {
+        sig.send({ type: 'broadcast', event: 'meet-ice',
+          payload: { to: peerId, from: myId, candidate: candidate.toJSON() } })
+      }
+    }
+
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        peerConns.current.delete(peerId)
+        setPeers(prev => prev.filter(p => p.id !== peerId))
+      }
+    }
+
+    localStreamRef.current?.getTracks().forEach(t => {
+      pc.addTrack(t, localStreamRef.current!)
+    })
+    peerConns.current.set(peerId, pc)
+    return pc
+  }
+
+  const sendOffer = async (peerId: string, sig: any) => {
+    const pc = createPC(peerId, sig)
+    try {
+      const offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
+      sig.send({ type: 'broadcast', event: 'meet-offer',
+        payload: { to: peerId, from: myId, fromName: getName(currentUser), sdp: pc.localDescription } })
+    } catch {}
+  }
+
+  const handleOffer = async (peerId: string, sdp: any, sig: any) => {
+    const pc = createPC(peerId, sig)
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(sdp))
+      const answer = await pc.createAnswer()
+      await pc.setLocalDescription(answer)
+      sig.send({ type: 'broadcast', event: 'meet-answer',
+        payload: { to: peerId, from: myId, sdp: pc.localDescription } })
+    } catch {}
+  }
+
+  // ── Signaling channel setup ─────────────────────────────────────
+  useEffect(() => {
+    const sig = supabase.channel(`meet-sig-${groupId}`)
+      .on('broadcast', { event: 'meet-join' }, async ({ payload }) => {
+        if (payload.userId === myId || !inMeet) return
+        peerNames.current[payload.userId] = payload.name
+        // I'm already in, so send an offer to the newcomer
+        if (localStreamRef.current) await sendOffer(payload.userId, sig)
+      })
+      .on('broadcast', { event: 'meet-offer' }, async ({ payload }) => {
+        if (payload.to !== myId) return
+        peerNames.current[payload.from] = payload.fromName
+        await handleOffer(payload.from, payload.sdp, sig)
+      })
+      .on('broadcast', { event: 'meet-answer' }, async ({ payload }) => {
+        if (payload.to !== myId) return
+        const pc = peerConns.current.get(payload.from)
+        if (pc && pc.signalingState === 'have-local-offer') {
+          try { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)) } catch {}
+        }
+      })
+      .on('broadcast', { event: 'meet-ice' }, async ({ payload }) => {
+        if (payload.to !== myId) return
+        const pc = peerConns.current.get(payload.from)
+        if (pc?.remoteDescription) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) } catch {}
+        }
+      })
+      .on('broadcast', { event: 'meet-leave' }, ({ payload }) => {
+        peerConns.current.get(payload.userId)?.close()
+        peerConns.current.delete(payload.userId)
+        setPeers(prev => prev.filter(p => p.id !== payload.userId))
       })
       .subscribe()
-    channelRef.current = ch
-    return () => { supabase.removeChannel(ch) }
-  }, [groupId])
+    sigChannelRef.current = sig
+    return () => { supabase.removeChannel(sig) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, inMeet])
 
-  useEffect(() => () => {
-    streamRef.current?.getTracks().forEach(t => t.stop())
-    screenStreamRef.current?.getTracks().forEach(t => t.stop())
-  }, [])
-
-  // Check if this user is allowed to use cam/mic
-  const isAllowed = (() => {
-    if (isHost) return true
-    if (permission === 'allow_all') return true
-    if (permission === 'deny_all')  return false
-    if (permission === 'selected')  return selectedIds.has(currentUser?.id || '')
-    return false
-  })()
-
+  // ── Meet controls ───────────────────────────────────────────────
   const joinMeet = async () => {
     setLoading(true)
     try {
-      if (isAllowed) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        streamRef.current = stream
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream
-          // IMPORTANT: not mirrored — transform: scaleX(1)
-          localVideoRef.current.style.transform = 'scaleX(1)'
-        }
+      const stream = isAllowed
+        ? await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        : new MediaStream()
+      localStreamRef.current = stream
+      if (localVideoRef.current && stream.getVideoTracks().length > 0) {
+        localVideoRef.current.srcObject = stream
       }
-      await channelRef.current?.track({
-        user_id: currentUser?.id,
-        name:    getName(currentUser),
-        is_host: isHost,
-        has_cam: isAllowed,
-      })
       setInMeet(true)
-    } catch { alert('Could not access camera/microphone.') }
+      // Announce presence so existing participants send us offers
+      sigChannelRef.current?.send({ type: 'broadcast', event: 'meet-join',
+        payload: { userId: myId, name: getName(currentUser) } })
+    } catch { alert('Could not access camera/microphone. Please allow permissions.') }
     setLoading(false)
   }
 
-  const leaveMeet = async () => {
-    streamRef.current?.getTracks().forEach(t => t.stop())
+  const leaveMeet = () => {
+    sigChannelRef.current?.send({ type: 'broadcast', event: 'meet-leave', payload: { userId: myId } })
+    localStreamRef.current?.getTracks().forEach(t => t.stop())
     screenStreamRef.current?.getTracks().forEach(t => t.stop())
-    await channelRef.current?.untrack()
+    peerConns.current.forEach(pc => pc.close())
+    peerConns.current.clear()
+    setPeers([])
+    if (localVideoRef.current) localVideoRef.current.srcObject = null
+    localStreamRef.current = null
     setInMeet(false)
     setScreenOn(false)
   }
 
   const toggleMic = () => {
-    streamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled })
+    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled })
     setMicOn(p => !p)
   }
 
   const toggleCam = () => {
-    streamRef.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled })
+    localStreamRef.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled })
     setCamOn(p => !p)
   }
 
   const toggleScreen = async () => {
     if (screenOn) {
       screenStreamRef.current?.getTracks().forEach(t => t.stop())
-      if (localVideoRef.current && streamRef.current) {
-        localVideoRef.current.srcObject = streamRef.current
-        localVideoRef.current.style.transform = 'scaleX(1)'
+      screenStreamRef.current = null
+      const camTrack = localStreamRef.current?.getVideoTracks()[0]
+      if (camTrack) {
+        peerConns.current.forEach(pc => {
+          pc.getSenders().find(s => s.track?.kind === 'video')?.replaceTrack(camTrack).catch(() => {})
+        })
+      }
+      if (localVideoRef.current && localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current
       }
       setScreenOn(false)
     } else {
       try {
         const screen = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: true })
         screenStreamRef.current = screen
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = screen
-          localVideoRef.current.style.transform = 'scaleX(1)'
-        }
-        screen.getVideoTracks()[0].onended = () => {
-          if (streamRef.current && localVideoRef.current) {
-            localVideoRef.current.srcObject = streamRef.current
-          }
-          setScreenOn(false)
-        }
+        const screenTrack = screen.getVideoTracks()[0]
+        peerConns.current.forEach(pc => {
+          pc.getSenders().find(s => s.track?.kind === 'video')?.replaceTrack(screenTrack).catch(() => {})
+        })
+        if (localVideoRef.current) localVideoRef.current.srcObject = screen
+        screenTrack.onended = () => { setScreenOn(false) }
         setScreenOn(true)
       } catch {}
     }
   }
 
-  const toggleSelectedMember = (uid: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      next.has(uid) ? next.delete(uid) : next.add(uid)
-      return next
-    })
-  }
+  useEffect(() => () => {
+    localStreamRef.current?.getTracks().forEach(t => t.stop())
+    screenStreamRef.current?.getTracks().forEach(t => t.stop())
+    peerConns.current.forEach(pc => pc.close())
+  }, [])
+
+  const totalPeople = 1 + peers.length
+  const gridCols = totalPeople <= 1 ? 1 : totalPeople <= 4 ? 2 : 3
 
   return (
     <div className="flex flex-col h-full">
-      {/* Video area */}
-      <div className="flex-1 relative overflow-hidden" style={{ background: '#000', minHeight: 200 }}>
-        {inMeet && isAllowed ? (
-          <>
-            <video
-              ref={localVideoRef}
-              autoPlay playsInline muted
-              className="w-full h-full object-cover"
-              // NOT mirrored — critical requirement
-              style={{ transform: 'scaleX(1)' }}
-            />
-            {!camOn && !screenOn && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ background: C.surface }}>
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-2"
-                    style={{ background: avatarColor(currentUser?.id || '')+'22', color: avatarColor(currentUser?.id || '') }}>
-                    {getInitials(currentUser)}
-                  </div>
-                  <p className="text-xs" style={{ color: C.textMuted }}>Camera off</p>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
+      {/* Video grid */}
+      <div className="flex-1 overflow-hidden p-2" style={{ background: '#000', position: 'relative' }}>
+        {!inMeet ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
             <Video className="w-10 h-10" style={{ color: C.textDim }} />
-            {!inMeet ? (
-              <p className="text-sm" style={{ color: C.textMuted }}>Click "Join Meet" to start</p>
-            ) : !isAllowed ? (
-              <div className="text-center px-4">
-                <p className="text-sm font-semibold mb-1" style={{ color: C.text }}>Camera/mic restricted</p>
-                <p className="text-xs" style={{ color: C.textMuted }}>
-                  The host has {permission === 'deny_all' ? 'disabled all cameras' : 'not enabled your camera yet'}
-                </p>
-                {!handRaised && (
-                  <button onClick={() => setHandRaised(true)}
-                    className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mx-auto"
-                    style={{ background: C.goldDim, color: C.gold }}>
-                    <Hand className="w-4 h-4" /> Raise Hand
-                  </button>
-                )}
-                {handRaised && (
-                  <p className="mt-2 text-xs" style={{ color: C.gold }}>✋ Hand raised — waiting for host</p>
-                )}
+            <p className="text-sm" style={{ color: C.textMuted }}>Click "Join Meet" to start</p>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+            gap: 6,
+            height: '100%',
+            alignContent: 'start',
+          }}>
+            {/* Local tile */}
+            <div className="relative rounded-xl overflow-hidden" style={{ background: C.surface, minHeight: 120 }}>
+              {isAllowed && (
+                <video ref={localVideoRef} autoPlay playsInline muted
+                  className="w-full h-full object-cover"
+                  style={{ display: (camOn || screenOn) ? 'block' : 'none' }} />
+              )}
+              {isAllowed && !camOn && !screenOn && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: C.surface }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
+                    style={{ background: avatarColor(myId) + '22', color: avatarColor(myId) }}>
+                    {getInitials(currentUser)}
+                  </div>
+                </div>
+              )}
+              {!isAllowed && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
+                    style={{ background: avatarColor(myId) + '22', color: avatarColor(myId) }}>
+                    {getInitials(currentUser)}
+                  </div>
+                  {!handRaised
+                    ? <button onClick={() => setHandRaised(true)}
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold"
+                        style={{ background: C.goldDim, color: C.gold }}>
+                        <Hand className="w-3 h-3" /> Raise Hand
+                      </button>
+                    : <p className="text-xs text-center" style={{ color: C.gold }}>✋ Waiting for host</p>
+                  }
+                </div>
+              )}
+              <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold"
+                style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>
+                {!micOn && <MicOff className="w-2.5 h-2.5 mr-0.5" style={{ color: '#f87171' }} />}
+                You {isHost && <Crown className="w-2.5 h-2.5 ml-0.5" style={{ color: C.gold }} />}
               </div>
-            ) : null}
+            </div>
+
+            {/* Remote peer tiles */}
+            {peers.map(peer => <PeerVideoTile key={peer.id} peer={peer} />)}
           </div>
         )}
 
-        {/* Participant count badge */}
-        {inMeet && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
-            style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>
-            <Users className="w-3 h-3" />
-            {participants.length}
-          </div>
-        )}
-
-        {/* Screen share indicator */}
-        {screenOn && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
-            style={{ background: 'rgba(37,99,235,0.2)', color: C.blueLight, border: `1px solid rgba(37,99,235,0.3)` }}>
-            <Monitor className="w-3 h-3" /> Sharing screen
-          </div>
-        )}
-
-        {/* Host permission badge */}
+        {/* Host permission control */}
         {isHost && inMeet && (
-          <div className="absolute bottom-3 left-3">
-            <button onClick={() => setShowSettings(p => !p)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: 'rgba(0,0,0,0.6)', color: C.gold }}>
-              <Settings className="w-3 h-3" />
-              {permission === 'allow_all' ? 'All can talk' : permission === 'deny_all' ? 'Muted all' : 'Selected'}
-            </button>
-          </div>
+          <button onClick={() => setShowSettings(p => !p)}
+            className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
+            style={{ background: 'rgba(0,0,0,0.7)', color: C.gold }}>
+            <Settings className="w-3 h-3" />
+            {permission === 'allow_all' ? 'All can talk' : permission === 'deny_all' ? 'Muted all' : 'Selected'}
+          </button>
         )}
       </div>
 
       {/* Host permission settings */}
       {isHost && showSettings && (
-        <div className="p-4 space-y-3 flex-shrink-0" style={{ background: C.surface, borderTop: `1px solid ${C.border}` }}>
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: C.textMuted }}>
+        <div className="p-4 space-y-2 flex-shrink-0" style={{ background: C.surface, borderTop: `1px solid ${C.border}` }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: C.textMuted }}>
             Camera & Mic Permissions
           </p>
           <div className="flex gap-2">
             {([
-              { id: 'allow_all', label: 'Allow All',  color: C.green },
-              { id: 'selected',  label: 'Selected',   color: C.gold  },
-              { id: 'deny_all',  label: 'Deny All',   color: C.red   },
+              { id: 'allow_all', label: 'Allow All', color: C.green },
+              { id: 'selected',  label: 'Selected',  color: C.gold  },
+              { id: 'deny_all',  label: 'Deny All',  color: C.red   },
             ] as { id: MeetPermission; label: string; color: string }[]).map(opt => (
               <button key={opt.id} onClick={() => setPermission(opt.id)}
-                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-                style={{
-                  background: permission === opt.id ? opt.color : C.card,
-                  color:      permission === opt.id ? '#fff'    : C.textMuted,
-                  border:     `1px solid ${permission === opt.id ? opt.color : C.border}`,
-                }}>
+                className="flex-1 py-2 rounded-xl text-xs font-bold"
+                style={{ background: permission === opt.id ? opt.color : C.card, color: permission === opt.id ? '#fff' : C.textMuted, border: `1px solid ${permission === opt.id ? opt.color : C.border}` }}>
                 {opt.label}
               </button>
             ))}
           </div>
-
-          {/* Selected members list */}
-          {permission === 'selected' && participants.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-xs" style={{ color: C.textDim }}>Toggle members to enable their camera/mic:</p>
-              {participants.filter((p: any) => p.user_id !== currentUser?.id).map((p: any) => (
-                <div key={p.user_id} className="flex items-center justify-between px-3 py-2 rounded-lg"
-                  style={{ background: C.card, border: `1px solid ${selectedIds.has(p.user_id) ? C.green+'44' : C.border}` }}>
-                  <span className="text-sm" style={{ color: C.text }}>{p.name}</span>
-                  <button onClick={() => toggleSelectedMember(p.user_id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                    style={{
-                      background: selectedIds.has(p.user_id) ? C.green : C.border,
-                      color:      selectedIds.has(p.user_id) ? '#fff'  : C.textMuted,
-                    }}>
-                    {selectedIds.has(p.user_id) ? <Check className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -705,21 +785,18 @@ function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUse
             {isAllowed && (
               <>
                 <button onClick={toggleMic}
-                  className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
-                  style={{ background: micOn ? C.card : C.redDim, color: micOn ? C.text : C.red, border: `1px solid ${micOn ? C.border : C.red+'44'}` }}
-                  title={micOn ? 'Mute' : 'Unmute'}>
+                  className="w-11 h-11 rounded-full flex items-center justify-center"
+                  style={{ background: micOn ? C.card : C.redDim, color: micOn ? C.text : C.red, border: `1px solid ${micOn ? C.border : C.red + '44'}` }}>
                   {micOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
                 </button>
                 <button onClick={toggleCam}
-                  className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
-                  style={{ background: camOn ? C.card : C.redDim, color: camOn ? C.text : C.red, border: `1px solid ${camOn ? C.border : C.red+'44'}` }}
-                  title={camOn ? 'Turn off camera' : 'Turn on camera'}>
+                  className="w-11 h-11 rounded-full flex items-center justify-center"
+                  style={{ background: camOn ? C.card : C.redDim, color: camOn ? C.text : C.red, border: `1px solid ${camOn ? C.border : C.red + '44'}` }}>
                   {camOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
                 </button>
                 <button onClick={toggleScreen}
-                  className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
-                  style={{ background: screenOn ? C.blueDim : C.card, color: screenOn ? C.blueLight : C.textMuted, border: `1px solid ${screenOn ? 'rgba(37,99,235,0.3)' : C.border}` }}
-                  title={screenOn ? 'Stop sharing' : 'Share screen'}>
+                  className="w-11 h-11 rounded-full flex items-center justify-center"
+                  style={{ background: screenOn ? C.blueDim : C.card, color: screenOn ? C.blueLight : C.textMuted, border: `1px solid ${screenOn ? 'rgba(37,99,235,0.3)' : C.border}` }}>
                   {screenOn ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
                 </button>
               </>
