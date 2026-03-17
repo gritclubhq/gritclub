@@ -448,39 +448,33 @@ function VoiceTab({ groupId, currentUser }: { groupId: string; currentUser: any 
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TAB 4 — VIDEO MEET (WebRTC mesh — real peer-to-peer video)
+// TAB 4 — VIDEO MEET  (WebRTC full mesh — everyone sees everyone)
 // ═══════════════════════════════════════════════════════════════════════════
+
 const MEET_ICE: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turns:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
 ]
 
-function PeerVideoTile({ peer }: { peer: { id: string; name: string; stream: MediaStream | null } }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+// One tile per remote participant — needs its own ref so video plays correctly
+function RemoteTile({ stream, name, userId }: { stream: MediaStream; name: string; userId: string }) {
+  const vRef = useRef<HTMLVideoElement>(null)
   useEffect(() => {
-    if (videoRef.current && peer.stream) {
-      videoRef.current.srcObject = peer.stream
-      videoRef.current.play().catch(() => {})
+    if (vRef.current && stream) {
+      vRef.current.srcObject = stream
+      vRef.current.play().catch(() => {})
     }
-  }, [peer.stream])
-  const color = AVATAR_COLORS[(peer.id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
+  }, [stream])
+  const color = AVATAR_COLORS[(userId?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
   return (
-    <div className="relative rounded-xl overflow-hidden flex-shrink-0" style={{ background: '#111827', minHeight: 120 }}>
-      {peer.stream
-        ? <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-        : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
-              style={{ background: color + '22', color }}>
-              {(peer.name || 'U').slice(0, 2).toUpperCase()}
-            </div>
-          </div>
-        )}
-      <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded text-xs font-semibold"
-        style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>
-        {peer.name || peer.id.slice(0, 8)}
+    <div className="relative rounded-xl overflow-hidden" style={{ background: '#111827', minHeight: 140 }}>
+      <video ref={vRef} autoPlay playsInline className="w-full h-full object-cover" style={{ minHeight: 140 }}/>
+      <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(0,0,0,0.7)', color: '#fff' }}>
+        {name || userId.slice(0, 8)}
       </div>
     </div>
   )
@@ -493,254 +487,281 @@ function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUse
   const [screenOn,     setScreenOn]     = useState(false)
   const [loading,      setLoading]      = useState(false)
   const [permission,   setPermission]   = useState<MeetPermission>('allow_all')
-  const [peers,        setPeers]        = useState<{ id: string; name: string; stream: MediaStream | null }[]>([])
   const [showSettings, setShowSettings] = useState(false)
   const [handRaised,   setHandRaised]   = useState(false)
+  // Remote peers: array of { userId, name, stream }
+  const [peers, setPeers] = useState<{ userId: string; name: string; stream: MediaStream }[]>([])
 
-  const localVideoRef   = useRef<HTMLVideoElement>(null)
-  const localStreamRef  = useRef<MediaStream | null>(null)
-  const screenStreamRef = useRef<MediaStream | null>(null)
-  const peerConns       = useRef<Map<string, RTCPeerConnection>>(new Map())
-  const sigChannelRef   = useRef<any>(null)
-  const peerNames       = useRef<Record<string, string>>({})
-  const myId            = currentUser?.id as string
+  const localVid      = useRef<HTMLVideoElement>(null)
+  const localStream   = useRef<MediaStream|null>(null)
+  const screenStream  = useRef<MediaStream|null>(null)
+  const peerConns     = useRef<Map<string, RTCPeerConnection>>(new Map())
+  const sigRef        = useRef<any>(null)
+  const peerNames     = useRef<Record<string, string>>({})
+  const pendingIceMap = useRef<Record<string, RTCIceCandidateInit[]>>({})
 
+  const myId   = currentUser?.id as string
+  const myName = getName(currentUser)
   const isAllowed = isHost || permission === 'allow_all'
 
-  // ── WebRTC helpers ──────────────────────────────────────────────
-  const createPC = (peerId: string, sig: any): RTCPeerConnection => {
-    peerConns.current.get(peerId)?.close()
+  // ── Create / get a peer connection for a remote user ──────────────
+  const getOrCreatePC = useCallback((peerId: string): RTCPeerConnection => {
+    if (peerConns.current.has(peerId)) return peerConns.current.get(peerId)!
+
     const pc = new RTCPeerConnection({ iceServers: MEET_ICE })
     const remoteStream = new MediaStream()
 
-    pc.ontrack = (e) => {
-      e.streams[0]?.getTracks().forEach(t => remoteStream.addTrack(t))
+    pc.ontrack = e => {
+      e.streams[0]?.getTracks().forEach(t => {
+        if (!remoteStream.getTrackById(t.id)) remoteStream.addTrack(t)
+      })
       setPeers(prev => {
-        const idx = prev.findIndex(p => p.id === peerId)
-        const tile = { id: peerId, name: peerNames.current[peerId] || peerId.slice(0, 8), stream: remoteStream }
-        if (idx >= 0) { const next = [...prev]; next[idx] = tile; return next }
+        const existing = prev.findIndex(p => p.userId === peerId)
+        const tile = { userId: peerId, name: peerNames.current[peerId] || peerId.slice(0,8), stream: remoteStream }
+        if (existing >= 0) { const next = [...prev]; next[existing] = tile; return next }
         return [...prev, tile]
       })
     }
 
     pc.onicecandidate = ({ candidate }) => {
-      if (candidate) {
-        sig.send({ type: 'broadcast', event: 'meet-ice',
-          payload: { to: peerId, from: myId, candidate: candidate.toJSON() } })
+      if (candidate && sigRef.current) {
+        sigRef.current.send({ type: 'broadcast', event: 'meet-ice', payload: { to: peerId, from: myId, candidate: candidate.toJSON() } })
       }
     }
 
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
         peerConns.current.delete(peerId)
-        setPeers(prev => prev.filter(p => p.id !== peerId))
+        setPeers(prev => prev.filter(p => p.userId !== peerId))
+        pc.close()
       }
     }
 
-    localStreamRef.current?.getTracks().forEach(t => {
-      pc.addTrack(t, localStreamRef.current!)
-    })
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'failed') pc.restartIce()
+    }
+
+    // Add all local tracks to this connection
+    localStream.current?.getTracks().forEach(t => pc.addTrack(t, localStream.current!))
+
     peerConns.current.set(peerId, pc)
     return pc
-  }
+  }, [myId])
 
-  const sendOffer = async (peerId: string, sig: any) => {
-    const pc = createPC(peerId, sig)
+  // ── Send an offer to a specific peer ──────────────────────────────
+  const sendOffer = useCallback(async (peerId: string) => {
+    const pc = getOrCreatePC(peerId)
     try {
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
-      sig.send({ type: 'broadcast', event: 'meet-offer',
-        payload: { to: peerId, from: myId, fromName: getName(currentUser), sdp: pc.localDescription } })
-    } catch {}
-  }
+      sigRef.current?.send({ type: 'broadcast', event: 'meet-offer', payload: { to: peerId, from: myId, fromName: myName, sdp: pc.localDescription } })
+    } catch (e) { console.error('[MEET] offer error:', e) }
+  }, [getOrCreatePC, myId, myName])
 
-  const handleOffer = async (peerId: string, sdp: any, sig: any) => {
-    const pc = createPC(peerId, sig)
+  // ── Handle incoming offer ─────────────────────────────────────────
+  const handleOffer = useCallback(async (fromId: string, sdp: any) => {
+    const pc = getOrCreatePC(fromId)
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(sdp))
+      // Drain queued ICE
+      const queued = pendingIceMap.current[fromId] || []
+      for (const c of queued) { try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch {} }
+      delete pendingIceMap.current[fromId]
       const answer = await pc.createAnswer()
       await pc.setLocalDescription(answer)
-      sig.send({ type: 'broadcast', event: 'meet-answer',
-        payload: { to: peerId, from: myId, sdp: pc.localDescription } })
-    } catch {}
-  }
+      sigRef.current?.send({ type: 'broadcast', event: 'meet-answer', payload: { to: fromId, from: myId, sdp: pc.localDescription } })
+    } catch (e) { console.error('[MEET] handleOffer error:', e) }
+  }, [getOrCreatePC, myId])
 
-  // ── Signaling channel setup ─────────────────────────────────────
+  // ── Signaling channel setup ───────────────────────────────────────
   useEffect(() => {
     const sig = supabase.channel(`meet-sig-${groupId}`)
-      .on('broadcast', { event: 'meet-join' }, async ({ payload }) => {
-        if (payload.userId === myId || !inMeet) return
-        peerNames.current[payload.userId] = payload.name
-        // I'm already in, so send an offer to the newcomer
-        if (localStreamRef.current) await sendOffer(payload.userId, sig)
-      })
-      .on('broadcast', { event: 'meet-offer' }, async ({ payload }) => {
-        if (payload.to !== myId) return
-        peerNames.current[payload.from] = payload.fromName
-        await handleOffer(payload.from, payload.sdp, sig)
-      })
-      .on('broadcast', { event: 'meet-answer' }, async ({ payload }) => {
-        if (payload.to !== myId) return
-        const pc = peerConns.current.get(payload.from)
-        if (pc && pc.signalingState === 'have-local-offer') {
-          try { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)) } catch {}
-        }
-      })
-      .on('broadcast', { event: 'meet-ice' }, async ({ payload }) => {
-        if (payload.to !== myId) return
-        const pc = peerConns.current.get(payload.from)
-        if (pc?.remoteDescription) {
-          try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) } catch {}
-        }
-      })
-      .on('broadcast', { event: 'meet-leave' }, ({ payload }) => {
-        peerConns.current.get(payload.userId)?.close()
-        peerConns.current.delete(payload.userId)
-        setPeers(prev => prev.filter(p => p.id !== payload.userId))
-      })
-      .subscribe()
-    sigChannelRef.current = sig
+
+    // Someone joined the meet → send them an offer if we're already in
+    sig.on('broadcast', { event: 'meet-join' }, async ({ payload }) => {
+      if (payload.userId === myId) return
+      peerNames.current[payload.userId] = payload.name
+      if (inMeet) {
+        await sendOffer(payload.userId)
+      }
+    })
+
+    // We received an offer
+    sig.on('broadcast', { event: 'meet-offer' }, async ({ payload }) => {
+      if (payload.to !== myId) return
+      peerNames.current[payload.from] = payload.fromName
+      await handleOffer(payload.from, payload.sdp)
+    })
+
+    // We received an answer to our offer
+    sig.on('broadcast', { event: 'meet-answer' }, async ({ payload }) => {
+      if (payload.to !== myId) return
+      const pc = peerConns.current.get(payload.from)
+      if (pc && pc.signalingState === 'have-local-offer') {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          // Drain queued ICE
+          const queued = pendingIceMap.current[payload.from] || []
+          for (const c of queued) { try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch {} }
+          delete pendingIceMap.current[payload.from]
+        } catch (e) { console.warn('[MEET] answer error:', e) }
+      }
+    })
+
+    // ICE candidate from a peer
+    sig.on('broadcast', { event: 'meet-ice' }, async ({ payload }) => {
+      if (payload.to !== myId) return
+      const pc = peerConns.current.get(payload.from)
+      if (pc?.remoteDescription) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) } catch {}
+      } else {
+        if (!pendingIceMap.current[payload.from]) pendingIceMap.current[payload.from] = []
+        pendingIceMap.current[payload.from].push(payload.candidate)
+      }
+    })
+
+    // Someone left
+    sig.on('broadcast', { event: 'meet-leave' }, ({ payload }) => {
+      if (payload.userId === myId) return
+      peerConns.current.get(payload.userId)?.close()
+      peerConns.current.delete(payload.userId)
+      setPeers(prev => prev.filter(p => p.userId !== payload.userId))
+    })
+
+    sig.subscribe()
+    sigRef.current = sig
+
     return () => { supabase.removeChannel(sig) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, inMeet])
 
-  // ── Meet controls ───────────────────────────────────────────────
+  // ── Join meet ─────────────────────────────────────────────────────
   const joinMeet = async () => {
     setLoading(true)
     try {
-      const stream = isAllowed
-        ? await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        : new MediaStream()
-      localStreamRef.current = stream
-      if (localVideoRef.current && stream.getVideoTracks().length > 0) {
-        localVideoRef.current.srcObject = stream
+      let stream: MediaStream
+      if (isAllowed) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      } else {
+        // Still join but without cam/mic — audio/video restricted by host
+        stream = new MediaStream()
+      }
+      localStream.current = stream
+      if (localVid.current && stream.getVideoTracks().length > 0) {
+        localVid.current.srcObject = stream
+        await localVid.current.play().catch(() => {})
       }
       setInMeet(true)
-      // Announce presence so existing participants send us offers
-      sigChannelRef.current?.send({ type: 'broadcast', event: 'meet-join',
-        payload: { userId: myId, name: getName(currentUser) } })
-    } catch { alert('Could not access camera/microphone. Please allow permissions.') }
+      // Announce to room — existing participants will send us offers
+      sigRef.current?.send({ type: 'broadcast', event: 'meet-join', payload: { userId: myId, name: myName } })
+    } catch (e: any) {
+      if (e.name === 'NotAllowedError') alert('Camera/mic access denied. Please allow permissions in your browser.')
+      else alert('Could not join meet: ' + e.message)
+    }
     setLoading(false)
   }
 
+  // ── Leave meet ────────────────────────────────────────────────────
   const leaveMeet = () => {
-    sigChannelRef.current?.send({ type: 'broadcast', event: 'meet-leave', payload: { userId: myId } })
-    localStreamRef.current?.getTracks().forEach(t => t.stop())
-    screenStreamRef.current?.getTracks().forEach(t => t.stop())
+    sigRef.current?.send({ type: 'broadcast', event: 'meet-leave', payload: { userId: myId } })
+    localStream.current?.getTracks().forEach(t => t.stop())
+    screenStream.current?.getTracks().forEach(t => t.stop())
     peerConns.current.forEach(pc => pc.close())
     peerConns.current.clear()
     setPeers([])
-    if (localVideoRef.current) localVideoRef.current.srcObject = null
-    localStreamRef.current = null
-    setInMeet(false)
-    setScreenOn(false)
+    pendingIceMap.current = {}
+    localStream.current = null; screenStream.current = null
+    if (localVid.current) localVid.current.srcObject = null
+    setInMeet(false); setScreenOn(false)
   }
 
   const toggleMic = () => {
-    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled })
+    localStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled })
     setMicOn(p => !p)
   }
-
   const toggleCam = () => {
-    localStreamRef.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled })
+    localStream.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled })
     setCamOn(p => !p)
   }
 
   const toggleScreen = async () => {
     if (screenOn) {
-      screenStreamRef.current?.getTracks().forEach(t => t.stop())
-      screenStreamRef.current = null
-      const camTrack = localStreamRef.current?.getVideoTracks()[0]
-      if (camTrack) {
-        peerConns.current.forEach(pc => {
-          pc.getSenders().find(s => s.track?.kind === 'video')?.replaceTrack(camTrack).catch(() => {})
-        })
-      }
-      if (localVideoRef.current && localStreamRef.current) {
-        localVideoRef.current.srcObject = localStreamRef.current
-      }
+      screenStream.current?.getTracks().forEach(t => t.stop()); screenStream.current = null
+      const camTrack = localStream.current?.getVideoTracks()[0]
+      if (camTrack) peerConns.current.forEach(pc => { pc.getSenders().find(s => s.track?.kind === 'video')?.replaceTrack(camTrack).catch(() => {}) })
+      if (localVid.current && localStream.current) localVid.current.srcObject = localStream.current
       setScreenOn(false)
     } else {
       try {
-        const screen = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: true })
-        screenStreamRef.current = screen
-        const screenTrack = screen.getVideoTracks()[0]
-        peerConns.current.forEach(pc => {
-          pc.getSenders().find(s => s.track?.kind === 'video')?.replaceTrack(screenTrack).catch(() => {})
-        })
-        if (localVideoRef.current) localVideoRef.current.srcObject = screen
-        screenTrack.onended = () => { setScreenOn(false) }
+        const ss = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: true })
+        screenStream.current = ss
+        const sVid = ss.getVideoTracks()[0]
+        peerConns.current.forEach(pc => { pc.getSenders().find(s => s.track?.kind === 'video')?.replaceTrack(sVid).catch(() => {}) })
+        if (localVid.current) localVid.current.srcObject = ss
+        sVid.onended = () => { setScreenOn(false); toggleScreen() }
         setScreenOn(true)
       } catch {}
     }
   }
 
+  // Cleanup on unmount
   useEffect(() => () => {
-    localStreamRef.current?.getTracks().forEach(t => t.stop())
-    screenStreamRef.current?.getTracks().forEach(t => t.stop())
+    localStream.current?.getTracks().forEach(t => t.stop())
+    screenStream.current?.getTracks().forEach(t => t.stop())
     peerConns.current.forEach(pc => pc.close())
   }, [])
 
-  const totalPeople = 1 + peers.length
-  const gridCols = totalPeople <= 1 ? 1 : totalPeople <= 4 ? 2 : 3
+  const totalPeers = 1 + peers.length
+  const gridCols   = totalPeers <= 1 ? 1 : totalPeers <= 4 ? 2 : 3
 
   return (
     <div className="flex flex-col h-full">
       {/* Video grid */}
-      <div className="flex-1 overflow-hidden p-2" style={{ background: '#000', position: 'relative' }}>
+      <div className="flex-1 overflow-hidden relative p-2" style={{ background: '#000', minHeight: 200 }}>
         {!inMeet ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
             <Video className="w-10 h-10" style={{ color: C.textDim }} />
-            <p className="text-sm" style={{ color: C.textMuted }}>Click "Join Meet" to start</p>
+            <p className="text-sm" style={{ color: C.textMuted }}>Click "Join Meet" to start the video call</p>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-            gap: 6,
-            height: '100%',
-            alignContent: 'start',
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: 6, height: '100%', alignContent: 'start' }}>
             {/* Local tile */}
-            <div className="relative rounded-xl overflow-hidden" style={{ background: C.surface, minHeight: 120 }}>
-              {isAllowed && (
-                <video ref={localVideoRef} autoPlay playsInline muted
+            <div className="relative rounded-xl overflow-hidden" style={{ background: C.surface, minHeight: 140 }}>
+              {isAllowed ? (
+                <video ref={localVid} autoPlay playsInline muted
                   className="w-full h-full object-cover"
-                  style={{ display: (camOn || screenOn) ? 'block' : 'none' }} />
-              )}
+                  style={{ display: (camOn || screenOn) ? 'block' : 'none', minHeight: 140 }}/>
+              ) : null}
               {isAllowed && !camOn && !screenOn && (
                 <div className="absolute inset-0 flex items-center justify-center" style={{ background: C.surface }}>
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
-                    style={{ background: avatarColor(myId) + '22', color: avatarColor(myId) }}>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold"
+                    style={{ background: avatarColor(myId)+'22', color: avatarColor(myId) }}>
                     {getInitials(currentUser)}
                   </div>
                 </div>
               )}
               {!isAllowed && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
-                    style={{ background: avatarColor(myId) + '22', color: avatarColor(myId) }}>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3" style={{ background: C.surface }}>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold"
+                    style={{ background: avatarColor(myId)+'22', color: avatarColor(myId) }}>
                     {getInitials(currentUser)}
                   </div>
                   {!handRaised
-                    ? <button onClick={() => setHandRaised(true)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold"
-                        style={{ background: C.goldDim, color: C.gold }}>
-                        <Hand className="w-3 h-3" /> Raise Hand
-                      </button>
-                    : <p className="text-xs text-center" style={{ color: C.gold }}>✋ Waiting for host</p>
+                    ? <button onClick={() => setHandRaised(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: C.goldDim, color: C.gold }}><Hand className="w-3 h-3"/>Raise Hand</button>
+                    : <p className="text-xs text-center" style={{ color: C.gold }}>✋ Waiting for host to enable your mic/cam</p>
                   }
                 </div>
               )}
-              <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold"
-                style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}>
-                {!micOn && <MicOff className="w-2.5 h-2.5 mr-0.5" style={{ color: '#f87171' }} />}
-                You {isHost && <Crown className="w-2.5 h-2.5 ml-0.5" style={{ color: C.gold }} />}
+              <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(0,0,0,0.7)', color: '#fff' }}>
+                {!micOn && <MicOff className="w-2.5 h-2.5 mr-0.5" style={{ color: '#f87171' }}/>}
+                You {isHost && <Crown className="w-2.5 h-2.5 ml-0.5" style={{ color: C.gold }}/>}
               </div>
             </div>
 
             {/* Remote peer tiles */}
-            {peers.map(peer => <PeerVideoTile key={peer.id} peer={peer} />)}
+            {peers.map(peer => (
+              <RemoteTile key={peer.userId} stream={peer.stream} name={peer.name} userId={peer.userId}/>
+            ))}
           </div>
         )}
 
@@ -748,28 +769,26 @@ function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUse
         {isHost && inMeet && (
           <button onClick={() => setShowSettings(p => !p)}
             className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
-            style={{ background: 'rgba(0,0,0,0.7)', color: C.gold }}>
-            <Settings className="w-3 h-3" />
+            style={{ background: 'rgba(0,0,0,0.75)', color: C.gold }}>
+            <Settings className="w-3 h-3"/>
             {permission === 'allow_all' ? 'All can talk' : permission === 'deny_all' ? 'Muted all' : 'Selected'}
           </button>
         )}
       </div>
 
-      {/* Host permission settings */}
+      {/* Host permission settings panel */}
       {isHost && showSettings && (
         <div className="p-4 space-y-2 flex-shrink-0" style={{ background: C.surface, borderTop: `1px solid ${C.border}` }}>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: C.textMuted }}>
-            Camera & Mic Permissions
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: C.textMuted }}>Cam & Mic Permissions</p>
           <div className="flex gap-2">
             {([
-              { id: 'allow_all', label: 'Allow All', color: C.green },
-              { id: 'selected',  label: 'Selected',  color: C.gold  },
-              { id: 'deny_all',  label: 'Deny All',  color: C.red   },
+              { id: 'allow_all', label: 'Allow All', color: C.green  },
+              { id: 'selected',  label: 'Selected',  color: C.gold   },
+              { id: 'deny_all',  label: 'Deny All',  color: C.red    },
             ] as { id: MeetPermission; label: string; color: string }[]).map(opt => (
               <button key={opt.id} onClick={() => setPermission(opt.id)}
                 className="flex-1 py-2 rounded-xl text-xs font-bold"
-                style={{ background: permission === opt.id ? opt.color : C.card, color: permission === opt.id ? '#fff' : C.textMuted, border: `1px solid ${permission === opt.id ? opt.color : C.border}` }}>
+                style={{ background: permission===opt.id?opt.color:C.card, color: permission===opt.id?'#fff':C.textMuted, border: `1px solid ${permission===opt.id?opt.color:C.border}` }}>
                 {opt.label}
               </button>
             ))}
@@ -778,45 +797,47 @@ function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUse
       )}
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-2.5 p-3 flex-shrink-0"
-        style={{ background: C.surface, borderTop: `1px solid ${C.border}` }}>
+      <div className="flex items-center justify-center gap-2.5 p-3 flex-shrink-0" style={{ background: C.surface, borderTop: `1px solid ${C.border}` }}>
         {inMeet ? (
           <>
             {isAllowed && (
               <>
                 <button onClick={toggleMic}
                   className="w-11 h-11 rounded-full flex items-center justify-center"
-                  style={{ background: micOn ? C.card : C.redDim, color: micOn ? C.text : C.red, border: `1px solid ${micOn ? C.border : C.red + '44'}` }}>
-                  {micOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                  style={{ background: micOn?C.card:C.redDim, color: micOn?C.text:C.red, border: `1px solid ${micOn?C.border:C.red+'44'}` }}>
+                  {micOn ? <Mic className="w-5 h-5"/> : <MicOff className="w-5 h-5"/>}
                 </button>
                 <button onClick={toggleCam}
                   className="w-11 h-11 rounded-full flex items-center justify-center"
-                  style={{ background: camOn ? C.card : C.redDim, color: camOn ? C.text : C.red, border: `1px solid ${camOn ? C.border : C.red + '44'}` }}>
-                  {camOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                  style={{ background: camOn?C.card:C.redDim, color: camOn?C.text:C.red, border: `1px solid ${camOn?C.border:C.red+'44'}` }}>
+                  {camOn ? <Video className="w-5 h-5"/> : <VideoOff className="w-5 h-5"/>}
                 </button>
                 <button onClick={toggleScreen}
                   className="w-11 h-11 rounded-full flex items-center justify-center"
-                  style={{ background: screenOn ? C.blueDim : C.card, color: screenOn ? C.blueLight : C.textMuted, border: `1px solid ${screenOn ? 'rgba(37,99,235,0.3)' : C.border}` }}>
-                  {screenOn ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+                  style={{ background: screenOn?C.blueDim:C.card, color: screenOn?C.blueLight:C.textMuted, border: `1px solid ${screenOn?'rgba(37,99,235,0.3)':C.border}` }}>
+                  {screenOn ? <MonitorOff className="w-5 h-5"/> : <Monitor className="w-5 h-5"/>}
                 </button>
               </>
             )}
             <button onClick={leaveMeet}
               className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold"
               style={{ background: C.red, color: '#fff' }}>
-              <PhoneOff className="w-4 h-4" /> Leave
+              <PhoneOff className="w-4 h-4"/> Leave
             </button>
           </>
         ) : (
           <button onClick={joinMeet} disabled={loading}
             className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold disabled:opacity-50"
             style={{ background: C.blue, color: '#fff' }}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Video className="w-4 h-4"/>}
             {loading ? 'Connecting...' : 'Join Meet'}
           </button>
         )}
       </div>
     </div>
+  )
+}
+
   )
 }
 
