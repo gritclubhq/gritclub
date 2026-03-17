@@ -28,7 +28,7 @@ export default function EarningsPage() {
 
       if (ticketData) {
         const total = ticketData.reduce((sum, t) => sum + t.amount, 0)
-        setStats({ total, payout: Math.floor(total * 0.5), tickets: ticketData.length, events: myEvents.length })
+        setStats({ total, payout: Math.floor(total * 0.8), tickets: ticketData.length, events: myEvents.length })
         setTransactions(ticketData)
       }
       setLoading(false)
@@ -60,7 +60,7 @@ export default function EarningsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Total Sales', value: fmt(stats.total), icon: DollarSign, color: '#38BDF8' },
-            { label: 'Your Payout (50%)', value: fmt(stats.payout), icon: TrendingUp, color: '#4ADE80' },
+            { label: 'Your Payout (80%)', value: fmt(stats.payout), icon: TrendingUp, color: '#4ADE80' },
             { label: 'Tickets Sold', value: stats.tickets, icon: Ticket, color: '#FFD700' },
             { label: 'Total Events', value: stats.events, icon: Calendar, color: '#A855F7' },
           ].map(s => (
@@ -100,7 +100,7 @@ export default function EarningsPage() {
                   <tr key={t.id} style={{ borderBottom: '1px solid #334155' }}>
                     <td className="p-4 text-slate-300 max-w-[180px] truncate">{t.events?.title}</td>
                     <td className="p-4 text-slate-300">{fmt(t.amount)}</td>
-                    <td className="p-4 font-semibold" style={{ color: '#4ADE80' }}>{fmt(Math.floor(t.amount * 0.5))}</td>
+                    <td className="p-4 font-semibold" style={{ color: '#4ADE80' }}>{fmt(Math.floor(t.amount * 0.8))}</td>
                     <td className="p-4 text-slate-500">{new Date(t.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
