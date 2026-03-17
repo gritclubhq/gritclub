@@ -230,14 +230,12 @@ export default function AdminPage() {
   const sendAnnouncement = async () => {
     if (!annTitle.trim() || !annBody.trim()) return
     setAnnSaving(true)
-    // 1. Save to announcements table (banner shown in dashboard)
     await supabase.from('announcements').insert({
       title:      annTitle.trim().slice(0,200),
       body:       annBody.trim().slice(0,1000),
       is_active:  true,
       created_by: currentUser?.id,
     })
-    // 2. Also post to community feed so all users see it
     await supabase.from('posts').insert({
       user_id:        currentUser?.id,
       content:        `📢 ${annTitle.trim()}\n\n${annBody.trim()}`,
