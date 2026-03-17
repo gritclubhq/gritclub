@@ -24,7 +24,7 @@ export default function PayoutsPage() {
           .in('event_id', myEvents.map(e => e.id))
           .eq('status', 'paid')
         const total = tickets?.reduce((sum, t) => sum + t.amount, 0) || 0
-        setPendingPayout(Math.floor(total * 0.5))
+        setPendingPayout(Math.floor(total * 0.8))
       }
       setLoading(false)
     }
@@ -58,7 +58,7 @@ export default function PayoutsPage() {
               <div className="text-3xl font-bold text-green-400">{fmt(pendingPayout)}</div>
             </div>
           </div>
-          <p className="text-xs text-slate-500">50% of all ticket sales. Paid out every Monday via Stripe Connect.</p>
+          <p className="text-xs text-slate-500">80% of all ticket sales. Paid out every Monday via Stripe Connect.</p>
         </div>
 
         {/* Stripe Connect */}
@@ -89,7 +89,7 @@ export default function PayoutsPage() {
 
         {/* How it works */}
         <div className="p-4 rounded-xl text-sm text-slate-400" style={{ background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.1)' }}>
-          💡 <strong style={{ color: '#38BDF8' }}>How payouts work:</strong> When a ticket sells, 50% goes to you instantly. We batch payouts every Monday. Minimum payout is $10.
+          💡 <strong style={{ color: '#38BDF8' }}>How payouts work:</strong> When a ticket sells, 80% goes to you. GritClub keeps 20% as platform fee. We batch payouts every Monday. Minimum payout is $10.
         </div>
       </div>
     </DashboardLayout>
