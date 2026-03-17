@@ -15,5 +15,6 @@ export const getStripe = () => {
   return stripePromise
 }
 
-// Platform fee: 50% split
-export const PLATFORM_FEE_PERCENT = 50
+// Platform fee: GritClub takes 20%, host keeps 80%
+export const PLATFORM_FEE_PERCENT = 20
+export const HOST_PAYOUT_PERCENT = 80
