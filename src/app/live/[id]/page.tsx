@@ -55,14 +55,20 @@ function useW() {
 }
 
 // ── Whiteboard ────────────────────────────────────────────────────────────────
-function Whiteboard({bg}:{bg:string}) {
+function Whiteboard({bg,onCanvasReady}:{bg:string,onCanvasReady?:(c:HTMLCanvasElement)=>void}) {
   const ref=useRef<HTMLCanvasElement>(null)
   const [tool,setTool]=useState<'pen'|'eraser'|'line'|'rect'|'circle'>('pen')
   const [color,setColor]=useState('#FFFFFF')
   const [size,setSize]=useState(4)
   const dr=useRef(false),last=useRef<any>(null),snap=useRef<ImageData|null>(null)
 
-  useEffect(()=>{const c=ref.current;if(!c)return;const ctx=c.getContext('2d')!;ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height)},[bg])
+  useEffect(()=>{
+    const c=ref.current;if(!c)return
+    const ctx=c.getContext('2d')!;ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height)
+    // Notify parent so it can captureStream
+    if(onCanvasReady)onCanvasReady(c)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[bg])
 
   const gp=(e:any,c:HTMLCanvasElement)=>{const r=c.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(c.width/r.width),y:(s.clientY-r.top)*(c.height/r.height)}}
   const start=(e:any)=>{const c=ref.current;if(!c)return;const ctx=c.getContext('2d')!;const p=gp(e,c);dr.current=true;last.current=p;snap.current=ctx.getImageData(0,0,c.width,c.height);if(tool==='pen'||tool==='eraser'){ctx.beginPath();ctx.moveTo(p.x,p.y)}}
@@ -150,6 +156,7 @@ export default function LiveRoomPage() {
   const remoteRef=useRef<HTMLVideoElement>(null)
   const localStream=useRef<MediaStream|null>(null)
   const screenStream=useRef<MediaStream|null>(null)
+  const wbStreamRef=useRef<MediaStream|null>(null)
   const chatCh=useRef<any>(null)
   const sigCh=useRef<any>(null)
   const peerConn=useRef<RTCPeerConnection|null>(null)
@@ -250,6 +257,7 @@ export default function LiveRoomPage() {
       clearInterval(recTimer.current)
       localStream.current?.getTracks().forEach(t=>t.stop())
       screenStream.current?.getTracks().forEach(t=>t.stop())
+      wbStreamRef.current?.getTracks().forEach(t=>t.stop())
       peerConn.current?.close()
       hostPeers.current.forEach(pc=>pc.close())
       if(chatCh.current)supabase.removeChannel(chatCh.current)
@@ -406,6 +414,7 @@ export default function LiveRoomPage() {
     await stopRecording()
     localStream.current?.getTracks().forEach(t=>t.stop())
     screenStream.current?.getTracks().forEach(t=>t.stop())
+    wbStreamRef.current?.getTracks().forEach(t=>t.stop());wbStreamRef.current=null
     hostPeers.current.forEach(pc=>pc.close());hostPeers.current.clear()
     if(localRef.current)localRef.current.srcObject=null
     setStreaming(false)
@@ -416,15 +425,27 @@ export default function LiveRoomPage() {
   const toggleMic=()=>{localStream.current?.getAudioTracks().forEach(t=>{t.enabled=!t.enabled});setMicOn(p=>!p)}
   const toggleCam=()=>{localStream.current?.getVideoTracks().forEach(t=>{t.enabled=!t.enabled});setCamOn(p=>!p)}
 
+  // ── Helper: replace video track on all peer connections ──────────
+  const replaceVideoTrackAll=(track:MediaStreamTrack)=>{
+    hostPeers.current.forEach(pc=>{
+      const sender=pc.getSenders().find(s=>s.track?.kind==='video')
+      if(sender)sender.replaceTrack(track).catch(()=>{})
+    })
+  }
+
   // ── Screen share ──────────────────────────────────────────────────
   const startScreen=async()=>{
     try{
       const ss=await (navigator.mediaDevices as any).getDisplayMedia({video:{cursor:'always'},audio:true})
       screenStream.current=ss
+      // Stop any active whiteboard stream first
+      wbStreamRef.current?.getTracks().forEach(t=>t.stop());wbStreamRef.current=null
       if(localRef.current){localRef.current.srcObject=ss;await localRef.current.play().catch(()=>{})}
       setMode('screen')
       const vt=ss.getVideoTracks()[0]
-      hostPeers.current.forEach(pc=>{pc.getSenders().find(s=>s.track?.kind==='video')?.replaceTrack(vt)})
+      replaceVideoTrackAll(vt)
+      // Signal viewers so late-joiners know current mode
+      sigCh.current?.send({type:'broadcast',event:'mode-change',payload:{mode:'screen'}})
       vt.onended=stopScreen
     }catch{}
   }
@@ -432,8 +453,33 @@ export default function LiveRoomPage() {
     screenStream.current?.getTracks().forEach(t=>t.stop());screenStream.current=null
     if(localStream.current&&localRef.current){localRef.current.srcObject=localStream.current}
     const ct=localStream.current?.getVideoTracks()[0]
-    if(ct)hostPeers.current.forEach(pc=>{pc.getSenders().find(s=>s.track?.kind==='video')?.replaceTrack(ct)})
+    if(ct)replaceVideoTrackAll(ct)
+    sigCh.current?.send({type:'broadcast',event:'mode-change',payload:{mode:'camera'}})
     setMode('camera')
+  }
+
+  // ── Whiteboard ────────────────────────────────────────────────────
+  const handleWhiteboardCanvas=(canvas:HTMLCanvasElement,bg:string)=>{
+    // Stop existing wb stream if switching bg
+    wbStreamRef.current?.getTracks().forEach(t=>t.stop());wbStreamRef.current=null
+    try{
+      // captureStream at 30fps — broadcasts canvas content as video track
+      const stream=(canvas as any).captureStream(30) as MediaStream
+      wbStreamRef.current=stream
+      const vt=stream.getVideoTracks()[0]
+      if(!vt)return
+      replaceVideoTrackAll(vt)
+      // Also mirror in host's local preview so host sees it in the video element
+      if(localRef.current){localRef.current.srcObject=stream;localRef.current.play().catch(()=>{})}
+    }catch(e){console.warn('captureStream not supported:',e)}
+  }
+  const stopWhiteboard=()=>{
+    wbStreamRef.current?.getTracks().forEach(t=>t.stop());wbStreamRef.current=null
+    // Restore camera
+    const ct=localStream.current?.getVideoTracks()[0]
+    if(ct)replaceVideoTrackAll(ct)
+    if(localStream.current&&localRef.current)localRef.current.srcObject=localStream.current
+    sigCh.current?.send({type:'broadcast',event:'mode-change',payload:{mode:'camera'}})
   }
 
   // ── PiP ──────────────────────────────────────────────────────────
@@ -596,12 +642,12 @@ export default function LiveRoomPage() {
   // ── Video Area ────────────────────────────────────────────────────
   const VideoArea=()=>(
     <div ref={videoContainer} style={{position:'relative',width:'100%',height:'100%',background:'#000',overflow:'hidden'}}>
-      {/* Host local video */}
-      <video ref={localRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',display:'block',visibility:canCtrl&&streaming&&mode==='camera'?'visible':'hidden',position:canCtrl&&streaming&&mode==='camera'?'relative':'absolute'}}/>
+      {/* Host local video — hidden when whiteboard is active since wb shows in video element */}
+      <video ref={localRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',display:'block',visibility:canCtrl&&streaming&&(mode==='camera'||mode==='screen'||mode==='whiteboard')?'visible':'hidden',position:canCtrl&&streaming?'relative':'absolute'}}/>
       {/* Viewer remote video */}
       {!canCtrl&&<video ref={remoteRef} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block',visibility:viewerStatus==='connected'?'visible':'hidden'}} muted={muted}/>}
-      {/* Whiteboard */}
-      {mode==='whiteboard'&&<div style={{position:'absolute',inset:0,zIndex:2}}><Whiteboard bg={boardBg}/></div>}
+      {/* Whiteboard overlay — only for host to draw; stream captured via onCanvasReady */}
+      {mode==='whiteboard'&&canCtrl&&<div style={{position:'absolute',inset:0,zIndex:2}}><Whiteboard bg={boardBg} onCanvasReady={(c)=>handleWhiteboardCanvas(c,boardBg)}/></div>}
 
       {/* Placeholder */}
       {((canCtrl&&!streaming)||((!canCtrl)&&viewerStatus!=='connected'))&&mode!=='whiteboard'&&(
@@ -665,11 +711,11 @@ export default function LiveRoomPage() {
     <div style={{flexShrink:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:isMobile?'10px 12px':'12px 20px'}}>
       {streaming&&(
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,marginBottom:10,flexWrap:'wrap'}}>
-          {[{label:'Camera',active:mode==='camera',action:()=>{stopScreen();setMode('camera')},Icon:Video},
+          {[{label:'Camera',active:mode==='camera',action:()=>{stopWhiteboard();stopScreen();setMode('camera')},Icon:Video},
             {label:mode==='screen'?'Stop Share':'Screen',active:mode==='screen',action:mode==='screen'?stopScreen:startScreen,Icon:mode==='screen'?MonitorOff:Monitor},
           ].map(b=><button key={b.label} onClick={b.action} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 14px',borderRadius:8,border:`1px solid ${b.active?'rgba(37,99,235,0.4)':'transparent'}`,background:b.active?C.blueDim:'rgba(51,65,85,0.4)',color:b.active?C.blueL:C.textDim,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif'}}><b.Icon style={{width:13,height:13}}/>{b.label}</button>)}
           {[{n:'White',v:'#F8FAFC'},{n:'Dark',v:'#0A0A0F'},{n:'Green',v:'#064E3B'}].map(b=>(
-            <button key={b.v} onClick={()=>{setBoardBg(b.v);setMode('whiteboard')}} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 14px',borderRadius:8,border:`1px solid ${mode==='whiteboard'&&boardBg===b.v?'rgba(124,58,237,0.4)':'transparent'}`,background:mode==='whiteboard'&&boardBg===b.v?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)',color:mode==='whiteboard'&&boardBg===b.v?'#A78BFA':C.textDim,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif'}}>
+            <button key={b.v} onClick={()=>{stopScreen();setBoardBg(b.v);setMode('whiteboard');sigCh.current?.send({type:'broadcast',event:'mode-change',payload:{mode:'whiteboard'}})}} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 14px',borderRadius:8,border:`1px solid ${mode==='whiteboard'&&boardBg===b.v?'rgba(124,58,237,0.4)':'transparent'}`,background:mode==='whiteboard'&&boardBg===b.v?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)',color:mode==='whiteboard'&&boardBg===b.v?'#A78BFA':C.textDim,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif'}}>
               <div style={{width:10,height:10,borderRadius:2,background:b.v,border:'1px solid rgba(255,255,255,0.2)'}}/>{b.n}
             </button>
           ))}
