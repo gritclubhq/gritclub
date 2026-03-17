@@ -23,7 +23,7 @@ export default function AdminRevenuePage() {
 
       if (ticketData) {
         const total = ticketData.reduce((sum, t) => sum + t.amount, 0)
-        setStats({ total, platform: Math.floor(total * 0.5), hosts: Math.floor(total * 0.5), tickets: ticketData.length, users: userCount || 0 })
+        setStats({ total, platform: Math.floor(total * 0.2), hosts: Math.floor(total * 0.8), tickets: ticketData.length, users: userCount || 0 })
         setTransactions(ticketData)
       }
       setLoading(false)
@@ -55,8 +55,8 @@ export default function AdminRevenuePage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Total Revenue', value: fmt(stats.total), icon: DollarSign, color: '#FFD700' },
-            { label: 'Platform (50%)', value: fmt(stats.platform), icon: TrendingUp, color: '#38BDF8' },
-            { label: 'Host Payouts (50%)', value: fmt(stats.hosts), icon: DollarSign, color: '#4ADE80' },
+            { label: 'Platform (20%)', value: fmt(stats.platform), icon: TrendingUp, color: '#38BDF8' },
+            { label: 'Host Payouts (80%)', value: fmt(stats.hosts), icon: DollarSign, color: '#4ADE80' },
             { label: 'Total Members', value: stats.users, icon: Users, color: '#A855F7' },
           ].map(s => (
             <div key={s.label} className="rounded-2xl p-4" style={{ background: '#1E293B' }}>
@@ -96,7 +96,7 @@ export default function AdminRevenuePage() {
                     <td className="p-4 text-slate-300">{t.users?.email?.split('@')[0] || 'User'}</td>
                     <td className="p-4 text-slate-300 max-w-[150px] truncate">{t.events?.title || 'Event'}</td>
                     <td className="p-4 font-semibold" style={{ color: '#4ADE80' }}>{fmt(t.amount)}</td>
-                    <td className="p-4 text-sky-400">{fmt(Math.floor(t.amount * 0.5))}</td>
+                    <td className="p-4 text-sky-400">{fmt(Math.floor(t.amount * 0.2))}</td>
                     <td className="p-4 text-slate-500">{new Date(t.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
