@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { eventId, tier, userId } = await req.json()
+    const { eventId, tier = 'general', userId } = await req.json()
     const supabase = createClient()
 
     // Get event details
@@ -25,9 +25,11 @@ export async function POST(req: NextRequest) {
       .eq('id', userId)
       .single()
 
-    // Calculate price based on tier
+    // VIP tier = 3x price, general = standard price
     const price = tier === 'vip' ? event.price * 3 : event.price
-    const replayAccess = tier === 'vip'
+
+    // Platform takes 20% — Stripe application_fee_amount is in cents
+    const platformFee = Math.round(price * 0.20)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -41,10 +43,10 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${event.title} — ${tier === 'vip' ? 'VIP Access' : 'Basic Access'}`,
+              name: `${event.title}${tier === 'vip' ? ' — VIP Access' : ''}`,
               description: tier === 'vip'
                 ? 'Lifetime replay + networking lounge + direct Q&A'
-                : 'Live stream + 7-day replay',
+                : 'Live stream access',
             },
             unit_amount: price,
           },
@@ -55,10 +57,10 @@ export async function POST(req: NextRequest) {
         eventId,
         userId,
         tier,
-        replayAccess: replayAccess.toString(),
+        platformFee: platformFee.toString(),
       },
       success_url: `${appUrl}/events/${eventId}?success=1`,
-      cancel_url: `${appUrl}/events/${eventId}?cancelled=1`,
+      cancel_url:  `${appUrl}/events/${eventId}?cancelled=1`,
     })
 
     return NextResponse.json({ url: session.url })
