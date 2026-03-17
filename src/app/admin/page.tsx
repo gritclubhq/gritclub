@@ -240,9 +240,7 @@ export default function AdminPage() {
     // 2. Also post to community feed so all users see it
     await supabase.from('posts').insert({
       user_id:        currentUser?.id,
-      content:        '📢 ' + annTitle.trim() + '
-
-' + annBody.trim(),
+      content:        `📢 ${annTitle.trim()}\n\n${annBody.trim()}`,
       image_urls:     [],
       likes_count:    0,
       comments_count: 0,
