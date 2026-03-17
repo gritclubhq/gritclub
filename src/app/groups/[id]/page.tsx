@@ -63,8 +63,6 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
         ? <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
         : getInitials(user)}
     </div>
-  )
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB 1 — CHAT
@@ -835,9 +833,6 @@ function MeetTab({ groupId, currentUser, isHost }: { groupId: string; currentUse
         )}
       </div>
     </div>
-  )
-}
-
   )
 }
 
