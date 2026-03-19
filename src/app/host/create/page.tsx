@@ -1,161 +1,177 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import { useRouter } from 'next/navigation'
-import { Radio, AlertCircle } from 'lucide-react'
+import { Radio, AlertCircle, X, Image } from 'lucide-react'
+
+const C = {
+  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
+  border:'rgba(255,255,255,0.07)', text:'#F0F4FF',
+  textMuted:'#7B8DB0', textDim:'#3D4F6E',
+  blue:'#2563EB', blueL:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
+  gold:'#F59E0B', red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
+  green:'#10B981',
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <label style={{ fontSize:13, fontWeight:600, color:C.textMuted, marginBottom:6, display:'block', fontFamily:'DM Sans,sans-serif' }}>{children}</label>
+}
+
+const inputStyle: React.CSSProperties = {
+  width:'100%', padding:'11px 14px', borderRadius:10,
+  border:`1px solid ${C.border}`, background:C.surface,
+  color:C.text, fontSize:13, fontFamily:'DM Sans,sans-serif',
+  outline:'none', boxSizing:'border-box',
+}
 
 export default function CreateEventPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    price: '',
-    capacity: '100',
-    start_time: '',
-    status: 'scheduled',
+    title:'', description:'', price:'', capacity:'100', start_time:'', status:'scheduled',
   })
+  const [bannerFile,    setBannerFile]    = useState<File|null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string|null>(null)
+  const [cohostEmail,   setCohostEmail]   = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error,   setError]   = useState('')
+  const bannerRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push('/auth/login'); return }
-      setUser(user)
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      if (!u) { router.push('/auth/login'); return }
+      setUser(u)
     })
   }, [])
+
+  const handleBanner = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    if (file.size > 5*1024*1024) { setError('Banner must be under 5MB'); return }
+    setBannerFile(file); setBannerPreview(URL.createObjectURL(file))
+    e.target.value = ''
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
+    const priceInCents = Math.round(parseFloat(form.price||'0') * 100)
 
-    const priceInCents = Math.round(parseFloat(form.price || '0') * 100)
+    // Upload banner
+    let posterUrl: string|null = null
+    if (bannerFile) {
+      const ext = bannerFile.name.split('.').pop()
+      const path = `events/${user.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('event-banners')
+        .upload(path, bannerFile, { contentType:bannerFile.type, upsert:true })
+      if (upErr) { setError('Banner upload failed: ' + upErr.message); setLoading(false); return }
+      const { data: urlData } = supabase.storage.from('event-banners').getPublicUrl(path)
+      posterUrl = urlData.publicUrl
+    }
 
-    const { error: insertError } = await supabase.from('events').insert({
-      host_id: user.id,
-      title: form.title.trim(),
+    // Create event
+    const { data: ev, error: insertError } = await supabase.from('events').insert({
+      host_id: user.id, title: form.title.trim(),
       description: form.description.trim() || null,
-      price: priceInCents,
-      capacity: parseInt(form.capacity) || 100,
-      start_time: form.start_time || null,
-      status: form.status,
-      total_sold: 0,
-      viewer_peak: 0,
-    })
+      price: priceInCents, capacity: parseInt(form.capacity)||100,
+      start_time: form.start_time||null, status: form.status,
+      poster_url: posterUrl, total_sold:0, viewer_peak:0,
+    }).select('id').single()
 
-    if (insertError) {
-      console.error('Create event error:', insertError)
-      setError(`Error: ${insertError.message}`)
-      setLoading(false)
-      return
+    if (insertError) { setError('Error: ' + insertError.message); setLoading(false); return }
+
+    // Add co-host if provided
+    if (cohostEmail.trim() && ev?.id) {
+      const { data: coUser } = await supabase.from('users')
+        .select('id').ilike('email', cohostEmail.trim()).maybeSingle()
+      if (coUser) await supabase.from('event_cohosts').upsert({ event_id:ev.id, user_id:coUser.id })
     }
 
     router.push('/host')
   }
 
-  const priceNum = parseFloat(form.price || '0')
-  const hostEarnings = (priceNum * 0.8).toFixed(2)
+  const priceNum = parseFloat(form.price||'0')
 
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Create Event</h1>
-          <p className="text-slate-400 text-sm mt-1">You keep 80% of every ticket sold</p>
+      <div style={{ maxWidth:560, margin:'0 auto', padding:'24px 16px' }}>
+        <div style={{ marginBottom:24 }}>
+          <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueL, fontFamily:'DM Sans,sans-serif', marginBottom:4 }}>Host</p>
+          <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:4 }}>Create Event</h1>
+          <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>You keep 80% of every ticket sold</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="rounded-2xl p-5 space-y-4 mb-4" style={{ background: '#1E293B' }}>
-
-            <div>
-              <label className="text-sm font-medium text-slate-300 mb-2 block">Event Title *</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={e => setForm({ ...form, title: e.target.value })}
-                placeholder="e.g. How I Hit $10k MRR in 90 Days"
-                required
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
-                style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
-              <textarea
-                value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                placeholder="What will attendees learn? What's the agenda?"
-                rows={3}
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500 resize-none"
-                style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-slate-300 mb-2 block">Ticket Price ($) *</label>
-                <input
-                  type="number"
-                  value={form.price}
-                  onChange={e => setForm({ ...form, price: e.target.value })}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                  required
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
-                  style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
-                />
-                {priceNum > 0 && (
-                  <p className="text-xs mt-1.5" style={{ color: '#4ADE80' }}>
-                    You keep ${hostEarnings} per ticket
-                  </p>
-                )}
+        <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          {/* Banner */}
+          <div>
+            <Label>Event Banner</Label>
+            {bannerPreview ? (
+              <div style={{ position:'relative', borderRadius:12, overflow:'hidden', height:180 }}>
+                <img src={bannerPreview} alt="Banner" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                <button type="button" onClick={()=>{ setBannerFile(null); setBannerPreview(null) }}
+                  style={{ position:'absolute', top:8, right:8, width:28, height:28, borderRadius:'50%', border:'none', cursor:'pointer', background:'rgba(0,0,0,0.7)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <X style={{ width:14, height:14 }}/>
+                </button>
               </div>
+            ) : (
+              <div onClick={()=>bannerRef.current?.click()}
+                style={{ height:180, borderRadius:12, border:`2px dashed ${C.border}`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer', background:C.surface }}>
+                <Image style={{ width:32, height:32, color:C.textDim }}/>
+                <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Click to upload event banner</p>
+                <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>JPG, PNG · Max 5MB · Recommended 1280×720</p>
+              </div>
+            )}
+            <input ref={bannerRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleBanner}/>
+          </div>
 
+          <div style={{ display:'flex', flexDirection:'column', gap:16, padding:20, borderRadius:16, background:C.card, border:`1px solid ${C.border}` }}>
+            {/* Title */}
+            <div>
+              <Label>Event Title *</Label>
+              <input style={inputStyle} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="e.g. How I Hit $10k MRR in 90 Days" required/>
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label>Description</Label>
+              <textarea style={{ ...inputStyle, resize:'vertical' }} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="What will attendees learn?" rows={3}/>
+            </div>
+
+            {/* Price + Capacity */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
               <div>
-                <label className="text-sm font-medium text-slate-300 mb-2 block">Capacity</label>
-                <input
-                  type="number"
-                  value={form.capacity}
-                  onChange={e => setForm({ ...form, capacity: e.target.value })}
-                  min="1"
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
-                  style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0' }}
-                />
+                <Label>Ticket Price ($) *</Label>
+                <input style={inputStyle} type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} placeholder="0" min="0" step="0.01" required/>
+                {priceNum > 0 && <p style={{ fontSize:11, color:C.green, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>You keep ${(priceNum*0.8).toFixed(2)} per ticket</p>}
+              </div>
+              <div>
+                <Label>Capacity</Label>
+                <input style={inputStyle} type="number" value={form.capacity} onChange={e=>setForm({...form,capacity:e.target.value})} min="1"/>
               </div>
             </div>
 
+            {/* Start time */}
             <div>
-              <label className="text-sm font-medium text-slate-300 mb-2 block">Start Time</label>
-              <input
-                type="datetime-local"
-                value={form.start_time}
-                onChange={e => setForm({ ...form, start_time: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-sky-500"
-                style={{ background: '#0F172A', border: '1px solid #334155', color: '#E2E8F0', colorScheme: 'dark' }}
-              />
+              <Label>Start Time</Label>
+              <input style={{ ...inputStyle, colorScheme:'dark' } as any} type="datetime-local" value={form.start_time} onChange={e=>setForm({...form,start_time:e.target.value})}/>
             </div>
 
+            {/* Co-host */}
             <div>
-              <label className="text-sm font-medium text-slate-300 mb-2 block">Status</label>
-              <div className="flex gap-2">
-                {['draft', 'scheduled'].map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setForm({ ...form, status: s })}
-                    className="px-4 py-2 rounded-xl text-sm font-medium capitalize"
-                    style={{
-                      background: form.status === s ? '#38BDF8' : '#0F172A',
-                      color: form.status === s ? '#0F172A' : '#94A3B8',
-                      border: '1px solid #334155'
-                    }}
-                  >
+              <Label>Co-host Email (optional)</Label>
+              <input style={inputStyle} type="email" value={cohostEmail} onChange={e=>setCohostEmail(e.target.value)} placeholder="cohost@example.com"/>
+              <p style={{ fontSize:11, color:C.textDim, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>They can manage and co-present the stream</p>
+            </div>
+
+            {/* Status */}
+            <div>
+              <Label>Status</Label>
+              <div style={{ display:'flex', gap:8 }}>
+                {['draft','scheduled'].map(s=>(
+                  <button key={s} type="button" onClick={()=>setForm({...form,status:s})}
+                    style={{ padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:600, fontFamily:'DM Sans,sans-serif', cursor:'pointer', textTransform:'capitalize', border:`1px solid ${form.status===s?C.blue:C.border}`, background:form.status===s?C.blueDim:'transparent', color:form.status===s?C.blueL:C.textMuted }}>
                     {s}
                   </button>
                 ))}
@@ -164,21 +180,16 @@ export default function CreateEventPage() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-3 rounded-xl mb-4"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-red-400 text-sm">{error}</p>
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}>
+              <AlertCircle style={{ width:15, height:15, color:C.red, flexShrink:0 }}/>
+              <p style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{error}</p>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !form.title || !form.price}
-            className="w-full py-3 rounded-xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ background: '#FFD700', color: '#0F172A' }}
-          >
-            <Radio className="w-4 h-4" />
-            {loading ? 'Creating...' : 'Create Event'}
+          <button type="submit" disabled={loading||!form.title||!form.price}
+            style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:`linear-gradient(135deg,${C.gold},#F97316)`, color:'#0A0F1E', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!form.title||!form.price?0.5:1 }}>
+            <Radio style={{ width:17, height:17 }}/>
+            {loading?'Creating...':'Create Event'}
           </button>
         </form>
       </div>
