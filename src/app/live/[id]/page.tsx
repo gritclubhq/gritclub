@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Mic, MicOff, Video, VideoOff, PhoneOff, Send, Users, Radio,
-  Shield, Volume2, VolumeX, Monitor, MonitorOff, PenLine, Eraser,
+  Shield, Monitor, MonitorOff, PenLine, Eraser,
   Minus, Square, Circle, Trash2, Heart, Loader2, Crown,
-  MessageCircle, ChevronDown, Hand, Maximize, Minimize, Eye
+  MessageCircle, ChevronDown, Hand, Maximize, Minimize
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -147,9 +147,15 @@ export default function LiveRoomPage() {
   const [streaming,    setStreaming]   = useState(false)
   const [micOn,        setMicOn]       = useState(true)
   const [camOn,        setCamOn]       = useState(true)
-  const [muted,        setMuted]       = useState(false)
   const [mode,         setMode]        = useState<'camera'|'screen'|'whiteboard'>('camera')
   const [boardBg,      setBoardBg]     = useState('#0A0A0F')
+  const [wbBgOpen,     setWbBgOpen]    = useState(false)
+  const wbDropRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (wbDropRef.current && !wbDropRef.current.contains(e.target as Node)) setWbBgOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
   const [streamErr,    setStreamErr]   = useState('')
   const [vStatus,      setVStatus]     = useState<'idle'|'connecting'|'connected'|'failed'>('idle')
   const [retries,      setRetries]     = useState(0)
@@ -606,16 +612,15 @@ export default function LiveRoomPage() {
   // ── Screen share ──────────────────────────────────────────────────
   const startScreen = async () => {
     try {
-      const ss = await (navigator.mediaDevices as any).getDisplayMedia({ video: { cursor:'always' }, audio: true })
+      const ss = await (navigator.mediaDevices as any).getDisplayMedia({ video: { cursor:'always' }, audio: false })
       scrStream.current = ss
-      // Stop whiteboard stream if active
       wbStream.current?.getTracks().forEach(t => t.stop()); wbStream.current = null
-      txStream.current = ss
       setMode('screen')
       if (localVid.current) { localVid.current.srcObject = ss; await localVid.current.play().catch(() => {}) }
       const vt = ss.getVideoTracks()[0]
       if (vt) { replaceVid(vt); vt.onended = stopScreen }
-      const at = ss.getAudioTracks()[0]; if (at) replaceAud(at)
+      // Always keep cam mic audio — do NOT replace audio when screen sharing
+      // camStream audio track is already in the peer connection senders
     } catch {}
   }
   const stopScreen = () => { scrStream.current?.getTracks().forEach(t => t.stop()); scrStream.current = null; toCamera() }
@@ -633,14 +638,18 @@ export default function LiveRoomPage() {
       const canvas = wbCanvas.current
       if (!canvas) { setStreamErr('Canvas not ready — try again.'); return }
       try {
+        // Capture only the canvas video — audio stays as camStream mic
         const ws = (canvas as any).captureStream(30) as MediaStream
-        wbStream.current  = ws
-        txStream.current  = ws
+        wbStream.current = ws
         const vt = ws.getVideoTracks()[0]
         if (!vt) { setStreamErr('Canvas stream unavailable. Use Chrome or Edge.'); return }
+        // Replace only the VIDEO track — audio track stays as cam mic (never replaced)
         replaceVid(vt)
-        // Show canvas stream in host preview
-        if (localVid.current) { localVid.current.srcObject = ws; localVid.current.play().catch(() => {}) }
+        // Build a preview stream that has canvas video + cam audio for host monitor
+        const previewStream = new MediaStream()
+        ws.getVideoTracks().forEach(t => previewStream.addTrack(t))
+        camStream.current?.getAudioTracks().forEach(t => previewStream.addTrack(t))
+        if (localVid.current) { localVid.current.srcObject = previewStream; localVid.current.play().catch(() => {}) }
       } catch (e) {
         console.error('[WB] captureStream error:', e)
         setStreamErr('Whiteboard streaming requires Chrome 72+ or Edge.')
@@ -649,14 +658,7 @@ export default function LiveRoomPage() {
   }
 
   // ── PiP / Fullscreen ──────────────────────────────────────────────
-  const togglePip = async () => {
-    const vid = (isHost || isCohost) ? localVid.current : remoteVid.current; if (!vid) return
-    try {
-      document.pictureInPictureElement
-        ? await document.exitPictureInPicture()
-        : await (vid as any).requestPictureInPicture()
-    } catch {}
-  }
+  // PiP removed — not needed
   const toggleFS = () => {
     if (!vidBox.current) return
     if (!document.fullscreenElement) { vidBox.current.requestFullscreen(); setFullscreen(true) }
@@ -806,7 +808,7 @@ export default function LiveRoomPage() {
 
       {/* VIEWER receives host stream — audio + video in one MediaStream */}
       {!canCtrl && (
-        <video ref={remoteVid} autoPlay playsInline muted={muted}
+        <video ref={remoteVid} autoPlay playsInline
           style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,
             visibility: vStatus === 'connected' ? 'visible' : 'hidden'
           }}
@@ -875,8 +877,7 @@ export default function LiveRoomPage() {
 
       {/* Top-right controls */}
       <div style={{position:'absolute',top:10,right:10,zIndex:10,display:'flex',gap:6}}>
-        <button onClick={toggleFS}  style={{width:32,height:32,borderRadius:8,border:'none',cursor:'pointer',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>{fullscreen?<Minimize style={{width:14,height:14}}/>:<Maximize style={{width:14,height:14}}/>}</button>
-        <button onClick={togglePip} style={{width:32,height:32,borderRadius:8,border:'none',cursor:'pointer',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}><Eye style={{width:14,height:14}}/></button>
+        <button onClick={toggleFS} style={{width:32,height:32,borderRadius:8,border:'none',cursor:'pointer',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}}>{fullscreen?<Minimize style={{width:14,height:14}}/>:<Maximize style={{width:14,height:14}}/>}</button>
       </div>
 
       {/* Raised hands */}
@@ -901,12 +902,22 @@ export default function LiveRoomPage() {
             {mode==='screen'?<MonitorOff style={{width:13,height:13}}/>:<Monitor style={{width:13,height:13}}/>}
             {mode==='screen'?'Stop Share':'Screen'}
           </button>
-          {/* Whiteboard variants */}
-          {[{n:'White',v:'#F8FAFC'},{n:'Dark',v:'#0A0A0F'},{n:'Green',v:'#064E3B'}].map(b => (
-            <button key={b.v} onClick={() => startWhiteboard(b.v)} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 14px',borderRadius:8,border:`1px solid ${mode==='whiteboard'&&boardBg===b.v?'rgba(124,58,237,0.4)':'transparent'}`,background:mode==='whiteboard'&&boardBg===b.v?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)',color:mode==='whiteboard'&&boardBg===b.v?'#A78BFA':C.textDim,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif'}}>
-              <div style={{width:10,height:10,borderRadius:2,background:b.v,border:'1px solid rgba(255,255,255,0.2)'}}/>{b.n}
+          {/* Whiteboard dropdown */}
+          <div ref={wbDropRef} style={{position:'relative'}}>
+            <button onClick={()=>setWbBgOpen(p=>!p)} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 14px',borderRadius:8,border:`1px solid ${mode==='whiteboard'?'rgba(124,58,237,0.4)':'transparent'}`,background:mode==='whiteboard'?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)',color:mode==='whiteboard'?'#A78BFA':C.textDim,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif'}}>
+              <PenLine style={{width:13,height:13}}/>Whiteboard
+              <ChevronDown style={{width:11,height:11,marginLeft:2}}/>
             </button>
-          ))}
+            {wbBgOpen&&(
+              <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden',zIndex:50,minWidth:120,boxShadow:'0 8px 24px rgba(0,0,0,0.4)'}}>
+                {[{n:'White board',v:'#F8FAFC'},{n:'Dark board',v:'#0A0A0F'},{n:'Green board',v:'#064E3B'}].map(b=>(
+                  <button key={b.v} onClick={()=>{startWhiteboard(b.v);setWbBgOpen(false)}} style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'9px 14px',border:'none',background:boardBg===b.v&&mode==='whiteboard'?'rgba(124,58,237,0.15)':'transparent',color:boardBg===b.v&&mode==='whiteboard'?'#A78BFA':C.text,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left'}}>
+                    <div style={{width:14,height:14,borderRadius:3,background:b.v,border:'1px solid rgba(255,255,255,0.25)',flexShrink:0}}/>{b.n}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {/* Mod */}
           <button onClick={()=>setShowMod(p=>!p)} style={{display:'flex',alignItems:'center',gap:5,padding:'6px 14px',borderRadius:8,border:`1px solid ${showMod?'rgba(239,68,68,0.4)':'transparent'}`,background:showMod?C.redDim:'rgba(51,65,85,0.4)',color:showMod?C.red:C.textDim,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif'}}>
             <Shield style={{width:13,height:13}}/>Mod
@@ -914,11 +925,19 @@ export default function LiveRoomPage() {
         </div>
       )}
       {showMod && streaming && (
-        <div style={{marginBottom:10,display:'flex',gap:8}}>
-          <input value={modCmd} onChange={e=>setModCmd(e.target.value)} onKeyDown={e=>e.key==='Enter'&&runMod(modCmd)}
-            placeholder="/mute @user 30 | /ban @user | /slow | /slowoff"
-            style={{flex:1,padding:'8px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.surface,color:C.text,fontSize:12,fontFamily:'DM Sans,sans-serif',outline:'none'}}/>
-          <button onClick={()=>runMod(modCmd)} style={{padding:'8px 14px',borderRadius:10,border:'none',background:C.red,color:'#fff',fontSize:12,cursor:'pointer',fontFamily:'DM Sans,sans-serif',fontWeight:600}}>Run</button>
+        <div style={{marginBottom:10}}>
+          <p style={{fontSize:10,color:C.textDim,fontFamily:'DM Sans,sans-serif',marginBottom:6,paddingLeft:2}}>
+            Moderation commands: <b style={{color:C.textMuted}}>/mute @email 30</b> · <b style={{color:C.textMuted}}>/ban @email</b> · <b style={{color:C.textMuted}}>/slow</b> · <b style={{color:C.textMuted}}>/slowoff</b>
+          </p>
+          <div style={{display:'flex',gap:8}}>
+            <input value={modCmd} onChange={e=>setModCmd(e.target.value)}
+              onKeyDown={e=>{ if(e.key==='Enter'){ runMod(modCmd); } }}
+              placeholder="e.g. /mute @john@gmail.com 30"
+              style={{flex:1,padding:'8px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.surface,color:C.text,fontSize:12,fontFamily:'DM Sans,sans-serif',outline:'none'}}/>
+            <button
+              onClick={()=>{ const cmd=modCmd.trim(); if(cmd) runMod(cmd); }}
+              style={{padding:'8px 18px',borderRadius:10,border:'none',background:C.red,color:'#fff',fontSize:12,cursor:'pointer',fontFamily:'DM Sans,sans-serif',fontWeight:700}}>Run</button>
+          </div>
         </div>
       )}
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
@@ -941,9 +960,6 @@ export default function LiveRoomPage() {
 
   const renderViewerBar = () => (
     <div style={{flexShrink:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:'10px 16px',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-      <button onClick={()=>setMuted(m=>!m)} style={{display:'flex',alignItems:'center',gap:5,padding:'8px 14px',borderRadius:20,border:`1px solid ${muted?C.red+'44':C.border}`,background:muted?C.redDim:C.card,color:muted?C.red:C.textMuted,cursor:'pointer',fontSize:12,fontFamily:'DM Sans,sans-serif'}}>
-        {muted?<VolumeX style={{width:14,height:14}}/>:<Volume2 style={{width:14,height:14}}/>}{!isMobile&&(muted?'Unmute':'Mute')}
-      </button>
       <button onClick={doLike} disabled={liked} style={{display:'flex',alignItems:'center',gap:5,padding:'8px 14px',borderRadius:20,border:`1px solid ${liked?C.red+'44':C.border}`,background:liked?C.redDim:C.card,color:liked?C.red:C.textMuted,cursor:liked?'default':'pointer',fontSize:12,fontFamily:'DM Sans,sans-serif',opacity:liked?0.8:1}}>
         <Heart style={{width:14,height:14,fill:liked?C.red:'none',stroke:liked?C.red:'currentColor'}}/>{reactions>0?reactions:(!isMobile?'Like':'')}
       </button>
