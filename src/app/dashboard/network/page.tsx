@@ -219,17 +219,25 @@ export default function NetworkPage() {
   }
 
   const loadConnections = async (uid: string) => {
+    // Fetch connections with both user records using separate queries for reliability
     const { data } = await supabase
       .from('connections')
-      .select('id, user1_id, user2_id, status, created_at, users!connections_user1_id_fkey(id, full_name, email, photo_url, username, role, bio), users!connections_user2_id_fkey(id, full_name, email, photo_url, username, role, bio)')
+      .select('id, user1_id, user2_id, status, created_at')
       .or(`user1_id.eq.${uid},user2_id.eq.${uid}`)
       .eq('status', 'accepted')
-    const enriched = (data||[]).map((c:any) => {
-      const other = c.user1_id === uid ? c.users_connections_user2_id_fkey || c.users : c.users_connections_user1_id_fkey || c.users
-      // Handle both possible join key names from Supabase
-      const u1 = Array.isArray(c.users) ? c.users[0] : c.users
-      const friend = c.user1_id === uid ? (c['users!connections_user2_id_fkey'] || u1) : (c['users!connections_user1_id_fkey'] || u1)
-      return { ...c, friend: friend || {} }
+    if (!data?.length) { setConnections([]); return }
+
+    // Get all unique user IDs that are the "other" person
+    const otherIds = data.map((c:any) => c.user1_id === uid ? c.user2_id : c.user1_id)
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, full_name, email, photo_url, username, role, bio')
+      .in('id', otherIds)
+    const userMap = Object.fromEntries((users||[]).map((u:any) => [u.id, u]))
+
+    const enriched = data.map((c:any) => {
+      const friendId = c.user1_id === uid ? c.user2_id : c.user1_id
+      return { ...c, friend: userMap[friendId] || {} }
     })
     setConnections(enriched)
   }
