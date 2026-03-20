@@ -755,12 +755,22 @@ export default function GroupRoomPage() {
               ))}
             </div>
 
-            {/* Panels */}
-            <div style={{ flex:1, overflow:'hidden' }}>
-              {activeTab==='chat'     && <ChatTab     groupId={groupId} currentUser={currentUser}/>}
-              {activeTab==='files'    && <FilesTab    groupId={groupId} currentUser={currentUser}/>}
-              {activeTab==='call'     && <CallTab     groupId={groupId} currentUser={currentUser} isCtrl={isCtrl}/>}
-              {activeTab==='settings' && <SettingsTab group={group} myRole={myRole} currentUser={currentUser} onDeleted={()=>router.push('/groups')}/>}
+            {/* Panels — CallTab always mounted so WebRTC survives tab switches */}
+            <div style={{ flex:1, overflow:'hidden', position:'relative' }}>
+              <div style={{ position:'absolute', inset:0, display: activeTab==='chat' ? 'flex' : 'none', flexDirection:'column' }}>
+                <ChatTab groupId={groupId} currentUser={currentUser}/>
+              </div>
+              <div style={{ position:'absolute', inset:0, display: activeTab==='files' ? 'block' : 'none' }}>
+                <FilesTab groupId={groupId} currentUser={currentUser}/>
+              </div>
+              <div style={{ position:'absolute', inset:0, display: activeTab==='call' ? 'flex' : 'none', flexDirection:'column' }}>
+                <CallTab groupId={groupId} currentUser={currentUser} isCtrl={isCtrl}/>
+              </div>
+              {(myRole==='owner'||myRole==='admin') && (
+                <div style={{ position:'absolute', inset:0, display: activeTab==='settings' ? 'block' : 'none' }}>
+                  <SettingsTab group={group} myRole={myRole} currentUser={currentUser} onDeleted={()=>router.push('/groups')}/>
+                </div>
+              )}
             </div>
           </div>
 
