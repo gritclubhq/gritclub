@@ -74,26 +74,43 @@ function AnnouncementCard({ ann }: { ann: any }) {
   const date = new Date(ann.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   return (
     <div style={{
-      borderRadius: 20, padding: '18px 20px',
+      borderRadius: 20, overflow: 'hidden',
       background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,146,60,0.08))',
       border: '1px solid rgba(245,158,11,0.3)',
-      display: 'flex', flexDirection: 'column', gap: 10,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(245,158,11,0.3)' }}>
-          <Megaphone style={{ width: 16, height: 16, color: '#F59E0B' }} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
-            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
+      {/* Banner image */}
+      {ann.image_url && (
+        <img src={ann.image_url} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', display: 'block' }}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+      )}
+      <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(245,158,11,0.3)' }}>
+            <Megaphone style={{ width: 16, height: 16, color: '#F59E0B' }} />
           </div>
-          <p style={{ fontSize: 11, color: '#7B8DB0', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
+              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
+            </div>
+            <p style={{ fontSize: 11, color: '#7B8DB0', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
+          </div>
         </div>
-      </div>
-      <div>
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#F0F4FF', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
-        <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
+        {/* Content */}
+        <div>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#F0F4FF', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
+          <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
+        </div>
+        {/* CTA button */}
+        {ann.link_url && (
+          <a href={ann.link_url} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.18)', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(245,158,11,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.28)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.18)')}>
+            {ann.link_label || 'Learn more'} →
+          </a>
+        )}
       </div>
     </div>
   )
