@@ -408,43 +408,6 @@ function CohostModal({ eventId, hostId, eventTitle, onClose }: { eventId: string
       </div>
     </div>
   )
-}: { eventId: string; onClose: () => void }) {
-  const [email, setEmail] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
-
-  const add = async () => {
-    if (!email.trim()) return
-    setSaving(true); setMsg('')
-    const { data: u } = await supabase.from('users').select('id,full_name,email').ilike('email', email.trim()).maybeSingle()
-    if (!u) { setMsg('User not found'); setSaving(false); return }
-    const { error } = await supabase.from('event_cohosts').upsert({ event_id: eventId, user_id: u.id })
-    if (error) setMsg('Error: ' + error.message)
-    else setMsg(`✓ ${u.full_name || u.email} added as co-host`)
-    setSaving(false)
-  }
-
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)' }} onClick={onClose}/>
-      <div style={{ position:'relative', width:'100%', maxWidth:380, margin:'0 16px', borderRadius:20, padding:24, background:C.card, border:`1px solid ${C.border}` }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <h3 style={{ fontSize:16, fontWeight:700, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Add Co-host</h3>
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:C.textMuted }}><X style={{ width:18, height:18 }}/></button>
-        </div>
-        <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:12 }}>Enter the email of the user you want to add as co-host</p>
-        <input value={email} onChange={e=>setEmail(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&add()}
-          placeholder="email@example.com"
-          style={{ width:'100%', padding:'10px 14px', borderRadius:10, border:`1px solid ${C.border}`, background:C.surface, color:C.text, fontSize:13, fontFamily:'DM Sans,sans-serif', outline:'none', marginBottom:10, boxSizing:'border-box' }}/>
-        {msg && <p style={{ fontSize:12, color:msg.startsWith('✓')?C.green:C.red, fontFamily:'DM Sans,sans-serif', marginBottom:10 }}>{msg}</p>}
-        <button onClick={add} disabled={saving||!email.trim()}
-          style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:C.blue, color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'DM Sans,sans-serif', opacity:saving||!email.trim()?0.5:1 }}>
-          {saving?'Adding...':'Add Co-host'}
-        </button>
-      </div>
-    </div>
-  )
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
