@@ -62,7 +62,6 @@ export default function EventDetailPage() {
   const [event,       setEvent]       = useState<any>(null)
   const [user,        setUser]        = useState<any>(null)
   const [hasTicket,   setHasTicket]   = useState(false)
-  const [isCohost,    setIsCohost]    = useState(false)
   const [loading,     setLoading]     = useState(true)
   const [claiming,    setClaiming]    = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -81,15 +80,8 @@ export default function EventDetailPage() {
       setEvent(ev)
 
       if (u && ev) {
-        // Check if user is host or co-host (they don't need a ticket)
-        const isHostUser = ev.host_id === u.id
-        const { data: coRow } = await supabase
-          .from('event_cohosts')
-          .select('id').eq('event_id', eventId).eq('user_id', u.id).maybeSingle()
-        const isCoHostUser = !!coRow
-        setIsCohost(isCoHostUser)
-        if (isHostUser || isCoHostUser) {
-          setHasTicket(true)  // Host and co-hosts always have access
+        if (isHostUser) {
+          setHasTicket(true)
         } else {
           const { data: ticket } = await supabase
             .from('tickets')
