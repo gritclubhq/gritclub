@@ -8,7 +8,7 @@ import {
   MessageSquare, Folder, Video, Send, Upload, Download, Trash2,
   Users, Crown, Mic, MicOff, VideoOff, PhoneOff, Monitor, MonitorOff,
   Loader2, Lock, Globe, ChevronLeft, Shield, Zap,
-  Phone, PhoneCall, X, PhoneMissed, Settings, AlertTriangle
+  Phone, PhoneCall, X, PhoneMissed, Settings, AlertTriangle, Check
 } from 'lucide-react'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -665,9 +665,19 @@ export default function GroupRoomPage() {
       setGroup(g)
 
       const { data:mem } = await supabase.from('group_members')
-        .select('role').eq('group_id',groupId).eq('user_id',u.id).maybeSingle()
+        .select('role, status').eq('group_id',groupId).eq('user_id',u.id).maybeSingle()
+
       if (!mem||dead) { router.push('/groups'); return }
-      setMyRole(mem.role); setAccess(true)
+
+      // Pending members (awaiting owner approval) cannot enter the room
+      if (mem.status === 'pending') {
+        router.push('/groups?pending=1')
+        return
+      }
+
+      // Normalize role — 'host' and 'owner' both mean owner
+      const role = mem.role === 'host' ? 'owner' : (mem.role || 'member')
+      setMyRole(role); setAccess(true)
 
       const { data:mems } = await supabase.from('group_members')
         .select('*, users(id,email,full_name,photo_url,role)').eq('group_id',groupId)
@@ -679,13 +689,31 @@ export default function GroupRoomPage() {
 
   const loadMembers = useCallback(async () => {
     const { data } = await supabase.from('group_members')
-      .select('*, users(id,email,full_name,photo_url,role)').eq('group_id',groupId)
+      .select('*, users(id,email,full_name,photo_url,role)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true })
     setMembers(data||[])
   }, [groupId])
 
   const promote = async (memberId: string, userId: string, newRole: 'admin'|'member') => {
     setPromoting(userId)
-    await supabase.from('group_members').update({ role:newRole }).eq('id',memberId)
+    await supabase.from('group_members').update({ role: newRole }).eq('id', memberId)
+    await loadMembers()
+    setPromoting(null)
+  }
+
+  const approveRequest = async (memberId: string) => {
+    setPromoting(memberId)
+    await supabase.from('group_members').update({ status: 'active' }).eq('id', memberId)
+    // Increment member count
+    await supabase.from('groups').update({ member_count: members.filter(m => (m.status==='active'||!m.status)).length + 1 }).eq('id', groupId)
+    await loadMembers()
+    setPromoting(null)
+  }
+
+  const rejectRequest = async (memberId: string) => {
+    setPromoting(memberId)
+    await supabase.from('group_members').delete().eq('id', memberId)
     await loadMembers()
     setPromoting(null)
   }
@@ -781,7 +809,36 @@ export default function GroupRoomPage() {
                 <p style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif' }}>Members ({members.length})</p>
               </div>
               <div style={{ flex:1, overflowY:'auto', padding:8, display:'flex', flexDirection:'column', gap:2 }}>
-                {members.map(m=>{
+                {/* Pending requests — only show to owner/admin */}
+                {isCtrl && members.filter(m=>m.status==='pending').length > 0 && (
+                  <>
+                    <p style={{ fontSize:10, fontWeight:700, color:C.gold, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif', padding:'4px 8px' }}>
+                      Requests ({members.filter(m=>m.status==='pending').length})
+                    </p>
+                    {members.filter(m=>m.status==='pending').map(m=>(
+                      <div key={m.id} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 8px', borderRadius:8, background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.15)', marginBottom:2 }}>
+                        <Av user={m.users} size={22}/>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontSize:11, fontWeight:600, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:'DM Sans,sans-serif' }}>{getName(m.users)}</p>
+                        </div>
+                        <button onClick={()=>approveRequest(m.id)} disabled={promoting===m.id}
+                          title="Approve" style={{ width:20, height:20, borderRadius:5, border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', background:C.greenDim, color:C.green, flexShrink:0 }}>
+                          {promoting===m.id ? <Loader2 style={{ width:8, height:8, animation:'spin 1s linear infinite' }}/> : <Check style={{ width:9, height:9 }}/>}
+                        </button>
+                        <button onClick={()=>rejectRequest(m.id)} disabled={promoting===m.id}
+                          title="Reject" style={{ width:20, height:20, borderRadius:5, border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', background:C.redDim, color:C.red, flexShrink:0 }}>
+                          <X style={{ width:9, height:9 }}/>
+                        </button>
+                      </div>
+                    ))}
+                    <div style={{ height:1, background:C.border, margin:'4px 0' }}/>
+                    <p style={{ fontSize:10, fontWeight:700, color:C.textDim, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif', padding:'4px 8px' }}>
+                      Members ({members.filter(m=>m.status!=='pending').length})
+                    </p>
+                  </>
+                )}
+                {/* Active members */}
+                {members.filter(m=>m.status!=='pending').map(m=>{
                   const isMe = m.user_id===currentUser?.id
                   const canPromote = myRole==='owner' && !isMe && m.role!=='owner'
                   return (
@@ -794,7 +851,7 @@ export default function GroupRoomPage() {
                         <p style={{ fontSize:12, fontWeight:600, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:'DM Sans,sans-serif' }}>{getName(m.users)}{isMe?' (you)':''}</p>
                         <p style={{ fontSize:10, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>{m.role}</p>
                       </div>
-                      {m.role==='owner' && <Crown style={{ width:11, height:11, color:C.gold, flexShrink:0 }}/>}
+                      {(m.role==='owner'||m.role==='host') && <Crown style={{ width:11, height:11, color:C.gold, flexShrink:0 }}/>}
                       {m.role==='admin' && <Shield style={{ width:11, height:11, color:C.purple, flexShrink:0 }}/>}
                       {canPromote && (
                         <button onClick={()=>promote(m.id, m.user_id, m.role==='admin'?'member':'admin')}
