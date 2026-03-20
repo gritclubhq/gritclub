@@ -531,13 +531,18 @@ function GroupCard({ group, currentUserId, onJoin }: {
             >
               Open Group →
             </button>
+          ) : isPending ? (
+            <div className="w-full py-2.5 rounded-xl text-xs font-bold text-center"
+              style={{ background: C.goldDim, color: C.gold, border: `1px solid rgba(245,158,11,0.3)` }}>
+              ⏳ Request Pending
+            </div>
           ) : (
             <button
               onClick={() => onJoin(group)}
               className="w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: C.blue, color: '#fff' }}
+              style={{ background: group.is_private ? C.goldDim : C.blue, color: group.is_private ? C.gold : '#fff', border: group.is_private ? `1px solid rgba(245,158,11,0.3)` : 'none' }}
             >
-              {group.is_private ? 'Request to Join' : 'Join Group'}
+              {group.is_private ? '🔒 Request to Join' : 'Join Group'}
             </button>
           )}
         </div>
@@ -575,21 +580,23 @@ export default function GroupsPage() {
       .select('*')
       .order('created_at', { ascending: false })
 
-    // User's memberships
+    // User's memberships (only active ones count as joined)
     const { data: memberships } = await supabase
       .from('group_members')
-      .select('group_id')
+      .select('group_id, status, role')
       .eq('user_id', uid)
 
-    const memberGroupIds = new Set((memberships || []).map((m: any) => m.group_id))
+    const activeMemberIds  = new Set((memberships || []).filter((m: any) => m.status === 'active' || !m.status).map((m: any) => m.group_id))
+    const pendingMemberIds = new Set((memberships || []).filter((m: any) => m.status === 'pending').map((m: any) => m.group_id))
 
     const enriched = (allGroups || []).map(g => ({
       ...g,
-      is_member: memberGroupIds.has(g.id),
+      is_member:  activeMemberIds.has(g.id),
+      is_pending: pendingMemberIds.has(g.id),
     }))
 
     setGroups(enriched)
-    setMyGroups(enriched.filter(g => memberGroupIds.has(g.id)))
+    setMyGroups(enriched.filter(g => activeMemberIds.has(g.id)))
   }
 
   const handleJoin = async (group: any) => {
@@ -601,20 +608,34 @@ export default function GroupsPage() {
       return
     }
 
-    await supabase.from('group_members').insert({
-      group_id: group.id,
-      user_id:  currentUser.id,
-      role:     'member',
-    })
-
-    // Increment member count
-    await supabase
-      .from('groups')
-      .update({ member_count: (group.member_count || 0) + 1 })
-      .eq('id', group.id)
-
-    await loadGroups(currentUser.id)
-    router.push(`/groups/${group.id}`)
+    if (group.is_private) {
+      // Private group — insert with status:'pending', owner approves
+      const { error } = await supabase.from('group_members').insert({
+        group_id: group.id,
+        user_id:  currentUser.id,
+        role:     'member',
+        status:   'pending',
+      })
+      if (!error) {
+        alert('Join request sent! The group owner will review your request.')
+        await loadGroups(currentUser.id)
+      }
+    } else {
+      // Public group — join immediately
+      const { error } = await supabase.from('group_members').insert({
+        group_id: group.id,
+        user_id:  currentUser.id,
+        role:     'member',
+        status:   'active',
+      })
+      if (!error) {
+        await supabase.from('groups')
+          .update({ member_count: (group.member_count || 0) + 1 })
+          .eq('id', group.id)
+        await loadGroups(currentUser.id)
+        router.push(`/groups/${group.id}`)
+      }
+    }
   }
 
   const handleGroupCreated = async (id: string) => {
