@@ -119,6 +119,9 @@ export default function PublicProfilePage() {
         .select('id,full_name,email,photo_url,banner_url,username,role,bio,website_url,instagram,twitter,linkedin,show_email,is_premium,created_at')
         .eq('id', targetId)
         .single()
+
+      // Admins have no public profile — redirect away
+      if (prof?.role === 'admin') { router.push('/dashboard'); return }
       setProfile(prof)
 
       const { data: userPosts } = await supabase
