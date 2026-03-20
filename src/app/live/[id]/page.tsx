@@ -804,7 +804,7 @@ export default function LiveRoomPage() {
         startRec(stream)
       } else {
         // COHOST: send stream ONLY to the host (host's UID from event)
-        const hostUid = hostIdRef.current
+        const hostUid = event?.host_id
         if (hostUid) makeHostPeer(hostUid, stream)
         // Don't record from cohost side
       }
