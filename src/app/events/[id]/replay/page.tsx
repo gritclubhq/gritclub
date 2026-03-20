@@ -30,6 +30,7 @@ export default function EventReplayPage() {
   const [messages,   setMessages]   = useState<any[]>([])
   const [loading,    setLoading]    = useState(true)
   const [canWatch,   setCanWatch]   = useState(false)
+  const [accessLabel, setAccessLabel] = useState('')
   const [playing,    setPlaying]    = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -44,12 +45,38 @@ export default function EventReplayPage() {
       const {data:ev} = await supabase.from('events').select('*, users(id,full_name,email,photo_url)').eq('id',eventId).single()
       setEvent(ev)
 
-      // Check if user can watch
-      const isHost = ev?.host_id===user.id || prof?.role==='admin'
-      const isPremium = prof?.is_premium===true || prof?.role==='host' || prof?.role==='admin'
-      const watchAllowed = isHost || isPremium
+      // Access rules:
+      // 1. Host / admin → always
+      // 2. Premium members → always (unlimited)
+      // 3. Ticket holders (paid) → within 7 days of event ending
+      const isHost    = ev?.host_id === user.id || prof?.role === 'admin'
+      const isPremium = prof?.is_premium === true || prof?.role === 'host' || prof?.role === 'admin'
 
+      let isTicketHolder = false
+      if (!isHost && !isPremium) {
+        const { data: tkt } = await supabase.from('tickets').select('id')
+          .eq('user_id', user.id).eq('event_id', eventId)
+          .in('status', ['paid','confirmed']).maybeSingle()
+        if (tkt) {
+          // Check 7-day window from event end
+          const endedAt   = ev?.ended_at ? new Date(ev.ended_at) : null
+          const daysAgo   = endedAt ? (Date.now() - endedAt.getTime()) / (1000 * 60 * 60 * 24) : 999
+          isTicketHolder  = daysAgo <= 7
+        }
+      }
+
+      const watchAllowed = isHost || isPremium || isTicketHolder
       setCanWatch(watchAllowed)
+      // Store access type for UI
+      if (isTicketHolder && !isPremium) {
+        const endedAt = ev?.ended_at ? new Date(ev.ended_at) : null
+        const daysLeft = endedAt ? Math.max(0, Math.ceil(7 - (Date.now() - endedAt.getTime()) / (1000 * 60 * 60 * 24))) : 0
+        setAccessLabel(`Ticket access — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`)
+      } else if (isPremium) {
+        setAccessLabel('Pro member')
+      } else if (isHost) {
+        setAccessLabel('Host')
+      }
 
       if(watchAllowed){
         // Load recording
@@ -94,12 +121,12 @@ export default function EventReplayPage() {
           <div style={{width:72,height:72,borderRadius:'50%',background:C.purpleDim,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',border:`2px solid rgba(124,58,237,0.3)`}}>
             <Lock style={{width:28,height:28,color:C.purple}}/>
           </div>
-          <h2 style={{fontSize:22,fontWeight:800,color:C.text,fontFamily:'Syne,sans-serif',letterSpacing:'-0.02em',marginBottom:8}}>Premium Only</h2>
+          <h2 style={{fontSize:22,fontWeight:800,color:C.text,fontFamily:'Syne,sans-serif',letterSpacing:'-0.02em',marginBottom:8}}>Replay Access Required</h2>
           <p style={{fontSize:14,color:C.textMuted,fontFamily:'DM Sans,sans-serif',lineHeight:1.7,marginBottom:24}}>
-            Replay access is available for <strong style={{color:C.gold}}>GritClub Pro</strong> members. Upgrade to watch this session and all past recordings.
+            Watch this replay by upgrading to <strong style={{color:C.gold}}>GritClub Pro</strong> — or if you attended this event, ticket holders can watch for 7 days after it ends.
           </p>
           <div style={{borderRadius:16,padding:20,background:C.surface,border:`1px solid ${C.border}`,marginBottom:24,textAlign:'left'}}>
-            {['Watch all session replays','Download recordings','Exclusive networking','Priority event access'].map(f=>(
+            {['Pro: Unlimited replay access','Ticket holders: 7 days after event','Download recordings (Pro)','Priority event access (Pro)'].map(f=>(
               <div key={f} style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
                 <div style={{width:20,height:20,borderRadius:'50%',background:C.goldDim,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   <span style={{fontSize:10,color:C.gold}}>✓</span>
@@ -131,7 +158,7 @@ export default function EventReplayPage() {
           </button>
           <span style={{color:C.textDim}}>·</span>
           <span style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>Replay</span>
-          <span style={{fontSize:11,padding:'2px 8px',borderRadius:6,background:C.goldDim,color:C.gold,fontFamily:'DM Sans,sans-serif',fontWeight:700,marginLeft:4}}>PRO</span>
+          {accessLabel && <span style={{fontSize:11,padding:'2px 8px',borderRadius:6,background:C.goldDim,color:C.gold,fontFamily:'DM Sans,sans-serif',fontWeight:700,marginLeft:4}}>{accessLabel}</span>}
         </div>
 
         <div style={{maxWidth:900,margin:'0 auto',padding:'24px 16px',display:'grid',gridTemplateColumns:'1fr 300px',gap:20,alignItems:'start'}}>
