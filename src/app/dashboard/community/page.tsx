@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import {
   Heart, MessageCircle, Share2, Send, Trash2,
   MoreHorizontal, Globe, Users, Search, X,
-  Loader2, UserPlus, Check, Image as ImageIcon, ChevronDown
+  Loader2, UserPlus, Check, Image as ImageIcon, ChevronDown, Megaphone
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -64,6 +64,37 @@ function Avatar({ u, size = 40 }: { u: any; size?: number }) {
       {u?.photo_url
         ? <img src={u.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : getInitials(u)}
+    </div>
+  )
+}
+
+
+// ─── Announcement Card ────────────────────────────────────────────────────────
+function AnnouncementCard({ ann }: { ann: any }) {
+  const date = new Date(ann.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return (
+    <div style={{
+      borderRadius: 20, padding: '18px 20px',
+      background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,146,60,0.08))',
+      border: '1px solid rgba(245,158,11,0.3)',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(245,158,11,0.3)' }}>
+          <Megaphone style={{ width: 16, height: 16, color: '#F59E0B' }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
+            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
+          </div>
+          <p style={{ fontSize: 11, color: '#7B8DB0', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
+        </div>
+      </div>
+      <div>
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#F0F4FF', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
+        <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
+      </div>
     </div>
   )
 }
@@ -513,6 +544,7 @@ export default function CommunityPage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [profile,     setProfile]     = useState<any>(null)
   const [posts,       setPosts]       = useState<any[]>([])
+  const [announcements, setAnnouncements] = useState<any[]>([])
   const [loading,     setLoading]     = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore,     setHasMore]     = useState(true)
@@ -561,6 +593,15 @@ export default function CommunityPage() {
       setLikedIds(ids)
 
       loadPosts(u.id, true)
+
+      // Load active announcements — shown pinned at top of feed
+      const { data: anns } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(3)
+      setAnnouncements(anns || [])
     })
   }, [])
 
@@ -623,6 +664,15 @@ export default function CommunityPage() {
 
               {currentUser && (
                 <Composer currentUser={currentUser} profile={profile} onPosted={handlePosted} />
+              )}
+
+              {/* Pinned announcements — shown above all posts */}
+              {announcements.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {announcements.map(ann => (
+                    <AnnouncementCard key={ann.id} ann={ann} />
+                  ))}
+                </div>
               )}
 
               {loading ? (
