@@ -236,11 +236,11 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: {
 
       if (gErr || !group) throw gErr
 
-      // Add creator as host member
+      // Add creator as owner member
       await supabase.from('group_members').insert({
         group_id: group.id,
         user_id:  currentUserId,
-        role:     'host',
+        role:     'owner',
       })
 
       onCreated(group.id)
