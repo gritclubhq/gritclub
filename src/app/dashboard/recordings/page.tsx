@@ -153,7 +153,7 @@ function RecordingCard({ rec, isPremium, onWatch }: { rec: any; isPremium: boole
             </span>
           )}
           {canWatch && (
-            <span style={{ fontSize:10, padding:'3px 8px', borderRadius:6, background:C.greenDim||'rgba(16,185,129,0.1)', color:C.green, fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>
+            <span style={{ fontSize:10, padding:'3px 8px', borderRadius:6, background:'rgba(16,185,129,0.1)', color:C.green, fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>
               ✓ Available
             </span>
           )}
