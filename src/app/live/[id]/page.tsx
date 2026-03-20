@@ -237,179 +237,6 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
   )
 }
 
-// ── Cohost modal ──────────────────────────────────────────────────────────────
-function CohostModal({ eventId, hostId, eventTitle, onClose }: { eventId: string; hostId: string; eventTitle: string; onClose: () => void }) {
-  const [query,      setQuery]      = useState('')
-  const [results,    setResults]    = useState<any[]>([])
-  const [selected,   setSelected]   = useState<any>(null)
-  const [cohosts,    setCohosts]    = useState<any[]>([])
-  const [saving,     setSaving]     = useState(false)
-  const [msg,        setMsg]        = useState('')
-  const debounce     = useRef<any>(null)
-
-  // Load existing co-hosts and search connections on mount
-  useEffect(() => {
-    loadCohosts()
-  }, [])
-
-  const loadCohosts = async () => {
-    const { data } = await supabase
-      .from('event_cohosts')
-      .select('user_id, users(id,full_name,email,photo_url,username)')
-      .eq('event_id', eventId)
-    setCohosts(data || [])
-  }
-
-  const searchConnections = async (q: string) => {
-    if (!q.trim()) { setResults([]); return }
-    // Search only from host's accepted connections
-    const { data: conns } = await supabase
-      .from('connections')
-      .select('user1_id, user2_id')
-      .or(`user1_id.eq.${hostId},user2_id.eq.${hostId}`)
-      .eq('status', 'accepted')
-    const connIds = (conns||[]).map((c:any) => c.user1_id === hostId ? c.user2_id : c.user1_id)
-    if (!connIds.length) { setResults([]); return }
-
-    const { data: users } = await supabase
-      .from('users')
-      .select('id,full_name,email,photo_url,username')
-      .in('id', connIds)
-      .or(`full_name.ilike.%${q}%,username.ilike.%${q}%,email.ilike.%${q}%`)
-      .limit(6)
-    setResults(users || [])
-  }
-
-  const handleInput = (val: string) => {
-    setQuery(val); setSelected(null)
-    clearTimeout(debounce.current)
-    debounce.current = setTimeout(() => searchConnections(val), 300)
-  }
-
-  const add = async () => {
-    if (!selected) return
-    setSaving(true); setMsg('')
-    // Use INSERT with ON CONFLICT DO NOTHING to avoid duplicate key error
-    const { error } = await supabase.from('event_cohosts')
-      .insert({ event_id: eventId, user_id: selected.id })
-      .select()
-    if (error && !error.message.includes('duplicate')) {
-      setMsg('Error: ' + error.message); setSaving(false); return
-    }
-    // Send notification to the co-host
-    await supabase.from('notifications').insert({
-      user_id:   selected.id,
-      actor_id:  hostId,
-      type:      'cohost_invite',
-      title:     "You've been added as co-host!",
-      body:      `You are now co-host for "${eventTitle}"`,
-      link:      `/live/${eventId}`,
-      is_read:   false,
-    })
-    setMsg(`✓ ${selected.full_name || selected.email} added as co-host`)
-    setSelected(null); setQuery('')
-    loadCohosts()
-    setSaving(false)
-  }
-
-  const remove = async (userId: string) => {
-    await supabase.from('event_cohosts').delete().eq('event_id', eventId).eq('user_id', userId)
-    loadCohosts()
-  }
-
-  const AC2 = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
-  const uc = (id: string) => AC2[(id?.charCodeAt(0)||0) % AC2.length]
-  const un = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
-
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)' }} onClick={onClose}/>
-      <div style={{ position:'relative', width:'100%', maxWidth:420, margin:'0 16px', borderRadius:20, padding:24, background:C.card, border:`1px solid ${C.border}`, maxHeight:'80vh', overflow:'auto' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-          <h3 style={{ fontSize:16, fontWeight:700, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Manage Co-hosts</h3>
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:C.textMuted }}><X style={{ width:18, height:18 }}/></button>
-        </div>
-        <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:16 }}>Search your connections by name or username</p>
-
-        {/* Search input */}
-        <div style={{ position:'relative', marginBottom:10 }}>
-          {selected ? (
-            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderRadius:10, border:`1px solid ${C.blue}`, background:C.blueDim }}>
-              <div style={{ width:28, height:28, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:uc(selected.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:uc(selected.id) }}>
-                {selected.photo_url ? <img src={selected.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : un(selected).slice(0,2).toUpperCase()}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{un(selected)}</p>
-                {selected.username && <p style={{ fontSize:11, color:C.blueL, fontFamily:'DM Sans,sans-serif' }}>@{selected.username}</p>}
-              </div>
-              <button onClick={()=>{ setSelected(null); setQuery('') }} style={{ background:'none', border:'none', cursor:'pointer', color:C.textMuted }}><X style={{ width:14, height:14 }}/></button>
-            </div>
-          ) : (
-            <input
-              value={query}
-              onChange={e=>handleInput(e.target.value)}
-              placeholder="Search by name, @username or email..."
-              style={{ width:'100%', padding:'10px 14px', borderRadius:10, border:`1px solid ${C.border}`, background:C.surface, color:C.text, fontSize:13, fontFamily:'DM Sans,sans-serif', outline:'none', boxSizing:'border-box' }}
-              onFocus={e=>(e.target.style.borderColor='rgba(37,99,235,0.5)')}
-              onBlur={e=>setTimeout(()=>{ (e.target as any).style.borderColor=C.border }, 200)}
-            />
-          )}
-          {/* Autocomplete dropdown */}
-          {results.length > 0 && !selected && (
-            <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:10, zIndex:10, overflow:'hidden', boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
-              {results.map(u => (
-                <div key={u.id} onClick={()=>{ setSelected(u); setResults([]); setQuery(un(u)) }}
-                  style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer', borderBottom:`1px solid ${C.border}` }}
-                  onMouseEnter={e=>((e.currentTarget as HTMLElement).style.background=C.surface)}
-                  onMouseLeave={e=>((e.currentTarget as HTMLElement).style.background='transparent')}>
-                  <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:uc(u.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:uc(u.id) }}>
-                    {u.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : un(u).slice(0,2).toUpperCase()}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif', margin:0 }}>{un(u)}</p>
-                    <p style={{ fontSize:11, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:0 }}>{u.username ? `@${u.username}` : u.email}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {msg && <p style={{ fontSize:12, color:msg.startsWith('✓')?C.green:C.red, fontFamily:'DM Sans,sans-serif', marginBottom:10 }}>{msg}</p>}
-
-        <button onClick={add} disabled={saving||!selected}
-          style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:C.blue, color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginBottom:16, opacity:saving||!selected?0.4:1 }}>
-          {saving?'Adding...':'Add Co-host'}
-        </button>
-
-        {/* Current co-hosts list */}
-        {cohosts.length > 0 && (
-          <>
-            <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:C.textDim, fontFamily:'DM Sans,sans-serif', marginBottom:8 }}>Current Co-hosts</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-              {cohosts.map((c:any) => {
-                const u = c.users || {}
-                return (
-                  <div key={c.user_id} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background:C.surface, border:`1px solid ${C.border}` }}>
-                    <div style={{ width:30, height:30, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:uc(u.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:uc(u.id) }}>
-                      {u.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : un(u).slice(0,2).toUpperCase()}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif', margin:0 }}>{un(u)}</p>
-                      {u.username && <p style={{ fontSize:11, color:C.blueL, fontFamily:'DM Sans,sans-serif', margin:0 }}>@{u.username}</p>}
-                    </div>
-                    <button onClick={()=>remove(c.user_id)} style={{ background:'none', border:'none', cursor:'pointer', color:C.red, fontSize:11, fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>Remove</button>
-                  </div>
-                )
-              })}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function LiveRoomPage() {
   const { id } = useParams(); const router = useRouter()
@@ -418,7 +245,6 @@ export default function LiveRoomPage() {
 
   const [event,        setEvent]       = useState<any>(null)
   const [isHost,       setIsHost]      = useState(false)
-  const [isCohost,     setIsCohost]    = useState(false)
   const [loading,      setLoading]     = useState(true)
   const [accessDenied, setAccessDenied]= useState(false)
   const [streaming,    setStreaming]   = useState(false)
@@ -439,7 +265,6 @@ export default function LiveRoomPage() {
   const [vStatus,      setVStatus]     = useState<'idle'|'connecting'|'connected'|'failed'>('idle')
   const [needsUnmute,  setNeedsUnmute] = useState(false)
   const [retries,         setRetries]        = useState(0)
-  const [cohostConnected, setCohostConnected] = useState(false)
   const [fullscreen,   setFullscreen]  = useState(false)
   const [messages,     setMessages]    = useState<any[]>([])
   const [newMsg,       setNewMsg]      = useState('')
@@ -463,7 +288,6 @@ export default function LiveRoomPage() {
   const localVid  = useRef<HTMLVideoElement>(null)
   const remoteVid = useRef<HTMLVideoElement>(null)
   const wbCanvas  = useRef<HTMLCanvasElement>(null)
-  const cohostVid = useRef<HTMLVideoElement>(null)   // host sees cohost PiP
   const vidBox    = useRef<HTMLDivElement>(null)
   const chatEnd   = useRef<HTMLDivElement>(null)
   const wbDropRef = useRef<HTMLDivElement>(null)
@@ -471,13 +295,9 @@ export default function LiveRoomPage() {
   const camStream    = useRef<MediaStream|null>(null)
   const scrStream    = useRef<MediaStream|null>(null)
   const wbStream     = useRef<MediaStream|null>(null)
-  // cohostStream: the cohost's video/audio received by the HOST
-  const cohostStream = useRef<MediaStream|null>(null)
 
   const hPeers = useRef<Map<string,{pc:RTCPeerConnection,iceQueue:RTCIceCandidateInit[]}>>(new Map())
-  // inboundPeers: connections FROM others TO us (host stream, cohost stream)
-  const inboundPeers = useRef<Map<string, { pc: RTCPeerConnection; ice: RTCIceCandidateInit[] }>>(new Map())
-  const vPc    = useRef<RTCPeerConnection|null>(null)  // kept for compat
+  const vPc    = useRef<RTCPeerConnection|null>(null)
   const vIce   = useRef<RTCIceCandidateInit[]>([])
   const isLive = useRef(false)
   const myUid  = useRef<string>('')  // stored here so presence sync can exclude host
@@ -514,12 +334,8 @@ export default function LiveRoomPage() {
 
       const hc = ev.host_id === u.id || prof?.role === 'admin'
       setIsHost(hc)
-      const { data: co } = await supabase.from('event_cohosts')
-        .select('id').eq('event_id', eventId).eq('user_id', u.id).maybeSingle()
-      const cc = !!co; setIsCohost(cc)
-      const ctrl = hc || cc
 
-      if (!ctrl && (ev.price > 0 || !ev.is_free)) {
+      if (!hc && (ev.price > 0 || !ev.is_free)) {
         const { data: tkt } = await supabase.from('tickets').select('id')
           .eq('user_id', u.id).eq('event_id', eventId)
           .in('status', ['paid','free','confirmed','active']).maybeSingle()
@@ -549,9 +365,7 @@ export default function LiveRoomPage() {
 
       // ── If host reloads while stream was live ──
       // Host: restore streaming state
-      // Cohost: start connecting to host stream (they watch, not broadcast on reload)
       if (hc && ev.status === 'live') setStreaming(true)
-      // Note: cohost on reload will receive the host's offer via setupSignaling join event
 
       const ch = supabase.channel(`chat-${eventId}`, { config:{ presence:{ key: u.id } } })
         .on('broadcast', { event:'msg' }, ({ payload })=>{
@@ -577,7 +391,7 @@ export default function LiveRoomPage() {
         .subscribe(async s=>{ if (s==='SUBSCRIBED') await ch.track({ uid: u.id }) })
       chatCh.current = ch
 
-      setupSignaling(u.id, ctrl, cc, ev.status === 'live')
+      setupSignaling(u.id, hc, ev.status === 'live')
     })()
 
     return ()=>{
@@ -585,7 +399,6 @@ export default function LiveRoomPage() {
       clearTimeout(retryT.current); clearInterval(recTimer.current)
       killTracks()
       vPc.current?.close()
-      inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
       hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
       if (chatCh.current) supabase.removeChannel(chatCh.current)
       if (sigCh.current)  supabase.removeChannel(sigCh.current)
@@ -626,160 +439,91 @@ export default function LiveRoomPage() {
   }
 
   // ── Viewer peer ───────────────────────────────────────────────────────────────
-  // makeInboundPeer: create a peer connection to receive stream from senderId
-  const makeInboundPeer = (myId: string, senderId: string) => {
-    const existing = inboundPeers.current.get(senderId)
-    existing?.pc.close()
-    const pc = new RTCPeerConnection({ iceServers: ICE })
-    const entry = { pc, ice: [] as RTCIceCandidateInit[] }
-    inboundPeers.current.set(senderId, entry)
-
-    const ms = new MediaStream()
-    // isCohostSender: this inbound peer is from cohost → display in PiP, not remoteVid
-    const isCohostSender = senderId !== 'host'
-    pc.ontrack = e => {
-      e.streams[0]?.getTracks().forEach(t => { if (!ms.getTrackById(t.id)) ms.addTrack(t) })
-      if (isCohostSender) {
-        // Host receives cohost stream → show in PiP tile
-        cohostStream.current = ms
-        if (cohostVid.current) {
-          cohostVid.current.srcObject = ms
-          cohostVid.current.muted = false
-          cohostVid.current.play().catch(() => { if(cohostVid.current){ cohostVid.current.muted=true; cohostVid.current.play().catch(()=>{}) } })
-        }
-        setCohostConnected(true)
-      } else {
-        // Viewer/cohost receives host stream → show in main video
-        if (remoteVid.current) {
-          remoteVid.current.srcObject = ms
-          remoteVid.current.muted = false
-          remoteVid.current.play().catch(() => {
-            if (remoteVid.current) { remoteVid.current.muted = true; remoteVid.current.play().catch(() => {}); setNeedsUnmute(true) }
-          })
-        }
-        setVStatus('connected'); clearTimeout(retryT.current)
-      }
-    }
-    pc.onicecandidate = ({ candidate }) => {
-      if (!candidate || !sigCh.current) return
-      sigCh.current.send({ type: 'broadcast', event: 'ice', payload: { to: senderId, from: myId, candidate: candidate.toJSON() } })
-    }
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'connected') { setVStatus('connected'); setRetries(0); clearTimeout(retryT.current) }
-      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-        setVStatus('failed')
-        retryT.current = setTimeout(() => {
-          setRetries(r => r+1); setVStatus('connecting')
-          sigCh.current?.send({ type: 'broadcast', event: 'join', payload: { viewerId: myId } })
-        }, 4000)
-      }
-    }
-    pc.oniceconnectionstatechange = () => { if (pc.iceConnectionState === 'failed') pc.restartIce() }
-    vPc.current = pc  // keep for compat
-    return { pc, entry }
-  }
-
   const makeViewerPeer = (myId: string) => {
-    // Legacy wrapper — uses makeInboundPeer with 'host' as sender key
-    const { pc } = makeInboundPeer(myId, 'host')
-    return pc
+    vPc.current?.close(); vIce.current=[]
+    const pc = new RTCPeerConnection({ iceServers:ICE })
+    const ms = new MediaStream()
+    pc.ontrack=e=>{
+      e.streams[0]?.getTracks().forEach(t=>{ if(!ms.getTrackById(t.id)) ms.addTrack(t) })
+      if (remoteVid.current) {
+        remoteVid.current.srcObject=ms; remoteVid.current.muted=false
+        remoteVid.current.play().catch(()=>{
+          if (remoteVid.current) { remoteVid.current.muted=true; remoteVid.current.play().catch(()=>{}); setNeedsUnmute(true) }
+        })
+      }
+      setVStatus('connected'); clearTimeout(retryT.current)
+    }
+    pc.onicecandidate=({ candidate })=>{ if(candidate&&sigCh.current) sigCh.current.send({ type:'broadcast', event:'ice', payload:{ to:'host', from:myId, candidate:candidate.toJSON() } }) }
+    pc.onconnectionstatechange=()=>{
+      if(pc.connectionState==='connected'){ setVStatus('connected'); setRetries(0); clearTimeout(retryT.current) }
+      if(pc.connectionState==='failed'||pc.connectionState==='disconnected'){
+        setVStatus('failed')
+        retryT.current=setTimeout(()=>{ setRetries(r=>r+1); setVStatus('connecting'); sigCh.current?.send({ type:'broadcast', event:'join', payload:{ viewerId:myId } }) }, 4000)
+      }
+    }
+    pc.oniceconnectionstatechange=()=>{ if(pc.iceConnectionState==='failed') pc.restartIce() }
+    vPc.current=pc; return pc
   }
 
   // ── Signaling ─────────────────────────────────────────────────────────────────
-  const setupSignaling = (uid: string, ctrl: boolean, isCoHost: boolean, alreadyLive: boolean) => {
+  const setupSignaling = (uid: string, ctrl: boolean, alreadyLive: boolean) => {
     const sig = supabase.channel(`sig-${eventId}`)
-
-    // ── Host-side: handle viewer joins, answers, ICE ──────────────────────────
-    // Both host AND cohost register these handlers so either can serve viewers
-    // when they themselves go live
-    sig.on('broadcast',{ event:'join' },({ payload })=>{
-      const vid=payload.viewerId; if(!vid||vid===uid) return
-      // Only respond if THIS user is actively streaming (isLive + has their own cam)
-      if(!isLive.current||!camStream.current){
-        // If I'm not live, don't respond — the actual host will handle it
-        return
-      }
-      makeHostPeer(vid, camStream.current)
-    })
-    sig.on('broadcast',{ event:'answer' },async({ payload })=>{
-      if(payload.to!==uid&&payload.to!=='host') return
-      const entry=hPeers.current.get(payload.from); if(!entry) return
-      const { pc, iceQueue }=entry
-      if(pc.signalingState!=='have-local-offer') return
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-        for(const c of iceQueue){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }
-        entry.iceQueue=[]
-      } catch(e){ console.warn('[HOST/COHOST answer]',e) }
-    })
-    sig.on('broadcast',{ event:'ice' },async({ payload })=>{
-      if(payload.to!=='host'&&payload.to!==uid) return
-      const entry=hPeers.current.get(payload.from); if(!entry) return
-      if(entry.pc.remoteDescription){ try{ await entry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
-      else entry.iceQueue.push(payload.candidate)
-    })
-
-    // ── Viewer-side: receive the host's stream ────────────────────────────────
-    // Viewers AND cohosts both receive the host's offer so they can watch
-    sig.on('broadcast',{ event:'offer' },async({ payload })=>{
-      if(payload.to!==uid) return
-      // Ignore offers from ourselves
-      if(payload.from===uid) return
-      const senderId = payload.from || 'host'
-      const { pc, entry } = makeInboundPeer(uid, senderId)
-      setVStatus('connecting')
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-        // Flush any ICE that arrived before the offer
-        for(const c of entry.ice){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }
-        entry.ice=[]
-        const ans=await pc.createAnswer(); await pc.setLocalDescription(ans)
-        sig.send({ type:'broadcast', event:'answer', payload:{ to:payload.from, from:uid, sdp:pc.localDescription } })
-      } catch(e){ console.error('[INBOUND offer]',e); setVStatus('failed') }
-    })
-    sig.on('broadcast',{ event:'ice' },async({ payload })=>{
-      if(payload.to!==uid) return
-      // Skip ICE meant for our outbound peers (already handled above)
-      if(hPeers.current.has(payload.from)) return
-      const senderId = payload.from || 'host'
-      const entry = inboundPeers.current.get(senderId)
-      if(entry){
+    if (ctrl) {
+      sig.on('broadcast',{ event:'join' },({ payload })=>{
+        const vid=payload.viewerId; if(!vid||vid===uid) return
+        if(!isLive.current||!camStream.current){ sig.send({ type:'broadcast', event:'not-live', payload:{ to:vid } }); return }
+        makeHostPeer(vid, camStream.current)
+      })
+      sig.on('broadcast',{ event:'answer' },async({ payload })=>{
+        if(payload.to!==uid&&payload.to!=='host') return
+        const entry=hPeers.current.get(payload.from); if(!entry) return
+        const { pc, iceQueue }=entry
+        if(pc.signalingState!=='have-local-offer') return
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          for(const c of iceQueue){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }
+          entry.iceQueue=[]
+        } catch(e){ console.warn('[HOST]',e) }
+      })
+      sig.on('broadcast',{ event:'ice' },async({ payload })=>{
+        if(payload.to!=='host'&&payload.to!==uid) return
+        const entry=hPeers.current.get(payload.from); if(!entry) return
         if(entry.pc.remoteDescription){ try{ await entry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
-        else entry.ice.push(payload.candidate)
-      } else {
-        // Queue for the next inbound peer from this sender
-        vIce.current.push(payload.candidate)
-      }
-    })
-    sig.on('broadcast',{ event:'not-live' },({ payload })=>{ if(payload.to===uid) setVStatus('idle') })
-    sig.on('broadcast',{ event:'stream-ended' },({ payload })=>{
-      if(payload?.hostEnded){
-        // Host ended — redirect EVERYONE (viewers and cohost) to dashboard
-        inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
-        hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
-        if(remoteVid.current) remoteVid.current.srcObject=null
-        router.push('/dashboard')
-      } else {
-        setVStatus('idle')
-        inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
-        if(remoteVid.current) remoteVid.current.srcObject=null
-      }
-    })
-    sig.on('broadcast',{ event:'cohost-left' },({ payload })=>{
-      const entry = inboundPeers.current.get(payload.cohostId)
-      entry?.pc.close(); inboundPeers.current.delete(payload.cohostId)
-      setCohostConnected(false); cohostStream.current=null
-    })
-
+        else entry.iceQueue.push(payload.candidate)
+      })
+    } else {
+      sig.on('broadcast',{ event:'offer' },async({ payload })=>{
+        if(payload.to!==uid) return
+        const pc=makeViewerPeer(uid); setVStatus('connecting')
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          for(const c of vIce.current){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; vIce.current=[]
+          const ans=await pc.createAnswer(); await pc.setLocalDescription(ans)
+          sig.send({ type:'broadcast', event:'answer', payload:{ to:payload.from, from:uid, sdp:pc.localDescription } })
+        } catch(e){ console.error('[VIEWER]',e); setVStatus('failed') }
+      })
+      sig.on('broadcast',{ event:'ice' },async({ payload })=>{
+        if(payload.to!==uid) return
+        if(vPc.current?.remoteDescription){ try{ await vPc.current.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
+        else vIce.current.push(payload.candidate)
+      })
+      sig.on('broadcast',{ event:'not-live' },({ payload })=>{ if(payload.to===uid) setVStatus('idle') })
+      sig.on('broadcast',{ event:'stream-ended' },({ payload })=>{
+        if(payload?.hostEnded){
+          hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
+          if(remoteVid.current) remoteVid.current.srcObject=null
+          router.push('/dashboard')
+        } else {
+          setVStatus('idle')
+          if(remoteVid.current) remoteVid.current.srcObject=null
+        }
+      })
+    }
     sig.subscribe(async s=>{
-      if(s==='SUBSCRIBED'&&alreadyLive){
-        // Both viewers and cohosts join to receive the host stream
+      if(s==='SUBSCRIBED'&&!ctrl&&alreadyLive){
         setVStatus('connecting')
         sig.send({ type:'broadcast', event:'join', payload:{ viewerId:uid } })
-        retryT.current=setTimeout(()=>{
-          if(vPc.current?.connectionState!=='connected')
-            sig.send({ type:'broadcast', event:'join', payload:{ viewerId:uid } })
-        }, 7000)
+        retryT.current=setTimeout(()=>{ if(vPc.current?.connectionState!=='connected') sig.send({ type:'broadcast', event:'join', payload:{ viewerId:uid } }) }, 7000)
       }
     })
     sigCh.current=sig
@@ -797,17 +541,9 @@ export default function LiveRoomPage() {
       if(localVid.current){ localVid.current.srcObject=stream; localVid.current.muted=true; await localVid.current.play().catch(()=>{}) }
       setStreaming(true); setMode('camera')
       await supabase.from('events').update({ status:'live' }).eq('id', eventId)
-      if (isHost) {
-        // HOST: send stream to all presence members (viewers + cohost)
-        const ps=chatCh.current?.presenceState()||{}
-        Object.keys(ps).filter(v=>v!==uRef.current?.id).forEach(vid=>makeHostPeer(vid,stream))
-        startRec(stream)
-      } else {
-        // COHOST: send stream ONLY to the host (host's UID from event)
-        const hostUid = event?.host_id
-        if (hostUid) makeHostPeer(hostUid, stream)
-        // Don't record from cohost side
-      }
+      const ps=chatCh.current?.presenceState()||{}
+      Object.keys(ps).filter(v=>v!==uRef.current?.id).forEach(vid=>makeHostPeer(vid,stream))
+      startRec(stream)
     } catch(err:any){
       if(err.name==='NotAllowedError') setStreamErr('Camera/mic access denied. Allow permissions.')
       else if(err.name==='NotFoundError') setStreamErr('No camera or microphone found.')
@@ -818,29 +554,17 @@ export default function LiveRoomPage() {
   const endStream = async () => {
     // Only HOST calls this — ends the whole event for everyone
     isLive.current=false
-    // Broadcast stream-ended — all viewers AND cohost will be redirected
+    // Broadcast stream-ended — redirect all viewers
     sigCh.current?.send({ type:'broadcast', event:'stream-ended', payload:{ hostEnded: true } })
     await stopRec()
     killTracks()
     hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
-    inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
     if(localVid.current) localVid.current.srcObject=null
     setStreaming(false)
     await supabase.from('events').update({ status:'ended', ended_at:new Date().toISOString() }).eq('id', eventId)
     router.push('/host')
   }
 
-  const leaveStream = () => {
-    // Cohost leaves — disconnects their own camera but does NOT end the event
-    isLive.current=false
-    killTracks()
-    hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
-    if(localVid.current) localVid.current.srcObject=null
-    setStreaming(false)
-    // Notify host that cohost left
-    sigCh.current?.send({ type:'broadcast', event:'cohost-left', payload:{ cohostId: uRef.current?.id } })
-    router.push('/dashboard')
-  }
 
   const toggleMic = () => { camStream.current?.getAudioTracks().forEach(t=>{ t.enabled=!t.enabled }); setMicOn(p=>!p) }
   const toggleCam = () => { camStream.current?.getVideoTracks().forEach(t=>{ t.enabled=!t.enabled }); setCamOn(p=>!p) }
@@ -925,14 +649,14 @@ export default function LiveRoomPage() {
   const sendMsg = async () => {
     if(!newMsg.trim()||sending) return
     const u=uRef.current, p=pRef.current
-    if(slowMode&&!(isHost||isCohost)){
+    if(slowMode&&!isHost){
       const elapsed=(Date.now()-lastMsg)/1000
       if(elapsed<10){ const rem=Math.ceil(10-elapsed); setSlowCD(rem); const t=setInterval(()=>setSlowCD(prev=>{ if(prev<=1){ clearInterval(t); return 0 } return prev-1 }),1000); return }
     }
-    if(hasBad(newMsg)&&!(isHost||isCohost)){ alert('Message blocked.'); return }
+    if(hasBad(newMsg)&&!isHost){ alert('Message blocked.'); return }
     if(mutedUsers.has(u?.id||'')){ alert('You are muted.'); return }
     setSending(true)
-    const m={ id:crypto.randomUUID(), user_id:u?.id, name:uname(p||u), avatar:p?.photo_url||'', text:newMsg.trim().slice(0,500), ts:Date.now(), isHost:isHost||isCohost }
+    const m={ id:crypto.randomUUID(), user_id:u?.id, name:uname(p||u), avatar:p?.photo_url||'', text:newMsg.trim().slice(0,500), ts:Date.now(), isHost:isHost }
     setNewMsg(''); setLastMsg(Date.now())
     setMessages(prev=>[...prev,m]); setTimeout(()=>chatEnd.current?.scrollIntoView({ behavior:'smooth' }),50)
     await supabase.from('live_messages').insert({ id:m.id, event_id:eventId, user_id:u?.id, user_name:m.name, user_avatar:m.avatar, is_host:m.isHost, content:m.text })
@@ -950,7 +674,7 @@ export default function LiveRoomPage() {
     chatCh.current?.send({ type:'broadcast', event:'hand', payload:{ uid:uRef.current?.id, name:uname(pRef.current||uRef.current), raised } })
   }
 
-  const canCtrl = isHost || isCohost
+  const canCtrl = isHost
 
   if(loading) return (
     <div style={{ height:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg, flexDirection:'column', gap:12 }}>
@@ -972,22 +696,8 @@ export default function LiveRoomPage() {
 
   const renderVideoArea = () => (
     <div ref={vidBox} style={{ position:'relative', width:'100%', height:'100%', background:'#000', overflow:'hidden' }}>
-      {/* Host/cohost own camera preview — shown when streaming */}
       {canCtrl && <video ref={localVid} autoPlay playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0, opacity:streaming&&mode!=='board'?1:0, transition:'opacity 0.2s' }}/>}
-      {/* Remote stream — viewers see host; cohost also sees host when not streaming themselves */}
-      <video ref={remoteVid} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0,
-        visibility: vStatus==='connected' && !streaming ? 'visible' : 'hidden'
-      }}/>
-      {/* Cohost PiP — only the HOST sees this; shows cohost camera in bottom-right corner */}
-      {isHost && cohostConnected && (
-        <div style={{ position:'absolute', bottom:16, right:16, zIndex:8, width:200, height:112, borderRadius:12, overflow:'hidden', border:`2px solid ${C.gold}`, boxShadow:'0 4px 20px rgba(0,0,0,0.6)' }}>
-          <video ref={cohostVid} autoPlay playsInline muted={false}
-            style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
-          <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'4px 8px', background:'linear-gradient(transparent,rgba(0,0,0,0.7))', fontSize:11, fontWeight:700, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>
-            Co-host
-          </div>
-        </div>
-      )}
+      {!canCtrl && <video ref={remoteVid} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0, visibility:vStatus==='connected'?'visible':'hidden' }}/>}
       {mode==='board'&&canCtrl && (
         <div style={{ position:'absolute', inset:0, zIndex:3, background:boardBg }}>
           <BoardCanvas bg={boardBg} canvasRef={wbCanvas} toolRef={boardToolRef} colorRef={boardColorRef} sizeRef={boardSizeRef} opacityRef={boardOpacityRef}/>
@@ -1001,24 +711,13 @@ export default function LiveRoomPage() {
             {event?.users?.photo_url ? <img src={event.users.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <div style={{ width:'100%', height:'100%', background:uac(event?.users?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:700, color:uac(event?.users?.id||''), fontFamily:'Syne,sans-serif' }}>{uinits(event?.users)}</div>}
           </div>
           <div style={{ textAlign:'center', maxWidth:300, padding:'0 20px' }}>
-            {isHost ? (
+            {canCtrl ? (
               <>
                 <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>You are the host</p>
                 <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:24 }}>Click Go Live to start broadcasting</p>
                 {streamErr && <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
                 <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'13px 32px', borderRadius:14, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, cursor:'pointer', boxShadow:'0 6px 24px rgba(239,68,68,0.4)' }}>
                   <Radio style={{ width:18, height:18 }}/>Go Live
-                </button>
-              </>
-            ) : isCohost ? (
-              <>
-                <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>You are co-host</p>
-                <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:20 }}>
-                  {vStatus==='connecting'?'Connecting to host stream...':'Waiting for host to go live'}
-                </p>
-                {streamErr && <div style={{ marginBottom:12, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
-                <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:14, border:`1px solid rgba(37,99,235,0.4)`, background:C.blueDim, color:C.blueL, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>
-                  <Video style={{ width:16, height:16 }}/>Turn on my Camera
                 </button>
               </>
             ) : (
@@ -1113,13 +812,10 @@ export default function LiveRoomPage() {
         <button onClick={toggleCam} style={{ width:46, height:46, borderRadius:'50%', border:`1px solid ${camOn?C.border:C.red+'55'}`, background:camOn?C.card:C.redDim, color:camOn?C.text:C.red, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           {camOn?<Video style={{ width:19, height:19 }}/>:<VideoOff style={{ width:19, height:19 }}/>}
         </button>
-        {streaming ? (
-          isHost
-            ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
-            : <button onClick={leaveStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:`1px solid ${C.red}55`, background:C.redDim, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}><PhoneOff style={{ width:17, height:17 }}/>Leave</button>
-        ) : (
-          <button onClick={goLive} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
-        )}
+        {streaming
+          ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
+          : <button onClick={goLive}    style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
+        }
         {recording && <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}><span style={{ width:8, height:8, borderRadius:'50%', background:C.red, display:'inline-block', animation:'pulse 1s infinite' }}/>{recFmt(recTime)}</div>}
         {recStatus && <span style={{ fontSize:11, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>{recStatus}</span>}
       </div>
