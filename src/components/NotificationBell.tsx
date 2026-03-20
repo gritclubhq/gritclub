@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Bell, X, Check, Users, Heart, MessageCircle, UserPlus, Megaphone, Loader2 } from 'lucide-react'
+import { Bell, X, Check, Users, Heart, MessageCircle, UserPlus, Megaphone, Loader2, Radio } from 'lucide-react'
 
 const C = {
   bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
@@ -32,6 +32,7 @@ const NOTIF_ICON: Record<string, any> = {
   post_like:           { icon: Heart,         color: '#EF4444' },
   post_comment:        { icon: MessageCircle, color: '#F59E0B' },
   announcement:        { icon: Megaphone,     color: '#F59E0B' },
+  cohost_invite:       { icon: Radio,          color: '#7C3AED' },
 }
 
 export default function NotificationBell({ userId }: { userId: string }) {
