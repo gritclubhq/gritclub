@@ -230,21 +230,42 @@ export default function AdminPage() {
   const sendAnnouncement = async () => {
     if (!annTitle.trim() || !annBody.trim()) return
     setAnnSaving(true)
+
+    // Insert into announcements table (shown pinned in community)
     await supabase.from('announcements').insert({
       title:      annTitle.trim().slice(0,200),
       body:       annBody.trim().slice(0,1000),
       is_active:  true,
       created_by: currentUser?.id,
     })
+
+    // Also insert into posts so realtime community feed picks it up as a special post
     await supabase.from('posts').insert({
-      user_id:        currentUser?.id,
-      content:        `📢 ${annTitle.trim()}\n\n${annBody.trim()}`,
-      image_urls:     [],
-      likes_count:    0,
-      comments_count: 0,
+      user_id:    currentUser?.id,
+      content:    `📢 **${annTitle.trim()}**\n\n${annBody.trim()}`,
+      is_announcement: true,
     })
+
+    // Notify all users via notifications table
+    const { data: allUsers } = await supabase.from('users').select('id').neq('id', currentUser?.id)
+    if (allUsers?.length) {
+      const notifs = allUsers.map((u:any) => ({
+        user_id:  u.id,
+        actor_id: currentUser?.id,
+        type:     'announcement',
+        title:    annTitle.trim(),
+        body:     annBody.trim().slice(0, 120),
+        link:     '/dashboard/community',
+        is_read:  false,
+      }))
+      // Insert in batches of 100
+      for (let i = 0; i < notifs.length; i += 100) {
+        await supabase.from('notifications').insert(notifs.slice(i, i + 100))
+      }
+    }
+
     await logAction('create_announcement', 'platform', null, { title: annTitle })
-    addNotif('📢 Announcement posted to community feed!', 'success')
+    addNotif('📢 Announcement sent to all users!', 'success')
     setAnnTitle(''); setAnnBody('')
     setAnnSaved(true); setTimeout(() => setAnnSaved(false), 3000)
     setAnnSaving(false)
