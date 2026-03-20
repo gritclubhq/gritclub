@@ -80,6 +80,7 @@ export default function EventDetailPage() {
       setEvent(ev)
 
       if (u && ev) {
+        const isHostUser = ev.host_id === u.id
         if (isHostUser) {
           setHasTicket(true)
         } else {
