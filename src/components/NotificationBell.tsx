@@ -32,7 +32,6 @@ const NOTIF_ICON: Record<string, any> = {
   post_like:           { icon: Heart,         color: '#EF4444' },
   post_comment:        { icon: MessageCircle, color: '#F59E0B' },
   announcement:        { icon: Megaphone,     color: '#F59E0B' },
-  cohost_invite:       { icon: Radio,          color: '#7C3AED' },
 }
 
 export default function NotificationBell({ userId }: { userId: string }) {
