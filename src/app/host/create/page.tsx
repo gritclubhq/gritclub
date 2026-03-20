@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import { useRouter } from 'next/navigation'
@@ -34,10 +34,6 @@ export default function CreateEventPage() {
   })
   const [bannerFile,    setBannerFile]    = useState<File|null>(null)
   const [bannerPreview, setBannerPreview] = useState<string|null>(null)
-  const [cohostSelected, setCohostSelected] = useState<any>(null)
-  const [cohostQuery,    setCohostQuery]    = useState('')
-  const [cohostResults,  setCohostResults]  = useState<any[]>([])
-  const cohostDebounce = useRef<any>(null)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const bannerRef = useRef<HTMLInputElement>(null)
@@ -54,28 +50,6 @@ export default function CreateEventPage() {
     if (file.size > 5*1024*1024) { setError('Banner must be under 5MB'); return }
     setBannerFile(file); setBannerPreview(URL.createObjectURL(file))
     e.target.value = ''
-  }
-
-  const searchCohost = async (q: string) => {
-    if (!q.trim() || !user) { setCohostResults([]); return }
-    clearTimeout(cohostDebounce.current)
-    cohostDebounce.current = setTimeout(async () => {
-      // Get accepted connections
-      const { data: conns } = await supabase
-        .from('connections')
-        .select('user1_id, user2_id')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .eq('status', 'accepted')
-      const ids = (conns||[]).map((c:any) => c.user1_id === user.id ? c.user2_id : c.user1_id)
-      if (!ids.length) { setCohostResults([]); return }
-      const { data: users } = await supabase
-        .from('users')
-        .select('id,full_name,email,photo_url,username')
-        .in('id', ids)
-        .or(`full_name.ilike.%${q}%,username.ilike.%${q}%,email.ilike.%${q}%`)
-        .limit(5)
-      setCohostResults(users || [])
-    }, 300)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,22 +80,6 @@ export default function CreateEventPage() {
     }).select('id').single()
 
     if (insertError) { setError('Error: ' + insertError.message); setLoading(false); return }
-
-    // Add co-host if selected and notify them
-    if (cohostSelected && ev?.id) {
-      await supabase.from('event_cohosts')
-        .insert({ event_id: ev.id, user_id: cohostSelected.id })
-        .select()
-      await supabase.from('notifications').insert({
-        user_id:  cohostSelected.id,
-        actor_id: user.id,
-        type:     'cohost_invite',
-        title:    "You've been added as co-host!",
-        body:     `You are co-host for "${form.title.trim()}"`,
-        link:     `/events/${ev.id}`,
-        is_read:  false,
-      })
-    }
 
     router.push('/host')
   }
@@ -190,58 +148,6 @@ export default function CreateEventPage() {
             <div>
               <Label>Start Time</Label>
               <input style={{ ...inputStyle, colorScheme:'dark' } as any} type="datetime-local" value={form.start_time} onChange={e=>setForm({...form,start_time:e.target.value})}/>
-            </div>
-
-            {/* Co-host search from connections */}
-            <div style={{ position:'relative' }}>
-              <Label>Co-host (optional)</Label>
-              {cohostSelected ? (
-                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderRadius:10, border:`1px solid ${C.blue}`, background:C.blueDim }}>
-                  <div style={{ width:28, height:28, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:C.blueL+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:C.blueL }}>
-                    {cohostSelected.photo_url ? <img src={cohostSelected.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : (cohostSelected.full_name||'').slice(0,2).toUpperCase()}
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif', margin:0 }}>{cohostSelected.full_name||cohostSelected.email}</p>
-                    {cohostSelected.username && <p style={{ fontSize:11, color:C.blueL, fontFamily:'DM Sans,sans-serif', margin:0 }}>@{cohostSelected.username}</p>}
-                  </div>
-                  <button type="button" onClick={()=>{ setCohostSelected(null); setCohostQuery('') }} style={{ background:'none', border:'none', cursor:'pointer', color:C.textMuted }}>✕</button>
-                </div>
-              ) : (
-                <input style={inputStyle} value={cohostQuery} onChange={e=>{ setCohostQuery(e.target.value); searchCohost(e.target.value) }}
-                  placeholder="Search connections by name or @username..."/>
-              )}
-              {cohostResults.length > 0 && !cohostSelected && (
-                <div style={{ position:'absolute', top:'calc(100% + 2px)', left:0, right:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:10, zIndex:20, overflow:'hidden', boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
-                  {cohostResults.map((u:any) => (
-                    <div key={u.id} onClick={()=>{ setCohostSelected(u); setCohostResults([]); setCohostQuery('') }}
-                      style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer', borderBottom:`1px solid ${C.border}` }}
-                      onMouseEnter={e=>((e.currentTarget as HTMLElement).style.background=C.surface)}
-                      onMouseLeave={e=>((e.currentTarget as HTMLElement).style.background='transparent')}>
-                      <div style={{ width:30, height:30, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:C.blueL+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:C.blueL }}>
-                        {u.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : (u.full_name||'').slice(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif', margin:0 }}>{u.full_name||u.email}</p>
-                        {u.username && <p style={{ fontSize:11, color:C.blueL, fontFamily:'DM Sans,sans-serif', margin:0 }}>@{u.username}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p style={{ fontSize:11, color:C.textDim, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>Only your connections can be co-hosts</p>
-            </div>
-
-            {/* Status */}
-            <div>
-              <Label>Status</Label>
-              <div style={{ display:'flex', gap:8 }}>
-                {['draft','scheduled'].map(s=>(
-                  <button key={s} type="button" onClick={()=>setForm({...form,status:s})}
-                    style={{ padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:600, fontFamily:'DM Sans,sans-serif', cursor:'pointer', textTransform:'capitalize', border:`1px solid ${form.status===s?C.blue:C.border}`, background:form.status===s?C.blueDim:'transparent', color:form.status===s?C.blueL:C.textMuted }}>
-                    {s}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
