@@ -1014,7 +1014,7 @@ export default function LiveRoomPage() {
               <>
                 <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>You are co-host</p>
                 <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:20 }}>
-                  {vStatus==='connecting'?'Connecting to host stream...':vStatus==='connected'?'Connected':'Waiting for host to go live'}
+                  {vStatus==='connecting'?'Connecting to host stream...':'Waiting for host to go live'}
                 </p>
                 {streamErr && <div style={{ marginBottom:12, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
                 <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:14, border:'none', background:C.blueDim, color:C.blueL, border:`1px solid rgba(37,99,235,0.4)`, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>
