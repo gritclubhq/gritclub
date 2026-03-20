@@ -472,7 +472,9 @@ export default function LiveRoomPage() {
   const wbStream  = useRef<MediaStream|null>(null)
 
   const hPeers = useRef<Map<string,{pc:RTCPeerConnection,iceQueue:RTCIceCandidateInit[]}>>(new Map())
-  const vPc    = useRef<RTCPeerConnection|null>(null)
+  // inboundPeers: connections FROM others TO us (host stream, cohost stream)
+  const inboundPeers = useRef<Map<string, { pc: RTCPeerConnection; ice: RTCIceCandidateInit[] }>>(new Map())
+  const vPc    = useRef<RTCPeerConnection|null>(null)  // kept for compat
   const vIce   = useRef<RTCIceCandidateInit[]>([])
   const isLive = useRef(false)
   const myUid  = useRef<string>('')  // stored here so presence sync can exclude host
@@ -580,6 +582,7 @@ export default function LiveRoomPage() {
       clearTimeout(retryT.current); clearInterval(recTimer.current)
       killTracks()
       vPc.current?.close()
+      inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
       hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
       if (chatCh.current) supabase.removeChannel(chatCh.current)
       if (sigCh.current)  supabase.removeChannel(sigCh.current)
@@ -620,30 +623,49 @@ export default function LiveRoomPage() {
   }
 
   // ── Viewer peer ───────────────────────────────────────────────────────────────
-  const makeViewerPeer = (myId: string) => {
-    vPc.current?.close(); vIce.current=[]
-    const pc = new RTCPeerConnection({ iceServers:ICE })
+  // makeInboundPeer: create a peer connection to receive stream from senderId
+  const makeInboundPeer = (myId: string, senderId: string) => {
+    const existing = inboundPeers.current.get(senderId)
+    existing?.pc.close()
+    const pc = new RTCPeerConnection({ iceServers: ICE })
+    const entry = { pc, ice: [] as RTCIceCandidateInit[] }
+    inboundPeers.current.set(senderId, entry)
+
     const ms = new MediaStream()
-    pc.ontrack=e=>{
-      e.streams[0]?.getTracks().forEach(t=>{ if(!ms.getTrackById(t.id)) ms.addTrack(t) })
+    pc.ontrack = e => {
+      e.streams[0]?.getTracks().forEach(t => { if (!ms.getTrackById(t.id)) ms.addTrack(t) })
       if (remoteVid.current) {
-        remoteVid.current.srcObject=ms; remoteVid.current.muted=false
-        remoteVid.current.play().catch(()=>{
-          if (remoteVid.current) { remoteVid.current.muted=true; remoteVid.current.play().catch(()=>{}); setNeedsUnmute(true) }
+        remoteVid.current.srcObject = ms
+        remoteVid.current.muted = false
+        remoteVid.current.play().catch(() => {
+          if (remoteVid.current) { remoteVid.current.muted = true; remoteVid.current.play().catch(() => {}); setNeedsUnmute(true) }
         })
       }
       setVStatus('connected'); clearTimeout(retryT.current)
     }
-    pc.onicecandidate=({ candidate })=>{ if(candidate&&sigCh.current) sigCh.current.send({ type:'broadcast', event:'ice', payload:{ to:'host', from:myId, candidate:candidate.toJSON() } }) }
-    pc.onconnectionstatechange=()=>{
-      if(pc.connectionState==='connected'){ setVStatus('connected'); setRetries(0); clearTimeout(retryT.current) }
-      if(pc.connectionState==='failed'||pc.connectionState==='disconnected'){
+    pc.onicecandidate = ({ candidate }) => {
+      if (!candidate || !sigCh.current) return
+      sigCh.current.send({ type: 'broadcast', event: 'ice', payload: { to: senderId, from: myId, candidate: candidate.toJSON() } })
+    }
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'connected') { setVStatus('connected'); setRetries(0); clearTimeout(retryT.current) }
+      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
         setVStatus('failed')
-        retryT.current=setTimeout(()=>{ setRetries(r=>r+1); setVStatus('connecting'); sigCh.current?.send({ type:'broadcast', event:'join', payload:{ viewerId:myId } }) }, 4000)
+        retryT.current = setTimeout(() => {
+          setRetries(r => r+1); setVStatus('connecting')
+          sigCh.current?.send({ type: 'broadcast', event: 'join', payload: { viewerId: myId } })
+        }, 4000)
       }
     }
-    pc.oniceconnectionstatechange=()=>{ if(pc.iceConnectionState==='failed') pc.restartIce() }
-    vPc.current=pc; return pc
+    pc.oniceconnectionstatechange = () => { if (pc.iceConnectionState === 'failed') pc.restartIce() }
+    vPc.current = pc  // keep for compat
+    return { pc, entry }
+  }
+
+  const makeViewerPeer = (myId: string) => {
+    // Legacy wrapper — uses makeInboundPeer with 'host' as sender key
+    const { pc } = makeInboundPeer(myId, 'host')
+    return pc
   }
 
   // ── Signaling ─────────────────────────────────────────────────────────────────
@@ -684,23 +706,33 @@ export default function LiveRoomPage() {
     // Viewers AND cohosts both receive the host's offer so they can watch
     sig.on('broadcast',{ event:'offer' },async({ payload })=>{
       if(payload.to!==uid) return
-      // If we are the host who sent this offer, ignore it
-      if(!isCoHost && ctrl && payload.from===uid) return
-      const pc=makeViewerPeer(uid); setVStatus('connecting')
+      // Ignore offers from ourselves
+      if(payload.from===uid) return
+      const senderId = payload.from || 'host'
+      const { pc, entry } = makeInboundPeer(uid, senderId)
+      setVStatus('connecting')
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-        for(const c of vIce.current){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; vIce.current=[]
+        // Flush any ICE that arrived before the offer
+        for(const c of entry.ice){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }
+        entry.ice=[]
         const ans=await pc.createAnswer(); await pc.setLocalDescription(ans)
         sig.send({ type:'broadcast', event:'answer', payload:{ to:payload.from, from:uid, sdp:pc.localDescription } })
-      } catch(e){ console.error('[VIEWER/COHOST offer]',e); setVStatus('failed') }
+      } catch(e){ console.error('[INBOUND offer]',e); setVStatus('failed') }
     })
     sig.on('broadcast',{ event:'ice' },async({ payload })=>{
-      // Only handle ICE addressed to us as a viewer (not as host)
       if(payload.to!==uid) return
-      // Skip if this is ICE for a peer we sent as host (handled above)
+      // Skip ICE meant for our outbound peers (already handled above)
       if(hPeers.current.has(payload.from)) return
-      if(vPc.current?.remoteDescription){ try{ await vPc.current.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
-      else vIce.current.push(payload.candidate)
+      const senderId = payload.from || 'host'
+      const entry = inboundPeers.current.get(senderId)
+      if(entry){
+        if(entry.pc.remoteDescription){ try{ await entry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
+        else entry.ice.push(payload.candidate)
+      } else {
+        // Queue for the next inbound peer from this sender
+        vIce.current.push(payload.candidate)
+      }
     })
     sig.on('broadcast',{ event:'not-live' },({ payload })=>{ if(payload.to===uid) setVStatus('idle') })
     sig.on('broadcast',{ event:'stream-ended' },()=>{
