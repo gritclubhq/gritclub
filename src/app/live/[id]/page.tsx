@@ -1017,7 +1017,7 @@ export default function LiveRoomPage() {
                   {vStatus==='connecting'?'Connecting to host stream...':'Waiting for host to go live'}
                 </p>
                 {streamErr && <div style={{ marginBottom:12, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
-                <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:14, border:'none', background:C.blueDim, color:C.blueL, border:`1px solid rgba(37,99,235,0.4)`, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>
+                <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:14, border:`1px solid rgba(37,99,235,0.4)`, background:C.blueDim, color:C.blueL, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>
                   <Video style={{ width:16, height:16 }}/>Turn on my Camera
                 </button>
               </>
@@ -1116,7 +1116,7 @@ export default function LiveRoomPage() {
         {streaming ? (
           isHost
             ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
-            : <button onClick={leaveStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.redDim, color:C.red, border:`1px solid ${C.red}55`, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}><PhoneOff style={{ width:17, height:17 }}/>Leave</button>
+            : <button onClick={leaveStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:`1px solid ${C.red}55`, background:C.redDim, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}><PhoneOff style={{ width:17, height:17 }}/>Leave</button>
         ) : (
           <button onClick={goLive} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
         )}
