@@ -439,6 +439,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
 }) {
   const router = useRouter()
   const isMember  = group.is_member
+  const isPending = group.is_pending
   const isFull    = group.member_count >= FREE_MEMBER_LIMIT && !group.is_premium
   const fillPct   = Math.min((group.member_count / Math.max(group.max_members || FREE_MEMBER_LIMIT, 1)) * 100, 100)
 
