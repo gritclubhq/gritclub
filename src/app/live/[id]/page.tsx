@@ -301,7 +301,7 @@ function CohostModal({ eventId, hostId, eventTitle, onClose }: { eventId: string
       user_id:   selected.id,
       actor_id:  hostId,
       type:      'cohost_invite',
-      title:     'You've been added as co-host!',
+      title:     "You've been added as co-host!",
       body:      `You are now co-host for "${eventTitle}"`,
       link:      `/live/${eventId}`,
       is_read:   false,
