@@ -212,6 +212,7 @@ export default function NetworkPage() {
       .from('users')
       .select('id, full_name, email, photo_url, username, role, bio')
       .not('id', 'in', `(${[...connectedIds].join(',')})`)
+      .neq('role', 'admin')
       .limit(20)
 
     const enriched = (users||[]).map((u:any) => ({ ...u, suggestion_reason: 'New member on GritClub' }))
@@ -233,6 +234,7 @@ export default function NetworkPage() {
       .from('users')
       .select('id, full_name, email, photo_url, username, role, bio')
       .in('id', otherIds)
+      .neq('role', 'admin')
     const userMap = Object.fromEntries((users||[]).map((u:any) => [u.id, u]))
 
     const enriched = data.map((c:any) => {
@@ -259,7 +261,7 @@ export default function NetworkPage() {
     const connectedIds = new Set((connected||[]).flatMap((c:any) => [c.user1_id, c.user2_id]))
     connectedIds.add(uid)
 
-    let query = supabase.from('users').select('id, full_name, email, photo_url, username, role, bio').neq('id', uid).limit(50)
+    let query = supabase.from('users').select('id, full_name, email, photo_url, username, role, bio').neq('id', uid).neq('role', 'admin').limit(50)
     if (q.trim()) {
       query = query.or(`full_name.ilike.%${q}%,username.ilike.%${q}%,email.ilike.%${q}%`)
     }
