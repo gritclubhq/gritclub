@@ -238,7 +238,177 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
 }
 
 // ── Cohost modal ──────────────────────────────────────────────────────────────
-function CohostModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
+function CohostModal({ eventId, hostId, eventTitle, onClose }: { eventId: string; hostId: string; eventTitle: string; onClose: () => void }) {
+  const [query,      setQuery]      = useState('')
+  const [results,    setResults]    = useState<any[]>([])
+  const [selected,   setSelected]   = useState<any>(null)
+  const [cohosts,    setCohosts]    = useState<any[]>([])
+  const [saving,     setSaving]     = useState(false)
+  const [msg,        setMsg]        = useState('')
+  const debounce     = useRef<any>(null)
+
+  // Load existing co-hosts and search connections on mount
+  useEffect(() => {
+    loadCohosts()
+  }, [])
+
+  const loadCohosts = async () => {
+    const { data } = await supabase
+      .from('event_cohosts')
+      .select('user_id, users(id,full_name,email,photo_url,username)')
+      .eq('event_id', eventId)
+    setCohosts(data || [])
+  }
+
+  const searchConnections = async (q: string) => {
+    if (!q.trim()) { setResults([]); return }
+    // Search only from host's accepted connections
+    const { data: conns } = await supabase
+      .from('connections')
+      .select('user1_id, user2_id')
+      .or(`user1_id.eq.${hostId},user2_id.eq.${hostId}`)
+      .eq('status', 'accepted')
+    const connIds = (conns||[]).map((c:any) => c.user1_id === hostId ? c.user2_id : c.user1_id)
+    if (!connIds.length) { setResults([]); return }
+
+    const { data: users } = await supabase
+      .from('users')
+      .select('id,full_name,email,photo_url,username')
+      .in('id', connIds)
+      .or(`full_name.ilike.%${q}%,username.ilike.%${q}%,email.ilike.%${q}%`)
+      .limit(6)
+    setResults(users || [])
+  }
+
+  const handleInput = (val: string) => {
+    setQuery(val); setSelected(null)
+    clearTimeout(debounce.current)
+    debounce.current = setTimeout(() => searchConnections(val), 300)
+  }
+
+  const add = async () => {
+    if (!selected) return
+    setSaving(true); setMsg('')
+    // Use INSERT with ON CONFLICT DO NOTHING to avoid duplicate key error
+    const { error } = await supabase.from('event_cohosts')
+      .insert({ event_id: eventId, user_id: selected.id })
+      .select()
+    if (error && !error.message.includes('duplicate')) {
+      setMsg('Error: ' + error.message); setSaving(false); return
+    }
+    // Send notification to the co-host
+    await supabase.from('notifications').insert({
+      user_id:   selected.id,
+      actor_id:  hostId,
+      type:      'cohost_invite',
+      title:     'You've been added as co-host!',
+      body:      `You are now co-host for "${eventTitle}"`,
+      link:      `/live/${eventId}`,
+      is_read:   false,
+    })
+    setMsg(`✓ ${selected.full_name || selected.email} added as co-host`)
+    setSelected(null); setQuery('')
+    loadCohosts()
+    setSaving(false)
+  }
+
+  const remove = async (userId: string) => {
+    await supabase.from('event_cohosts').delete().eq('event_id', eventId).eq('user_id', userId)
+    loadCohosts()
+  }
+
+  const AC2 = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+  const uc = (id: string) => AC2[(id?.charCodeAt(0)||0) % AC2.length]
+  const un = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)' }} onClick={onClose}/>
+      <div style={{ position:'relative', width:'100%', maxWidth:420, margin:'0 16px', borderRadius:20, padding:24, background:C.card, border:`1px solid ${C.border}`, maxHeight:'80vh', overflow:'auto' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+          <h3 style={{ fontSize:16, fontWeight:700, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Manage Co-hosts</h3>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:C.textMuted }}><X style={{ width:18, height:18 }}/></button>
+        </div>
+        <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:16 }}>Search your connections by name or username</p>
+
+        {/* Search input */}
+        <div style={{ position:'relative', marginBottom:10 }}>
+          {selected ? (
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderRadius:10, border:`1px solid ${C.blue}`, background:C.blueDim }}>
+              <div style={{ width:28, height:28, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:uc(selected.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:uc(selected.id) }}>
+                {selected.photo_url ? <img src={selected.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : un(selected).slice(0,2).toUpperCase()}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{un(selected)}</p>
+                {selected.username && <p style={{ fontSize:11, color:C.blueL, fontFamily:'DM Sans,sans-serif' }}>@{selected.username}</p>}
+              </div>
+              <button onClick={()=>{ setSelected(null); setQuery('') }} style={{ background:'none', border:'none', cursor:'pointer', color:C.textMuted }}><X style={{ width:14, height:14 }}/></button>
+            </div>
+          ) : (
+            <input
+              value={query}
+              onChange={e=>handleInput(e.target.value)}
+              placeholder="Search by name, @username or email..."
+              style={{ width:'100%', padding:'10px 14px', borderRadius:10, border:`1px solid ${C.border}`, background:C.surface, color:C.text, fontSize:13, fontFamily:'DM Sans,sans-serif', outline:'none', boxSizing:'border-box' }}
+              onFocus={e=>(e.target.style.borderColor='rgba(37,99,235,0.5)')}
+              onBlur={e=>setTimeout(()=>{ (e.target as any).style.borderColor=C.border }, 200)}
+            />
+          )}
+          {/* Autocomplete dropdown */}
+          {results.length > 0 && !selected && (
+            <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:10, zIndex:10, overflow:'hidden', boxShadow:'0 8px 24px rgba(0,0,0,0.4)' }}>
+              {results.map(u => (
+                <div key={u.id} onClick={()=>{ setSelected(u); setResults([]); setQuery(un(u)) }}
+                  style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer', borderBottom:`1px solid ${C.border}` }}
+                  onMouseEnter={e=>((e.currentTarget as HTMLElement).style.background=C.surface)}
+                  onMouseLeave={e=>((e.currentTarget as HTMLElement).style.background='transparent')}>
+                  <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:uc(u.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:uc(u.id) }}>
+                    {u.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : un(u).slice(0,2).toUpperCase()}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif', margin:0 }}>{un(u)}</p>
+                    <p style={{ fontSize:11, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:0 }}>{u.username ? `@${u.username}` : u.email}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {msg && <p style={{ fontSize:12, color:msg.startsWith('✓')?C.green:C.red, fontFamily:'DM Sans,sans-serif', marginBottom:10 }}>{msg}</p>}
+
+        <button onClick={add} disabled={saving||!selected}
+          style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:C.blue, color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginBottom:16, opacity:saving||!selected?0.4:1 }}>
+          {saving?'Adding...':'Add Co-host'}
+        </button>
+
+        {/* Current co-hosts list */}
+        {cohosts.length > 0 && (
+          <>
+            <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:C.textDim, fontFamily:'DM Sans,sans-serif', marginBottom:8 }}>Current Co-hosts</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {cohosts.map((c:any) => {
+                const u = c.users || {}
+                return (
+                  <div key={c.user_id} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background:C.surface, border:`1px solid ${C.border}` }}>
+                    <div style={{ width:30, height:30, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:uc(u.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:uc(u.id) }}>
+                      {u.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : un(u).slice(0,2).toUpperCase()}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ fontSize:13, fontWeight:600, color:C.text, fontFamily:'DM Sans,sans-serif', margin:0 }}>{un(u)}</p>
+                      {u.username && <p style={{ fontSize:11, color:C.blueL, fontFamily:'DM Sans,sans-serif', margin:0 }}>@{u.username}</p>}
+                    </div>
+                    <button onClick={()=>remove(c.user_id)} style={{ background:'none', border:'none', cursor:'pointer', color:C.red, fontSize:11, fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>Remove</button>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}: { eventId: string; onClose: () => void }) {
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -945,7 +1115,7 @@ export default function LiveRoomPage() {
     <div style={{ height:'100dvh', display:'flex', flexDirection:'column', overflow:'hidden', background:C.bg }}>
       <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}} *{box-sizing:border-box;}`}</style>
       {renderTopBar()}
-      {showCohost && <CohostModal eventId={eventId} onClose={()=>setShowCohost(false)}/>}
+      {showCohost && <CohostModal eventId={eventId} hostId={uRef.current?.id||''} eventTitle={event?.title||''} onClose={()=>setShowCohost(false)}/>}
       {isMobile&&(
         <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
           <div style={{ flex:1, position:'relative', overflow:'hidden' }}>{renderVideoArea()}</div>
