@@ -9,7 +9,7 @@ import {
   Calendar, DollarSign, Shield, Menu, X, LogOut,
   Radio, Mic, Zap, UserCheck, BookOpen, Settings, Bell,
   ChevronRight, Crown, FileText
-} from 'lucide-react'
+, Video } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
 
 const C = {
@@ -28,6 +28,7 @@ const AUDIENCE_NAV = [
   { href: '/dashboard/network',   label: 'Network',    icon: Users },
   { href: '/groups',              label: 'Groups',     icon: Zap },
   { href: '/dashboard/community', label: 'Community',  icon: MessageSquare },
+  { href: '/dashboard/recordings', label: 'Recordings', icon: Video },
   { href: '/dashboard/profile',   label: 'Profile',    icon: User },
 ]
 
@@ -38,6 +39,7 @@ const HOST_NAV = [
   { href: '/dashboard/network',   label: 'Network',     icon: Users },
   { href: '/groups',              label: 'Groups',      icon: Zap },
   { href: '/dashboard/community', label: 'Community',   icon: MessageSquare },
+  { href: '/dashboard/recordings', label: 'Recordings',  icon: Video },
   { href: '/dashboard/profile',   label: 'Profile',     icon: User },
 ]
 
