@@ -797,7 +797,7 @@ export default function LiveRoomPage() {
       if(localVid.current){ localVid.current.srcObject=stream; localVid.current.muted=true; await localVid.current.play().catch(()=>{}) }
       setStreaming(true); setMode('camera')
       await supabase.from('events').update({ status:'live' }).eq('id', eventId)
-      if (isHostRef.current) {
+      if (isHost) {
         // HOST: send stream to all presence members (viewers + cohost)
         const ps=chatCh.current?.presenceState()||{}
         Object.keys(ps).filter(v=>v!==uRef.current?.id).forEach(vid=>makeHostPeer(vid,stream))
