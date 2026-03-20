@@ -542,8 +542,11 @@ export default function LiveRoomPage() {
 
       setLoading(false); if (dead) return
 
-      // ── If host reloads while stream was live, mark as streaming again ──
-      if (ctrl && ev.status === 'live') setStreaming(true)
+      // ── If host reloads while stream was live ──
+      // Host: restore streaming state
+      // Cohost: start connecting to host stream (they watch, not broadcast on reload)
+      if (hc && ev.status === 'live') setStreaming(true)
+      // Note: cohost on reload will receive the host's offer via setupSignaling join event
 
       const ch = supabase.channel(`chat-${eventId}`, { config:{ presence:{ key: u.id } } })
         .on('broadcast', { event:'msg' }, ({ payload })=>{
@@ -569,7 +572,7 @@ export default function LiveRoomPage() {
         .subscribe(async s=>{ if (s==='SUBSCRIBED') await ch.track({ uid: u.id }) })
       chatCh.current = ch
 
-      setupSignaling(u.id, ctrl, ev.status === 'live')
+      setupSignaling(u.id, ctrl, cc, ev.status === 'live')
     })()
 
     return ()=>{
@@ -644,49 +647,76 @@ export default function LiveRoomPage() {
   }
 
   // ── Signaling ─────────────────────────────────────────────────────────────────
-  const setupSignaling = (uid: string, ctrl: boolean, alreadyLive: boolean) => {
+  const setupSignaling = (uid: string, ctrl: boolean, isCoHost: boolean, alreadyLive: boolean) => {
     const sig = supabase.channel(`sig-${eventId}`)
-    if (ctrl) {
-      sig.on('broadcast',{ event:'join' },({ payload })=>{
-        const vid=payload.viewerId; if(!vid||vid===uid) return
-        if(!isLive.current||!camStream.current){ sig.send({ type:'broadcast', event:'not-live', payload:{ to:vid } }); return }
-        makeHostPeer(vid, camStream.current)
-      })
-      sig.on('broadcast',{ event:'answer' },async({ payload })=>{
-        if(payload.to!==uid&&payload.to!=='host') return
-        const entry=hPeers.current.get(payload.from); if(!entry) return
-        const { pc, iceQueue }=entry
-        if(pc.signalingState!=='have-local-offer') return
-        try { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); for(const c of iceQueue){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; entry.iceQueue=[] } catch(e){ console.warn('[HOST]',e) }
-      })
-      sig.on('broadcast',{ event:'ice' },async({ payload })=>{
-        if(payload.to!=='host'&&payload.to!==uid) return
-        const entry=hPeers.current.get(payload.from); if(!entry) return
-        if(entry.pc.remoteDescription){ try{ await entry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} } else entry.iceQueue.push(payload.candidate)
-      })
-    } else {
-      sig.on('broadcast',{ event:'offer' },async({ payload })=>{
-        if(payload.to!==uid) return
-        const pc=makeViewerPeer(uid); setVStatus('connecting')
-        try {
-          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-          for(const c of vIce.current){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; vIce.current=[]
-          const ans=await pc.createAnswer(); await pc.setLocalDescription(ans)
-          sig.send({ type:'broadcast', event:'answer', payload:{ to:payload.from, from:uid, sdp:pc.localDescription } })
-        } catch(e){ console.error('[VIEWER]',e); setVStatus('failed') }
-      })
-      sig.on('broadcast',{ event:'ice' },async({ payload })=>{
-        if(payload.to!==uid) return
-        if(vPc.current?.remoteDescription){ try{ await vPc.current.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} } else vIce.current.push(payload.candidate)
-      })
-      sig.on('broadcast',{ event:'not-live' },({ payload })=>{ if(payload.to===uid) setVStatus('idle') })
-      sig.on('broadcast',{ event:'stream-ended' },()=>{ setVStatus('idle'); if(remoteVid.current) remoteVid.current.srcObject=null })
-    }
+
+    // ── Host-side: handle viewer joins, answers, ICE ──────────────────────────
+    // Both host AND cohost register these handlers so either can serve viewers
+    // when they themselves go live
+    sig.on('broadcast',{ event:'join' },({ payload })=>{
+      const vid=payload.viewerId; if(!vid||vid===uid) return
+      // Only respond if THIS user is actively streaming (isLive + has their own cam)
+      if(!isLive.current||!camStream.current){
+        // If I'm not live, don't respond — the actual host will handle it
+        return
+      }
+      makeHostPeer(vid, camStream.current)
+    })
+    sig.on('broadcast',{ event:'answer' },async({ payload })=>{
+      if(payload.to!==uid&&payload.to!=='host') return
+      const entry=hPeers.current.get(payload.from); if(!entry) return
+      const { pc, iceQueue }=entry
+      if(pc.signalingState!=='have-local-offer') return
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+        for(const c of iceQueue){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }
+        entry.iceQueue=[]
+      } catch(e){ console.warn('[HOST/COHOST answer]',e) }
+    })
+    sig.on('broadcast',{ event:'ice' },async({ payload })=>{
+      if(payload.to!=='host'&&payload.to!==uid) return
+      const entry=hPeers.current.get(payload.from); if(!entry) return
+      if(entry.pc.remoteDescription){ try{ await entry.pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
+      else entry.iceQueue.push(payload.candidate)
+    })
+
+    // ── Viewer-side: receive the host's stream ────────────────────────────────
+    // Viewers AND cohosts both receive the host's offer so they can watch
+    sig.on('broadcast',{ event:'offer' },async({ payload })=>{
+      if(payload.to!==uid) return
+      // If we are the host who sent this offer, ignore it
+      if(!isCoHost && ctrl && payload.from===uid) return
+      const pc=makeViewerPeer(uid); setVStatus('connecting')
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+        for(const c of vIce.current){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; vIce.current=[]
+        const ans=await pc.createAnswer(); await pc.setLocalDescription(ans)
+        sig.send({ type:'broadcast', event:'answer', payload:{ to:payload.from, from:uid, sdp:pc.localDescription } })
+      } catch(e){ console.error('[VIEWER/COHOST offer]',e); setVStatus('failed') }
+    })
+    sig.on('broadcast',{ event:'ice' },async({ payload })=>{
+      // Only handle ICE addressed to us as a viewer (not as host)
+      if(payload.to!==uid) return
+      // Skip if this is ICE for a peer we sent as host (handled above)
+      if(hPeers.current.has(payload.from)) return
+      if(vPc.current?.remoteDescription){ try{ await vPc.current.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
+      else vIce.current.push(payload.candidate)
+    })
+    sig.on('broadcast',{ event:'not-live' },({ payload })=>{ if(payload.to===uid) setVStatus('idle') })
+    sig.on('broadcast',{ event:'stream-ended' },()=>{
+      setVStatus('idle')
+      if(remoteVid.current) remoteVid.current.srcObject=null
+    })
+
     sig.subscribe(async s=>{
-      if(s==='SUBSCRIBED'&&!ctrl&&alreadyLive){
+      if(s==='SUBSCRIBED'&&alreadyLive){
+        // Both viewers and cohosts join to receive the host stream
         setVStatus('connecting')
         sig.send({ type:'broadcast', event:'join', payload:{ viewerId:uid } })
-        retryT.current=setTimeout(()=>{ if(vPc.current?.connectionState!=='connected') sig.send({ type:'broadcast', event:'join', payload:{ viewerId:uid } }) }, 7000)
+        retryT.current=setTimeout(()=>{
+          if(vPc.current?.connectionState!=='connected')
+            sig.send({ type:'broadcast', event:'join', payload:{ viewerId:uid } })
+        }, 7000)
       }
     })
     sigCh.current=sig
@@ -856,8 +886,12 @@ export default function LiveRoomPage() {
 
   const renderVideoArea = () => (
     <div ref={vidBox} style={{ position:'relative', width:'100%', height:'100%', background:'#000', overflow:'hidden' }}>
+      {/* Host/cohost own camera preview — shown when streaming */}
       {canCtrl && <video ref={localVid} autoPlay playsInline muted style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0, opacity:streaming&&mode!=='board'?1:0, transition:'opacity 0.2s' }}/>}
-      {!canCtrl && <video ref={remoteVid} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0, visibility:vStatus==='connected'?'visible':'hidden' }}/>}
+      {/* Remote stream — viewers see host; cohost also sees host when not streaming themselves */}
+      <video ref={remoteVid} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0,
+        visibility: vStatus==='connected' && !streaming ? 'visible' : 'hidden'
+      }}/>
       {mode==='board'&&canCtrl && (
         <div style={{ position:'absolute', inset:0, zIndex:3, background:boardBg }}>
           <BoardCanvas bg={boardBg} canvasRef={wbCanvas} toolRef={boardToolRef} colorRef={boardColorRef} sizeRef={boardSizeRef} opacityRef={boardOpacityRef}/>
@@ -865,7 +899,7 @@ export default function LiveRoomPage() {
       )}
 
       {/* Waiting placeholder */}
-      {((canCtrl&&!streaming)||(!canCtrl&&vStatus!=='connected'))&&mode!=='board' && (
+      {((!streaming&&vStatus!=='connected'))&&mode!=='board' && (
         <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, background:'linear-gradient(180deg,#000 0%,#0A0F1E 100%)', zIndex:2 }}>
           <div style={{ width:80, height:80, borderRadius:'50%', overflow:'hidden', border:`3px solid ${uac(event?.users?.id||'')}44`, flexShrink:0 }}>
             {event?.users?.photo_url ? <img src={event.users.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <div style={{ width:'100%', height:'100%', background:uac(event?.users?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:700, color:uac(event?.users?.id||''), fontFamily:'Syne,sans-serif' }}>{uinits(event?.users)}</div>}
@@ -892,7 +926,7 @@ export default function LiveRoomPage() {
         </div>
       )}
 
-      {canCtrl&&streaming&&!camOn&&mode==='camera' && (
+      {streaming&&!camOn&&mode==='camera' && (
         <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:C.surface, zIndex:4 }}>
           <div style={{ textAlign:'center' }}><div style={{ width:56, height:56, borderRadius:'50%', background:uac(uRef.current?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:700, color:uac(uRef.current?.id||''), margin:'0 auto 8px' }}>{uinits(pRef.current)}</div><p style={{ color:C.textMuted, fontSize:12, fontFamily:'DM Sans,sans-serif' }}>Camera off</p></div>
         </div>
