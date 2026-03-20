@@ -8,7 +8,7 @@ import {
   Monitor, MonitorOff, PenLine, Eraser, Shield,
   Minus, Square, Circle, Trash2, Heart, Loader2, Crown,
   MessageCircle, ChevronDown, Hand, Maximize, Minimize, Volume2,
-  Highlighter, Upload, UserPlus, X
+  Highlighter, Upload, X
 } from 'lucide-react'
 
 const C = {
@@ -438,9 +438,9 @@ export default function LiveRoomPage() {
   const [streamErr,    setStreamErr]   = useState('')
   const [vStatus,      setVStatus]     = useState<'idle'|'connecting'|'connected'|'failed'>('idle')
   const [needsUnmute,  setNeedsUnmute] = useState(false)
-  const [retries,      setRetries]     = useState(0)
+  const [retries,         setRetries]        = useState(0)
+  const [cohostConnected, setCohostConnected] = useState(false)
   const [fullscreen,   setFullscreen]  = useState(false)
-  const [showCohost,   setShowCohost]  = useState(false)
   const [messages,     setMessages]    = useState<any[]>([])
   const [newMsg,       setNewMsg]      = useState('')
   const [sending,      setSending]     = useState(false)
@@ -463,13 +463,16 @@ export default function LiveRoomPage() {
   const localVid  = useRef<HTMLVideoElement>(null)
   const remoteVid = useRef<HTMLVideoElement>(null)
   const wbCanvas  = useRef<HTMLCanvasElement>(null)
+  const cohostVid = useRef<HTMLVideoElement>(null)   // host sees cohost PiP
   const vidBox    = useRef<HTMLDivElement>(null)
   const chatEnd   = useRef<HTMLDivElement>(null)
   const wbDropRef = useRef<HTMLDivElement>(null)
 
-  const camStream = useRef<MediaStream|null>(null)
-  const scrStream = useRef<MediaStream|null>(null)
-  const wbStream  = useRef<MediaStream|null>(null)
+  const camStream    = useRef<MediaStream|null>(null)
+  const scrStream    = useRef<MediaStream|null>(null)
+  const wbStream     = useRef<MediaStream|null>(null)
+  // cohostStream: the cohost's video/audio received by the HOST
+  const cohostStream = useRef<MediaStream|null>(null)
 
   const hPeers = useRef<Map<string,{pc:RTCPeerConnection,iceQueue:RTCIceCandidateInit[]}>>(new Map())
   // inboundPeers: connections FROM others TO us (host stream, cohost stream)
@@ -612,7 +615,7 @@ export default function LiveRoomPage() {
     const entry = { pc, iceQueue:[] as RTCIceCandidateInit[] }
     hPeers.current.set(viewerId, entry)
     stream.getTracks().forEach(t=>pc.addTrack(t, stream))
-    pc.onicecandidate=({ candidate })=>{ if(candidate&&sigCh.current) sigCh.current.send({ type:'broadcast', event:'ice', payload:{ to:viewerId, from:'host', candidate:candidate.toJSON() } }) }
+    pc.onicecandidate=({ candidate })=>{ if(candidate&&sigCh.current) sigCh.current.send({ type:'broadcast', event:'ice', payload:{ to:viewerId, from:uRef.current?.id||'host', candidate:candidate.toJSON() } }) }
     pc.onconnectionstatechange=()=>{ if(pc.connectionState==='failed'||pc.connectionState==='closed'){ hPeers.current.delete(viewerId); pc.close() } }
     pc.oniceconnectionstatechange=()=>{ if(pc.iceConnectionState==='failed') pc.restartIce() }
     pc.createOffer({ offerToReceiveAudio:false, offerToReceiveVideo:false })
@@ -632,16 +635,30 @@ export default function LiveRoomPage() {
     inboundPeers.current.set(senderId, entry)
 
     const ms = new MediaStream()
+    // isCohostSender: this inbound peer is from cohost → display in PiP, not remoteVid
+    const isCohostSender = senderId !== 'host'
     pc.ontrack = e => {
       e.streams[0]?.getTracks().forEach(t => { if (!ms.getTrackById(t.id)) ms.addTrack(t) })
-      if (remoteVid.current) {
-        remoteVid.current.srcObject = ms
-        remoteVid.current.muted = false
-        remoteVid.current.play().catch(() => {
-          if (remoteVid.current) { remoteVid.current.muted = true; remoteVid.current.play().catch(() => {}); setNeedsUnmute(true) }
-        })
+      if (isCohostSender) {
+        // Host receives cohost stream → show in PiP tile
+        cohostStream.current = ms
+        if (cohostVid.current) {
+          cohostVid.current.srcObject = ms
+          cohostVid.current.muted = false
+          cohostVid.current.play().catch(() => { if(cohostVid.current){ cohostVid.current.muted=true; cohostVid.current.play().catch(()=>{}) } })
+        }
+        setCohostConnected(true)
+      } else {
+        // Viewer/cohost receives host stream → show in main video
+        if (remoteVid.current) {
+          remoteVid.current.srcObject = ms
+          remoteVid.current.muted = false
+          remoteVid.current.play().catch(() => {
+            if (remoteVid.current) { remoteVid.current.muted = true; remoteVid.current.play().catch(() => {}); setNeedsUnmute(true) }
+          })
+        }
+        setVStatus('connected'); clearTimeout(retryT.current)
       }
-      setVStatus('connected'); clearTimeout(retryT.current)
     }
     pc.onicecandidate = ({ candidate }) => {
       if (!candidate || !sigCh.current) return
@@ -735,9 +752,23 @@ export default function LiveRoomPage() {
       }
     })
     sig.on('broadcast',{ event:'not-live' },({ payload })=>{ if(payload.to===uid) setVStatus('idle') })
-    sig.on('broadcast',{ event:'stream-ended' },()=>{
-      setVStatus('idle')
-      if(remoteVid.current) remoteVid.current.srcObject=null
+    sig.on('broadcast',{ event:'stream-ended' },({ payload })=>{
+      if(payload?.hostEnded){
+        // Host ended — redirect EVERYONE (viewers and cohost) to dashboard
+        inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
+        hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
+        if(remoteVid.current) remoteVid.current.srcObject=null
+        router.push('/dashboard')
+      } else {
+        setVStatus('idle')
+        inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
+        if(remoteVid.current) remoteVid.current.srcObject=null
+      }
+    })
+    sig.on('broadcast',{ event:'cohost-left' },({ payload })=>{
+      const entry = inboundPeers.current.get(payload.cohostId)
+      entry?.pc.close(); inboundPeers.current.delete(payload.cohostId)
+      setCohostConnected(false); cohostStream.current=null
     })
 
     sig.subscribe(async s=>{
@@ -766,9 +797,17 @@ export default function LiveRoomPage() {
       if(localVid.current){ localVid.current.srcObject=stream; localVid.current.muted=true; await localVid.current.play().catch(()=>{}) }
       setStreaming(true); setMode('camera')
       await supabase.from('events').update({ status:'live' }).eq('id', eventId)
-      const ps=chatCh.current?.presenceState()||{}
-      Object.keys(ps).filter(v=>v!==uRef.current?.id).forEach(vid=>makeHostPeer(vid,stream))
-      startRec(stream)
+      if (isHostRef.current) {
+        // HOST: send stream to all presence members (viewers + cohost)
+        const ps=chatCh.current?.presenceState()||{}
+        Object.keys(ps).filter(v=>v!==uRef.current?.id).forEach(vid=>makeHostPeer(vid,stream))
+        startRec(stream)
+      } else {
+        // COHOST: send stream ONLY to the host (host's UID from event)
+        const hostUid = hostIdRef.current
+        if (hostUid) makeHostPeer(hostUid, stream)
+        // Don't record from cohost side
+      }
     } catch(err:any){
       if(err.name==='NotAllowedError') setStreamErr('Camera/mic access denied. Allow permissions.')
       else if(err.name==='NotFoundError') setStreamErr('No camera or microphone found.')
@@ -777,15 +816,30 @@ export default function LiveRoomPage() {
   }
 
   const endStream = async () => {
+    // Only HOST calls this — ends the whole event for everyone
     isLive.current=false
-    sigCh.current?.send({ type:'broadcast', event:'stream-ended', payload:{} })
+    // Broadcast stream-ended — all viewers AND cohost will be redirected
+    sigCh.current?.send({ type:'broadcast', event:'stream-ended', payload:{ hostEnded: true } })
     await stopRec()
     killTracks()
     hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
+    inboundPeers.current.forEach(({pc})=>pc.close()); inboundPeers.current.clear()
     if(localVid.current) localVid.current.srcObject=null
     setStreaming(false)
     await supabase.from('events').update({ status:'ended', ended_at:new Date().toISOString() }).eq('id', eventId)
     router.push('/host')
+  }
+
+  const leaveStream = () => {
+    // Cohost leaves — disconnects their own camera but does NOT end the event
+    isLive.current=false
+    killTracks()
+    hPeers.current.forEach(({pc})=>pc.close()); hPeers.current.clear()
+    if(localVid.current) localVid.current.srcObject=null
+    setStreaming(false)
+    // Notify host that cohost left
+    sigCh.current?.send({ type:'broadcast', event:'cohost-left', payload:{ cohostId: uRef.current?.id } })
+    router.push('/dashboard')
   }
 
   const toggleMic = () => { camStream.current?.getAudioTracks().forEach(t=>{ t.enabled=!t.enabled }); setMicOn(p=>!p) }
@@ -924,6 +978,16 @@ export default function LiveRoomPage() {
       <video ref={remoteVid} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0,
         visibility: vStatus==='connected' && !streaming ? 'visible' : 'hidden'
       }}/>
+      {/* Cohost PiP — only the HOST sees this; shows cohost camera in bottom-right corner */}
+      {isHost && cohostConnected && (
+        <div style={{ position:'absolute', bottom:16, right:16, zIndex:8, width:200, height:112, borderRadius:12, overflow:'hidden', border:`2px solid ${C.gold}`, boxShadow:'0 4px 20px rgba(0,0,0,0.6)' }}>
+          <video ref={cohostVid} autoPlay playsInline muted={false}
+            style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
+          <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'4px 8px', background:'linear-gradient(transparent,rgba(0,0,0,0.7))', fontSize:11, fontWeight:700, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>
+            Co-host
+          </div>
+        </div>
+      )}
       {mode==='board'&&canCtrl && (
         <div style={{ position:'absolute', inset:0, zIndex:3, background:boardBg }}>
           <BoardCanvas bg={boardBg} canvasRef={wbCanvas} toolRef={boardToolRef} colorRef={boardColorRef} sizeRef={boardSizeRef} opacityRef={boardOpacityRef}/>
@@ -937,13 +1001,24 @@ export default function LiveRoomPage() {
             {event?.users?.photo_url ? <img src={event.users.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <div style={{ width:'100%', height:'100%', background:uac(event?.users?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:700, color:uac(event?.users?.id||''), fontFamily:'Syne,sans-serif' }}>{uinits(event?.users)}</div>}
           </div>
           <div style={{ textAlign:'center', maxWidth:300, padding:'0 20px' }}>
-            {canCtrl ? (
+            {isHost ? (
               <>
-                <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>{isHost?'You are the host':'You are co-host'}</p>
+                <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>You are the host</p>
                 <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:24 }}>Click Go Live to start broadcasting</p>
                 {streamErr && <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
                 <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'13px 32px', borderRadius:14, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, cursor:'pointer', boxShadow:'0 6px 24px rgba(239,68,68,0.4)' }}>
                   <Radio style={{ width:18, height:18 }}/>Go Live
+                </button>
+              </>
+            ) : isCohost ? (
+              <>
+                <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>You are co-host</p>
+                <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:20 }}>
+                  {vStatus==='connecting'?'Connecting to host stream...':vStatus==='connected'?'Connected':'Waiting for host to go live'}
+                </p>
+                {streamErr && <div style={{ marginBottom:12, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
+                <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:14, border:'none', background:C.blueDim, color:C.blueL, border:`1px solid rgba(37,99,235,0.4)`, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>
+                  <Video style={{ width:16, height:16 }}/>Turn on my Camera
                 </button>
               </>
             ) : (
@@ -1027,12 +1102,7 @@ export default function LiveRoomPage() {
               </div>
             )}
           </div>
-          {/* Add co-host (host only) */}
-          {isHost && (
-            <button onClick={()=>setShowCohost(true)} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid transparent`, background:'rgba(51,65,85,0.4)', color:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-              <UserPlus style={{ width:13, height:13 }}/>Co-host
-            </button>
-          )}
+
         </div>
       )}
       {/* Main controls */}
@@ -1043,10 +1113,13 @@ export default function LiveRoomPage() {
         <button onClick={toggleCam} style={{ width:46, height:46, borderRadius:'50%', border:`1px solid ${camOn?C.border:C.red+'55'}`, background:camOn?C.card:C.redDim, color:camOn?C.text:C.red, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
           {camOn?<Video style={{ width:19, height:19 }}/>:<VideoOff style={{ width:19, height:19 }}/>}
         </button>
-        {streaming
-          ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
-          : <button onClick={goLive}    style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
-        }
+        {streaming ? (
+          isHost
+            ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
+            : <button onClick={leaveStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.redDim, color:C.red, border:`1px solid ${C.red}55`, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}><PhoneOff style={{ width:17, height:17 }}/>Leave</button>
+        ) : (
+          <button onClick={goLive} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
+        )}
         {recording && <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}><span style={{ width:8, height:8, borderRadius:'50%', background:C.red, display:'inline-block', animation:'pulse 1s infinite' }}/>{recFmt(recTime)}</div>}
         {recStatus && <span style={{ fontSize:11, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>{recStatus}</span>}
       </div>
@@ -1144,7 +1217,6 @@ export default function LiveRoomPage() {
     <div style={{ height:'100dvh', display:'flex', flexDirection:'column', overflow:'hidden', background:C.bg }}>
       <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}} *{box-sizing:border-box;}`}</style>
       {renderTopBar()}
-      {showCohost && <CohostModal eventId={eventId} hostId={uRef.current?.id||''} eventTitle={event?.title||''} onClose={()=>setShowCohost(false)}/>}
       {isMobile&&(
         <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
           <div style={{ flex:1, position:'relative', overflow:'hidden' }}>{renderVideoArea()}</div>
