@@ -9,7 +9,7 @@ import {
   TrendingUp, Trash2, Ban, UserCheck, Activity, ChevronRight,
   AlertTriangle, Eye, Search, X, Loader2, Send, Globe, Settings,
   BarChart2, FileText, Clock, Check
-} from 'lucide-react'
+, Megaphone } from 'lucide-react'
 
 const C = {
   bg:       '#0A0F1E', surface:  '#0D1428', card:     '#111827', cardHover: '#141E35',
@@ -22,7 +22,7 @@ const C = {
   purple:   '#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-type AdminTab = 'overview'|'users'|'hosts'|'events'|'revenue'|'content'|'audit'
+type AdminTab = 'overview'|'users'|'hosts'|'events'|'revenue'|'content'|'audit'|'announce'
 
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const timeAgo = (ts: string) => {
@@ -77,6 +77,9 @@ export default function AdminPage() {
   // (announcements moved to Content page)
   const [annTitle,     setAnnTitle]     = useState('')
   const [annBody,      setAnnBody]      = useState('')
+  const [annImageUrl,  setAnnImageUrl]  = useState('')
+  const [annLinkUrl,   setAnnLinkUrl]   = useState('')
+  const [annLinkLabel, setAnnLinkLabel] = useState('')
   const [annSaving,    setAnnSaving]    = useState(false)
   const [annSaved,     setAnnSaved]     = useState(false)
   const [announcements,setAnnouncements]= useState<any[]>([])
@@ -231,42 +234,42 @@ export default function AdminPage() {
     if (!annTitle.trim() || !annBody.trim()) return
     setAnnSaving(true)
 
-    // Insert into announcements table (shown pinned in community)
     await supabase.from('announcements').insert({
-      title:      annTitle.trim().slice(0,200),
-      body:       annBody.trim().slice(0,1000),
+      title:      annTitle.trim().slice(0, 200),
+      body:       annBody.trim().slice(0, 1000),
+      image_url:  annImageUrl.trim() || null,
+      link_url:   annLinkUrl.trim()  || null,
+      link_label: annLinkLabel.trim() || 'Learn more',
       is_active:  true,
       created_by: currentUser?.id,
     })
 
-    // Also insert into posts so realtime community feed picks it up as a special post
     await supabase.from('posts').insert({
-      user_id:    currentUser?.id,
-      content:    `📢 **${annTitle.trim()}**\n\n${annBody.trim()}`,
+      user_id:         currentUser?.id,
+      content:         '📢 **' + annTitle.trim() + '**\n\n' + annBody.trim(),
       is_announcement: true,
     })
 
-    // Notify all users via notifications table
     const { data: allUsers } = await supabase.from('users').select('id').neq('id', currentUser?.id)
     if (allUsers?.length) {
-      const notifs = allUsers.map((u:any) => ({
-        user_id:  u.id,
-        actor_id: currentUser?.id,
-        type:     'announcement',
-        title:    annTitle.trim(),
-        body:     annBody.trim().slice(0, 120),
-        link:     '/dashboard/community',
-        is_read:  false,
-      }))
-      // Insert in batches of 100
-      for (let i = 0; i < notifs.length; i += 100) {
-        await supabase.from('notifications').insert(notifs.slice(i, i + 100))
+      for (let i = 0; i < allUsers.length; i += 100) {
+        await supabase.from('notifications').insert(
+          allUsers.slice(i, i + 100).map((u: any) => ({
+            user_id:  u.id,
+            actor_id: currentUser?.id,
+            type:     'announcement',
+            title:    annTitle.trim(),
+            body:     annBody.trim().slice(0, 120),
+            link:     '/dashboard/community',
+            is_read:  false,
+          }))
+        )
       }
     }
 
     await logAction('create_announcement', 'platform', null, { title: annTitle })
-    addNotif('📢 Announcement sent to all users!', 'success')
-    setAnnTitle(''); setAnnBody('')
+    addNotif('📢 Announcement sent to all members!', 'success')
+    setAnnTitle(''); setAnnBody(''); setAnnImageUrl(''); setAnnLinkUrl(''); setAnnLinkLabel('')
     setAnnSaved(true); setTimeout(() => setAnnSaved(false), 3000)
     setAnnSaving(false)
     loadData()
@@ -297,6 +300,7 @@ export default function AdminPage() {
     { id: 'revenue',   label: 'Revenue',        icon: DollarSign },
 
     { id: 'audit',     label: 'Audit Log',      icon: Clock },
+    { id: 'announce', label: 'Announce',       icon: Megaphone },
   ]
 
   return (
@@ -582,6 +586,123 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+
+          {/* ANNOUNCE */}
+          {activeTab === 'announce' && (
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: C.textMuted }}>Broadcast to All Members</p>
+                <p className="text-sm" style={{ color: C.textDim }}>Announcements are pinned at the top of the community feed and every user gets a bell notification.</p>
+              </div>
+              <div className="rounded-2xl p-5 space-y-4" style={{ background: C.card, border: `1px solid ${C.border}` }}>
+                <div>
+                  <label className="text-xs font-semibold block mb-1.5" style={{ color: C.textMuted }}>Title *</label>
+                  <input value={annTitle} onChange={e => setAnnTitle(e.target.value)} maxLength={200}
+                    placeholder="e.g. New feature just launched"
+                    className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                    style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
+                    onFocus={e => (e.target.style.borderColor = C.borderHover)}
+                    onBlur={e  => (e.target.style.borderColor = C.border)} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold block mb-1.5" style={{ color: C.textMuted }}>Message *</label>
+                  <textarea value={annBody} onChange={e => setAnnBody(e.target.value)} rows={4} maxLength={1000}
+                    placeholder="Write your announcement here..."
+                    className="w-full px-4 py-2.5 rounded-xl text-sm outline-none resize-y"
+                    style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
+                    onFocus={e => (e.target.style.borderColor = C.borderHover)}
+                    onBlur={e  => (e.target.style.borderColor = C.border)} />
+                  <p className="text-xs text-right mt-1" style={{ color: C.textDim }}>{annBody.length}/1000</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold block mb-1.5" style={{ color: C.textMuted }}>Banner Image URL <span style={{ color: C.textDim }}>(optional)</span></label>
+                  <input value={annImageUrl} onChange={e => setAnnImageUrl(e.target.value)}
+                    placeholder="https://example.com/banner.jpg"
+                    className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                    style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
+                    onFocus={e => (e.target.style.borderColor = C.borderHover)}
+                    onBlur={e  => (e.target.style.borderColor = C.border)} />
+                  {annImageUrl.trim() && (
+                    <img src={annImageUrl} alt="Preview" className="mt-2 w-full rounded-xl object-cover"
+                      style={{ maxHeight: 160, border: `1px solid ${C.border}` }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className="text-xs font-semibold block mb-1.5" style={{ color: C.textMuted }}>Link URL <span style={{ color: C.textDim }}>(optional)</span></label>
+                    <input value={annLinkUrl} onChange={e => setAnnLinkUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                      style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
+                      onFocus={e => (e.target.style.borderColor = C.borderHover)}
+                      onBlur={e  => (e.target.style.borderColor = C.border)} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold block mb-1.5" style={{ color: C.textMuted }}>Button Label</label>
+                    <input value={annLinkLabel} onChange={e => setAnnLinkLabel(e.target.value)}
+                      placeholder="Learn more"
+                      className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                      style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
+                      onFocus={e => (e.target.style.borderColor = C.borderHover)}
+                      onBlur={e  => (e.target.style.borderColor = C.border)} />
+                  </div>
+                </div>
+                {(annTitle.trim() || annBody.trim()) && (
+                  <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.gold }}>Preview</p>
+                    {annImageUrl.trim() && (
+                      <img src={annImageUrl} alt="" className="w-full rounded-lg object-cover mb-3" style={{ maxHeight: 120 }}
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    )}
+                    {annTitle.trim() && <p className="text-sm font-bold mb-1" style={{ color: C.text }}>{annTitle}</p>}
+                    {annBody.trim()  && <p className="text-xs leading-relaxed" style={{ color: C.textMuted }}>{annBody.slice(0, 200)}{annBody.length > 200 ? '...' : ''}</p>}
+                    {annLinkUrl.trim() && (
+                      <div className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        style={{ background: 'rgba(245,158,11,0.15)', color: C.gold, border: '1px solid rgba(245,158,11,0.3)' }}>
+                        {annLinkLabel.trim() || 'Learn more'} →
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button onClick={sendAnnouncement} disabled={annSaving || !annTitle.trim() || !annBody.trim()}
+                  className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+                  style={{ background: annSaved ? C.green : 'linear-gradient(135deg,#F59E0B,#F97316)', color: '#0A0F1E', opacity: annSaving || !annTitle.trim() || !annBody.trim() ? 0.5 : 1, cursor: annSaving || !annTitle.trim() || !annBody.trim() ? 'not-allowed' : 'pointer' }}>
+                  {annSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                   : annSaved ? <>&#10003; Sent!</>
+                   : <><Megaphone className="w-4 h-4" /> Send to All Members</>}
+                </button>
+              </div>
+              {announcements.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: C.textMuted }}>Previous Announcements</p>
+                  <div className="space-y-3">
+                    {announcements.map((ann: any) => (
+                      <div key={ann.id} className="rounded-xl p-4"
+                        style={{ background: C.card, border: `1px solid ${ann.is_active ? 'rgba(245,158,11,0.3)' : C.border}`, opacity: ann.is_active ? 1 : 0.5 }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold mb-0.5" style={{ color: C.text }}>{ann.title}</p>
+                            <p className="text-xs leading-relaxed line-clamp-2" style={{ color: C.textMuted }}>{ann.body}</p>
+                            {ann.link_url && <p className="text-xs mt-1" style={{ color: C.blueLight }}>Link: {ann.link_url}</p>}
+                            <p className="text-xs mt-1.5" style={{ color: C.textDim }}>{timeAgo(ann.created_at)} &middot; {ann.is_active ? 'Active' : 'Off'}</p>
+                          </div>
+                          {ann.is_active && (
+                            <button onClick={() => deactivateAnn(ann.id)}
+                              className="text-xs px-3 py-1.5 rounded-lg font-semibold flex-shrink-0"
+                              style={{ background: C.redDim, color: C.red }}>
+                              Deactivate
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
