@@ -210,248 +210,281 @@ function FilesTab({groupId,currentUser}:{groupId:string;currentUser:any}){
   )
 }
 
-// ─── CALL — full WebRTC mesh ──────────────────────────────────────────────────
-// Key architecture:
-//  - notifyCh: persistent channel, subscribed ONCE on mount, NEVER recreated
-//  - startCall: waits for SUBSCRIBED state before sending broadcast
-//  - isCtrl passed as prop from parent (already resolved role)
-//  - CallTab is always-mounted (display:none when hidden) so WbRTC survives tab switches
-function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;isCtrl:boolean}){
-  const [callActive,setCallActive]=useState(false)
-  const [callId,setCallId]=useState<string|null>(null)
-  const [inCall,setInCall]=useState(false)
-  const [micOn,setMicOn]=useState(true)
-  const [camOn,setCamOn]=useState(true)
-  const [screenOn,setScreenOn]=useState(false)
-  const [joining,setJoining]=useState(false)
-  const [notifyReady,setNotifyReady]=useState(false) // true once notifyCh is SUBSCRIBED
+// ─── CALL — full WebRTC mesh, Zoom-like features ─────────────────────────────
+// BLACK TILE FIX: All refs declared BEFORE any useEffect that uses them.
+// VIDEO PLAY FIX: Call panel uses visibility:hidden not display:none,
+//   so video elements are always in the render tree and can play().
+function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentUser:any;isCtrl:boolean;activeTab:string}){
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [callActive,  setCallActive]  = useState(false)
+  const [callId,      setCallId]      = useState<string|null>(null)
+  const [inCall,      setInCall]      = useState(false)
+  const [micOn,       setMicOn]       = useState(true)
+  const [camOn,       setCamOn]       = useState(true)
+  const [screenOn,    setScreenOn]    = useState(false)
+  const [joining,     setJoining]     = useState(false)
+  const [notifyReady, setNotifyReady] = useState(false)
+  const [raiseHand,   setRaiseHand]   = useState(false)
+  const [hands,       setHands]       = useState<{uid:string;name:string}[]>([])
+  const [mutedAll,    setMutedAll]    = useState(false)
+  const [spotlitUid,  setSpotlitUid]  = useState<string|null>(null)
+  const [reactions,   setReactions]   = useState<{uid:string;emoji:string;ts:number}[]>([])
 
-  // When we enter the call, ensure local video plays (may be blocked while tab was hidden)
+  type PE = {pc:RTCPeerConnection;stream:MediaStream;name:string;iceQueue?:RTCIceCandidateInit[]}
+  const [peers, setPeers] = useState<Map<string,PE>>(new Map())
+
+  // ── Refs — MUST be declared before any useEffect that references them ──────
+  const peersRef   = useRef<Map<string,PE>>(new Map())
+  const localVid   = useRef<HTMLVideoElement>(null)
+  const localStr   = useRef<MediaStream|null>(null)
+  const screenStr  = useRef<MediaStream|null>(null)
+  const notifyCh   = useRef<any>(null)
+  const sigCh      = useRef<any>(null)
+  const presCh     = useRef<any>(null)
+  const callIdRef  = useRef<string|null>(null)
+  const myUid      = currentUser?.id || ''
+  const myName     = getName(currentUser)
+
+  // ── Re-play local video whenever tab becomes visible or inCall changes ──────
   useEffect(()=>{
-    if(inCall && localVid.current && localStr.current){
-      localVid.current.srcObject=localStr.current
+    if(activeTab==='call' && inCall && localVid.current && localStr.current){
+      localVid.current.srcObject = localStr.current
       localVid.current.play().catch(()=>{})
     }
-  },[inCall])
+  },[activeTab, inCall])
 
-  type PE={pc:RTCPeerConnection;stream:MediaStream;name:string;iceQueue?:RTCIceCandidateInit[]}
-  const [peers,setPeers]=useState<Map<string,PE>>(new Map())
-  const peersRef=useRef<Map<string,PE>>(new Map())
-  const localVid=useRef<HTMLVideoElement>(null)
-  const localStr=useRef<MediaStream|null>(null)
-  const screenStr=useRef<MediaStream|null>(null)
-  const notifyCh=useRef<any>(null)
-  const sigCh=useRef<any>(null)
-  const presCh=useRef<any>(null)
-  const callIdRef=useRef<string|null>(null)
-  const myUid=currentUser?.id||''
-  const myName=getName(currentUser)
-
-  // ── Persistent notify channel — wait for SUBSCRIBED before allowing start ──
+  // ── Notify channel — subscribed ONCE, never recreated ────────────────────
   useEffect(()=>{
     supabase.from('group_calls').select('id').eq('group_id',groupId).eq('status','active').maybeSingle()
-      .then(({data})=>{if(data){setCallActive(true);setCallId(data.id);callIdRef.current=data.id}})
+      .then(({data})=>{ if(data){ setCallActive(true); setCallId(data.id); callIdRef.current=data.id } })
 
-    const ch=supabase.channel(`notify-${groupId}`)
+    const ch = supabase.channel(`notify-${groupId}`)
       .on('broadcast',{event:'call-started'},({payload})=>{
-        setCallActive(true);setCallId(payload.callId);callIdRef.current=payload.callId
+        setCallActive(true); setCallId(payload.callId); callIdRef.current=payload.callId
       })
       .on('broadcast',{event:'call-ended'},()=>{
-        setCallActive(false);setCallId(null);callIdRef.current=null;doLeave(true)
+        setCallActive(false); setCallId(null); callIdRef.current=null; doLeave(true)
       })
-      .subscribe(s=>{
-        if(s==='SUBSCRIBED'){setNotifyReady(true)}
+      .on('broadcast',{event:'reaction'},({payload})=>{
+        setReactions(prev=>[...prev,{uid:payload.uid,emoji:payload.emoji,ts:Date.now()}])
+        setTimeout(()=>setReactions(prev=>prev.filter(r=>r.ts!==payload.ts||r.uid!==payload.uid)),3000)
       })
-    notifyCh.current=ch
-    return()=>{supabase.removeChannel(ch);setNotifyReady(false)}
+      .subscribe(s=>{ if(s==='SUBSCRIBED') setNotifyReady(true) })
+    notifyCh.current = ch
+    return()=>{ supabase.removeChannel(ch); setNotifyReady(false) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[groupId])
 
-  // ── Signaling channel ────────────────────────────────────────────────────
+  // ── Signaling channel ─────────────────────────────────────────────────────
   useEffect(()=>{
-    const sig=supabase.channel(`sig-${groupId}`)
+    const sig = supabase.channel(`sig-${groupId}`)
       .on('broadcast',{event:'offer'},async({payload})=>{
-        if(payload.to!==myUid)return
-        // Always create a fresh peer for incoming offers
-        const pc=makePeer(payload.from,payload.name)
-        // Add MY local tracks to this connection so the other side can see/hear me
+        if(payload.to!==myUid) return
+        const pc = makePeer(payload.from, payload.name)
+        // Add local tracks so the remote side can see/hear us
         if(localStr.current){
           localStr.current.getTracks().forEach(t=>{
-            if(!pc.getSenders().find(s=>s.track===t)){
-              pc.addTrack(t,localStr.current!)
-            }
+            if(!pc.getSenders().find(s=>s.track===t)) pc.addTrack(t, localStr.current!)
           })
         }
         try{
           await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-          // Flush any ICE that arrived before remote description
-          const entry=peersRef.current.get(payload.from)
-          if(entry?.iceQueue){for(const c of entry.iceQueue){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch{}}; if(entry)entry.iceQueue=[]}
-          const ans=await pc.createAnswer();await pc.setLocalDescription(ans)
+          const entry = peersRef.current.get(payload.from)
+          if(entry?.iceQueue){ for(const c of entry.iceQueue){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; entry.iceQueue=[] }
+          const ans = await pc.createAnswer(); await pc.setLocalDescription(ans)
           sig.send({type:'broadcast',event:'answer',payload:{to:payload.from,from:myUid,sdp:pc.localDescription,name:myName}})
-        }catch(e){console.error('[CALL] answer',e)}
+        }catch(e){ console.error('[offer]',e) }
       })
       .on('broadcast',{event:'answer'},async({payload})=>{
-        if(payload.to!==myUid)return
-        const e=peersRef.current.get(payload.from)
-        if(!e||e.pc.signalingState!=='have-local-offer')return
+        if(payload.to!==myUid) return
+        const e = peersRef.current.get(payload.from)
+        if(!e||e.pc.signalingState!=='have-local-offer') return
         try{
           await e.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-          // Flush queued ICE
-          if(e.iceQueue){for(const c of e.iceQueue){try{await e.pc.addIceCandidate(new RTCIceCandidate(c))}catch{}}; e.iceQueue=[]}
-        }catch(e){console.error('[CALL] setRemoteDesc answer',e)}
+          if(e.iceQueue){ for(const c of e.iceQueue){ try{ await e.pc.addIceCandidate(new RTCIceCandidate(c)) }catch{} }; e.iceQueue=[] }
+        }catch(err){ console.error('[answer]',err) }
       })
       .on('broadcast',{event:'ice'},async({payload})=>{
-        if(payload.to!==myUid)return
-        const e=peersRef.current.get(payload.from)
-        if(!e)return
-        // Only add ICE after remote description is set
-        if(e.pc.remoteDescription){
-          try{await e.pc.addIceCandidate(new RTCIceCandidate(payload.candidate))}catch{}
-        } else {
-          // Queue it — will be flushed after setRemoteDescription
-          if(!e.iceQueue)e.iceQueue=[]
-          e.iceQueue.push(payload.candidate)
-        }
+        if(payload.to!==myUid) return
+        const e = peersRef.current.get(payload.from)
+        if(!e) return
+        if(e.pc.remoteDescription){ try{ await e.pc.addIceCandidate(new RTCIceCandidate(payload.candidate)) }catch{} }
+        else{ if(!e.iceQueue) e.iceQueue=[]; e.iceQueue.push(payload.candidate) }
       })
-      .on('broadcast',{event:'peer-left'},({payload})=>{dropPeer(payload.uid)})
+      .on('broadcast',{event:'peer-left'},({payload})=>{ dropPeer(payload.uid) })
+      .on('broadcast',{event:'raise-hand'},({payload})=>{
+        setHands(prev=> payload.raised
+          ? prev.find(h=>h.uid===payload.uid) ? prev : [...prev,{uid:payload.uid,name:payload.name}]
+          : prev.filter(h=>h.uid!==payload.uid)
+        )
+      })
+      .on('broadcast',{event:'mute-all'},()=>{ if(localStr.current){ localStr.current.getAudioTracks().forEach(t=>{t.enabled=false}); setMicOn(false) } })
       .subscribe()
-    sigCh.current=sig
-    return()=>{supabase.removeChannel(sig)}
+    sigCh.current = sig
+    return()=>{ supabase.removeChannel(sig) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[groupId,myUid])
+  },[groupId, myUid])
 
-  const makePeer=useCallback((uid:string,name:string)=>{
-    // Always close old connection and create fresh — never reuse stale peers
-    const existing=peersRef.current.get(uid)
-    existing?.pc.close()
-    const pc=new RTCPeerConnection({iceServers:ICE})
-    const ms=new MediaStream()
+  // ── makePeer ──────────────────────────────────────────────────────────────
+  const makePeer = useCallback((uid:string, name:string)=>{
+    peersRef.current.get(uid)?.pc.close()
+    const pc   = new RTCPeerConnection({iceServers:ICE})
+    const ms   = new MediaStream()
     peersRef.current.set(uid,{pc,stream:ms,name})
     setPeers(new Map(peersRef.current))
-    localStr.current?.getTracks().forEach(t=>pc.addTrack(t,localStr.current!))
-    pc.ontrack=e=>{
-      e.streams[0]?.getTracks().forEach(t=>{if(!ms.getTrackById(t.id))ms.addTrack(t)})
-      peersRef.current.set(uid,{pc,stream:ms,name})
+    localStr.current?.getTracks().forEach(t=>pc.addTrack(t, localStr.current!))
+    pc.ontrack = e=>{
+      e.streams[0]?.getTracks().forEach(t=>{ if(!ms.getTrackById(t.id)) ms.addTrack(t) })
+      peersRef.current.set(uid,{...peersRef.current.get(uid)!,stream:ms})
       setPeers(new Map(peersRef.current))
     }
-    pc.onicecandidate=({candidate})=>{
-      if(candidate)sigCh.current?.send({type:'broadcast',event:'ice',payload:{to:uid,from:myUid,candidate:candidate.toJSON()}})
-    }
-    pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'||pc.connectionState==='closed')dropPeer(uid)}
-    pc.oniceconnectionstatechange=()=>{if(pc.iceConnectionState==='failed')pc.restartIce()}
+    pc.onicecandidate = ({candidate})=>{ if(candidate) sigCh.current?.send({type:'broadcast',event:'ice',payload:{to:uid,from:myUid,candidate:candidate.toJSON()}}) }
+    pc.onconnectionstatechange = ()=>{ if(pc.connectionState==='failed'||pc.connectionState==='closed') dropPeer(uid) }
+    pc.oniceconnectionstatechange = ()=>{ if(pc.iceConnectionState==='failed') pc.restartIce() }
     return pc
   },[myUid])
 
-  const dropPeer=useCallback((uid:string)=>{
+  const dropPeer = useCallback((uid:string)=>{
     peersRef.current.get(uid)?.pc.close()
     peersRef.current.delete(uid)
     setPeers(new Map(peersRef.current))
   },[])
 
-  const doJoin=useCallback(async()=>{
+  // ── doJoin ────────────────────────────────────────────────────────────────
+  const doJoin = useCallback(async()=>{
     setJoining(true)
     try{
-      const stream=await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},
         audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
       })
-      localStr.current=stream
+      localStr.current = stream
+
+      // Set srcObject and play — works now because CallTab stays mounted
       if(localVid.current){
-        localVid.current.srcObject=stream
-        // Try play — may fail if element is hidden (display:none), retry when visible
-        localVid.current.play().catch(()=>{
-          // Retry when the call tab becomes visible
-          const retry=()=>{ localVid.current?.play().catch(()=>{}) }
-          localVid.current?.addEventListener('canplay', retry, {once:true})
-        })
+        localVid.current.srcObject = stream
+        await localVid.current.play().catch(()=>{})
       }
 
-      const pch=supabase.channel(`pres-${groupId}`,{config:{presence:{key:myUid}}})
+      const pch = supabase.channel(`pres-${groupId}`,{config:{presence:{key:myUid}}})
         .on('presence',{event:'join'},async({newPresences})=>{
           for(const p of newPresences as any[]){
-            if(p.uid===myUid)continue
-            // Both peers send offers — the answer handler uses signalingState guard
-            // to ignore duplicate offers. Small delay for the higher UID to reduce glare.
-            const delay = myUid < p.uid ? 0 : 150
+            if(p.uid===myUid) continue
+            const delay = myUid < p.uid ? 0 : 200
             setTimeout(async()=>{
-              const pc=makePeer(p.uid,p.name)
+              const pc = makePeer(p.uid, p.name)
               try{
-                const offer=await pc.createOffer();await pc.setLocalDescription(offer)
+                const offer = await pc.createOffer(); await pc.setLocalDescription(offer)
                 sigCh.current?.send({type:'broadcast',event:'offer',payload:{to:p.uid,from:myUid,sdp:pc.localDescription,name:myName}})
-              }catch(e){console.error('[CALL] offer',e)}
+              }catch(e){ console.error('[join offer]',e) }
             }, delay)
           }
         })
-        .on('presence',{event:'leave'},({leftPresences})=>{for(const p of leftPresences as any[])dropPeer(p.uid)})
-        .subscribe(async s=>{if(s==='SUBSCRIBED')await pch.track({uid:myUid,name:myName})})
-      presCh.current=pch
+        .on('presence',{event:'leave'},({leftPresences})=>{ for(const p of leftPresences as any[]) dropPeer(p.uid) })
+        .subscribe(async s=>{ if(s==='SUBSCRIBED') await pch.track({uid:myUid,name:myName}) })
+      presCh.current = pch
       setInCall(true)
     }catch(err:any){
-      if(err.name==='NotAllowedError')alert('Camera/mic access denied. Please allow in browser settings.')
-      else alert('Could not start camera: '+err.message)
+      if(err.name==='NotAllowedError') alert('Camera/mic access denied. Please allow in your browser settings.')
+      else alert('Could not start camera/mic: '+err.message)
     }
     setJoining(false)
   },[groupId,myUid,myName,makePeer,dropPeer])
 
-  const doLeave=useCallback(async(forced=false)=>{
+  // ── doLeave ───────────────────────────────────────────────────────────────
+  const doLeave = useCallback(async(forced=false)=>{
     localStr.current?.getTracks().forEach(t=>t.stop())
     screenStr.current?.getTracks().forEach(t=>t.stop())
-    localStr.current=null;screenStr.current=null
-    if(localVid.current)localVid.current.srcObject=null
+    localStr.current=null; screenStr.current=null
+    if(localVid.current) localVid.current.srcObject=null
     await presCh.current?.untrack()
-    if(presCh.current){supabase.removeChannel(presCh.current);presCh.current=null}
-    peersRef.current.forEach(({pc})=>pc.close());peersRef.current.clear();setPeers(new Map())
-    if(!forced)sigCh.current?.send({type:'broadcast',event:'peer-left',payload:{uid:myUid}})
-    setInCall(false);setMicOn(true);setCamOn(true);setScreenOn(false)
+    if(presCh.current){ supabase.removeChannel(presCh.current); presCh.current=null }
+    peersRef.current.forEach(({pc})=>pc.close()); peersRef.current.clear(); setPeers(new Map())
+    if(!forced) sigCh.current?.send({type:'broadcast',event:'peer-left',payload:{uid:myUid}})
+    setInCall(false); setMicOn(true); setCamOn(true); setScreenOn(false)
+    setRaiseHand(false); setHands([]); setSpotlitUid(null)
   },[myUid])
 
-  const startCall=async()=>{
-    if(!notifyReady){alert('Still connecting, please wait a moment and try again.');return}
+  const startCall = async()=>{
+    if(!notifyReady){ alert('Still connecting — try again in a moment.'); return }
     setJoining(true)
-    const{data}=await supabase.from('group_calls').insert({group_id:groupId,started_by:myUid,status:'active'}).select('id').single()
-    const cid=data?.id
-    callIdRef.current=cid;setCallId(cid);setCallActive(true)
+    const{data} = await supabase.from('group_calls').insert({group_id:groupId,started_by:myUid,status:'active'}).select('id').single()
+    const cid = data?.id
+    callIdRef.current=cid; setCallId(cid); setCallActive(true)
     notifyCh.current.send({type:'broadcast',event:'call-started',payload:{callId:cid}})
     setJoining(false)
     await doJoin()
   }
 
-  const endCall=async()=>{
+  const endCall = async()=>{
     await doLeave()
-    const cid=callIdRef.current
-    if(cid)await supabase.from('group_calls').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',cid)
+    const cid = callIdRef.current
+    if(cid) await supabase.from('group_calls').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',cid)
     notifyCh.current?.send({type:'broadcast',event:'call-ended',payload:{}})
-    setCallActive(false);setCallId(null);callIdRef.current=null
+    setCallActive(false); setCallId(null); callIdRef.current=null
   }
 
-  const toggleMic=()=>{localStr.current?.getAudioTracks().forEach(t=>{t.enabled=!t.enabled});setMicOn(p=>!p)}
-  const toggleCam=()=>{localStr.current?.getVideoTracks().forEach(t=>{t.enabled=!t.enabled});setCamOn(p=>!p)}
+  const toggleMic = ()=>{ localStr.current?.getAudioTracks().forEach(t=>{t.enabled=!t.enabled}); setMicOn(p=>!p) }
+  const toggleCam = ()=>{ localStr.current?.getVideoTracks().forEach(t=>{t.enabled=!t.enabled}); setCamOn(p=>!p) }
 
-  const toggleScreen=async()=>{
+  const toggleScreen = async()=>{
     if(screenOn){
-      screenStr.current?.getTracks().forEach(t=>t.stop());screenStr.current=null
-      if(localVid.current&&localStr.current)localVid.current.srcObject=localStr.current
-      const camT=localStr.current?.getVideoTracks()[0]
-      peersRef.current.forEach(({pc})=>{const s=pc.getSenders().find(s=>s.track?.kind==='video');if(s&&camT)s.replaceTrack(camT).catch(()=>{})})
+      screenStr.current?.getTracks().forEach(t=>t.stop()); screenStr.current=null
+      if(localVid.current&&localStr.current) localVid.current.srcObject=localStr.current
+      const camT = localStr.current?.getVideoTracks()[0]
+      peersRef.current.forEach(({pc})=>{ const s=pc.getSenders().find(s=>s.track?.kind==='video'); if(s&&camT) s.replaceTrack(camT).catch(()=>{}) })
       setScreenOn(false)
     }else{
       try{
-        const ss=await(navigator.mediaDevices as any).getDisplayMedia({video:true,audio:false})
+        const ss = await (navigator.mediaDevices as any).getDisplayMedia({video:true,audio:false})
         screenStr.current=ss
-        if(localVid.current)localVid.current.srcObject=ss
-        const vt=ss.getVideoTracks()[0]
-        peersRef.current.forEach(({pc})=>{const s=pc.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(vt).catch(()=>{})})
+        if(localVid.current) localVid.current.srcObject=ss
+        const vt = ss.getVideoTracks()[0]
+        peersRef.current.forEach(({pc})=>{ const s=pc.getSenders().find(s=>s.track?.kind==='video'); if(s) s.replaceTrack(vt).catch(()=>{}) })
         vt.onended=()=>toggleScreen()
         setScreenOn(true)
       }catch{}
     }
   }
 
-  const peerList=useMemo(()=>Array.from(peers.entries()),[peers])
-  const cols=peerList.length===0?1:peerList.length===1?2:peerList.length<=3?2:3
+  const sendReaction = (emoji:string)=>{
+    const payload = {uid:myUid,emoji,ts:Date.now()}
+    notifyCh.current?.send({type:'broadcast',event:'reaction',payload})
+    setReactions(prev=>[...prev,{...payload}])
+    setTimeout(()=>setReactions(prev=>prev.filter(r=>!(r.uid===myUid&&r.ts===payload.ts))),3000)
+  }
 
-  if(!callActive&&!inCall)return(
+  const toggleRaiseHand = ()=>{
+    const raised = !raiseHand; setRaiseHand(raised)
+    sigCh.current?.send({type:'broadcast',event:'raise-hand',payload:{uid:myUid,name:myName,raised}})
+    if(raised) setHands(prev=>[...prev.filter(h=>h.uid!==myUid),{uid:myUid,name:myName}])
+    else setHands(prev=>prev.filter(h=>h.uid!==myUid))
+  }
+
+  const muteAll = ()=>{
+    sigCh.current?.send({type:'broadcast',event:'mute-all',payload:{}})
+    setMutedAll(true); setTimeout(()=>setMutedAll(false),3000)
+  }
+
+  const dismissHand = (uid:string)=>{ setHands(prev=>prev.filter(h=>h.uid!==uid)) }
+
+  const peerList = useMemo(()=>Array.from(peers.entries()),[peers])
+
+  // Spotlight: if set, show spotlit peer big + others small; else grid
+  const orderedPeers = useMemo(()=>{
+    if(!spotlitUid) return peerList
+    const spotlit = peerList.find(([uid])=>uid===spotlitUid)
+    const rest = peerList.filter(([uid])=>uid!==spotlitUid)
+    return spotlit ? [spotlit,...rest] : peerList
+  },[peerList,spotlitUid])
+
+  const cols = !spotlitUid
+    ? (peerList.length===0?1:peerList.length===1?2:peerList.length<=3?2:3)
+    : 1
+  const EMOJIS = ['👍','❤️','😂','😮','🔥','👏','🎉','💡']
+
+  // ── No active call ────────────────────────────────────────────────────────
+  if(!callActive&&!inCall) return(
     <div style={{flex:1,height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
       <div style={{width:64,height:64,borderRadius:'50%',background:C.blueDim,display:'flex',alignItems:'center',justifyContent:'center'}}>
         <PhoneCall style={{width:28,height:28,color:C.blueL}}/>
@@ -466,13 +499,14 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
         <button onClick={startCall} disabled={joining||!notifyReady}
           style={{display:'flex',alignItems:'center',gap:8,padding:'12px 32px',borderRadius:24,border:'none',background:notifyReady?`linear-gradient(135deg,${C.green},#059669)`:'rgba(16,185,129,0.3)',color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:joining||!notifyReady?'not-allowed':'pointer',opacity:joining?0.6:1,boxShadow:notifyReady?'0 4px 20px rgba(16,185,129,0.35)':'none'}}>
           {joining?<Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/>:<PhoneCall style={{width:16,height:16}}/>}
-          {joining?'Starting...':`Start Group Call`}
+          {joining?'Starting...':'Start Group Call'}
         </button>
       )}
     </div>
   )
 
-  if(callActive&&!inCall)return(
+  // ── Call active, not joined ───────────────────────────────────────────────
+  if(callActive&&!inCall) return(
     <div style={{flex:1,height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
       <div style={{width:64,height:64,borderRadius:'50%',background:C.greenDim,display:'flex',alignItems:'center',justifyContent:'center'}}>
         <Phone style={{width:28,height:28,color:C.green}}/>
@@ -496,12 +530,30 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
     </div>
   )
 
+  // ── In call UI ────────────────────────────────────────────────────────────
   return(
-    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
-      <div style={{flex:1,background:'#050510',overflow:'auto',padding:8,display:'grid',gap:8,gridTemplateColumns:`repeat(${cols},1fr)`,alignContent:'start'}}>
-        <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',aspectRatio:'16/9'}}>
+    <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
+
+      {/* Reaction rain overlay */}
+      <div style={{position:'absolute',inset:0,zIndex:50,pointerEvents:'none',overflow:'hidden'}}>
+        {reactions.map((r,i)=>(
+          <div key={`${r.uid}-${r.ts}-${i}`} style={{position:'absolute',fontSize:28,animation:'floatUp 3s ease-out forwards',bottom:80,left:`${10+Math.random()*80}%`}}>
+            {r.emoji}
+          </div>
+        ))}
+      </div>
+
+      {/* Video grid */}
+      <div style={{flex:1,background:'#050510',overflow:'auto',padding:8,display:'grid',gap:8,
+        gridTemplateColumns:spotlitUid&&orderedPeers.length>0?'2fr 1fr':`repeat(${cols},1fr)`,
+        alignContent:'start'}}>
+
+        {/* My tile — always first */}
+        <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',aspectRatio:'16/9',
+          gridColumn:spotlitUid&&orderedPeers[0]?.[0]===myUid?'1':'auto':undefined,
+          gridRow:spotlitUid&&orderedPeers[0]?.[0]===myUid?'1 / span 3':'auto':undefined}}>
+          {/* KEY FIX: video is always rendered, srcObject set via ref/useEffect */}
           <video ref={localVid} autoPlay playsInline muted
-            onCanPlay={e=>{(e.target as HTMLVideoElement).play().catch(()=>{})}}
             style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
           {!camOn&&!screenOn&&(
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'#111'}}>
@@ -516,32 +568,110 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
           </div>
           {screenOn&&<div style={{position:'absolute',top:6,right:8,fontSize:10,fontWeight:700,color:C.blueL,background:'rgba(37,99,235,0.2)',padding:'2px 8px',borderRadius:6,border:'1px solid rgba(37,99,235,0.4)'}}>Sharing</div>}
         </div>
-        {peerList.map(([uid,{stream,name}])=>(
-          <RemoteTile key={uid} uid={uid} stream={stream} name={name}/>
-        ))}
+
+        {/* Remote tiles */}
+        {orderedPeers.map(([uid,{stream,name}],idx)=>{
+          const isSpotlit = uid===spotlitUid
+          return(
+            <div key={uid} style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',aspectRatio:'16/9',
+              gridColumn:isSpotlit?'1':'auto',
+              gridRow:isSpotlit?'1 / span 3':'auto',
+              outline:isSpotlit?`2px solid ${C.gold}`:'none'}}>
+              <RemoteTile uid={uid} stream={stream} name={name}/>
+              {isCtrl&&(
+                <button onClick={()=>setSpotlitUid(isSpotlit?null:uid)}
+                  title={isSpotlit?'Remove spotlight':'Spotlight'}
+                  style={{position:'absolute',top:6,right:6,width:24,height:24,borderRadius:6,border:'none',background:'rgba(0,0,0,0.6)',color:isSpotlit?C.gold:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:12}}>
+                  ⭐
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
-      <div style={{flexShrink:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap'}}>
-        <button onClick={toggleMic} style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${micOn?C.border:C.red+'55'}`,background:micOn?C.card:C.redDim,color:micOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+
+      {/* Raised hands bar — visible to ctrl */}
+      {isCtrl&&hands.length>0&&(
+        <div style={{flexShrink:0,background:'rgba(245,158,11,0.1)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
+          <Hand style={{width:14,height:14,color:C.gold,flexShrink:0}}/>
+          <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0}}>Raised hands:</span>
+          {hands.map((h,i)=>(
+            <div key={h.uid} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:20,background:'rgba(245,158,11,0.15)',fontSize:11,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0,whiteSpace:'nowrap'}}>
+              {i+1}. {h.name}
+              <button onClick={()=>dismissHand(h.uid)} style={{background:'none',border:'none',cursor:'pointer',color:C.textDim,padding:0,marginLeft:2,fontSize:10}}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Controls bar */}
+      <div style={{flexShrink:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'center',gap:8,flexWrap:'wrap'}}>
+        {/* Mic */}
+        <button onClick={toggleMic} title={micOn?'Mute':'Unmute'}
+          style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${micOn?C.border:C.red+'55'}`,background:micOn?C.card:C.redDim,color:micOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
           {micOn?<Mic style={{width:18,height:18}}/>:<MicOff style={{width:18,height:18}}/>}
         </button>
-        <button onClick={toggleCam} style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${camOn?C.border:C.red+'55'}`,background:camOn?C.card:C.redDim,color:camOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+        {/* Cam */}
+        <button onClick={toggleCam} title={camOn?'Camera off':'Camera on'}
+          style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${camOn?C.border:C.red+'55'}`,background:camOn?C.card:C.redDim,color:camOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
           {camOn?<Video style={{width:18,height:18}}/>:<VideoOff style={{width:18,height:18}}/>}
         </button>
-        <button onClick={toggleScreen} style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(37,99,235,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+        {/* Screen share */}
+        <button onClick={toggleScreen} title={screenOn?'Stop sharing':'Share screen'}
+          style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(37,99,235,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
           {screenOn?<MonitorOff style={{width:18,height:18}}/>:<Monitor style={{width:18,height:18}}/>}
         </button>
+        {/* Raise hand */}
+        <button onClick={toggleRaiseHand} title={raiseHand?'Lower hand':'Raise hand'}
+          style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${raiseHand?C.gold+'55':C.border}`,background:raiseHand?C.goldDim:C.card,color:raiseHand?C.gold:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <Hand style={{width:18,height:18}}/>
+        </button>
+        {/* Reactions */}
+        <div style={{position:'relative'}}>
+          <button title="Reactions"
+            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${C.border}`,background:C.card,color:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}
+            onClick={()=>{
+              const el=document.getElementById(`emoji-picker-${myUid}`)
+              if(el) el.style.display=el.style.display==='flex'?'none':'flex'
+            }}>
+            😊
+          </button>
+          <div id={`emoji-picker-${myUid}`} style={{display:'none',position:'absolute',bottom:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:8,gap:4,flexWrap:'wrap',width:180,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:20}}>
+            {EMOJIS.map(e=>(
+              <button key={e} onClick={()=>{ sendReaction(e); const el=document.getElementById(`emoji-picker-${myUid}`); if(el)el.style.display='none' }}
+                style={{width:36,height:36,borderRadius:8,border:'none',background:'transparent',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center'}}
+                onMouseEnter={ev=>(ev.currentTarget.style.background=C.surface)}
+                onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Participant count */}
         <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif',padding:'0 4px'}}>
           <Users style={{width:13,height:13}}/>{peerList.length+1}
         </div>
-        <button onClick={()=>doLeave()} style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+        {/* Host: mute all */}
+        {isCtrl&&(
+          <button onClick={muteAll} title="Mute all"
+            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${mutedAll?C.red+'55':C.border}`,background:mutedAll?C.redDim:C.card,color:mutedAll?C.red:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <MicOff style={{width:18,height:18}}/>
+          </button>
+        )}
+        {/* Leave */}
+        <button onClick={()=>doLeave()}
+          style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
           <PhoneOff style={{width:15,height:15}}/>Leave
         </button>
+        {/* End for all */}
         {isCtrl&&(
-          <button onClick={endCall} style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+          <button onClick={endCall}
+            style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
             <X style={{width:15,height:15}}/>End for All
           </button>
         )}
       </div>
+      <style>{`@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-120px)}}`}</style>
     </div>
   )
 }
@@ -764,9 +894,9 @@ export default function GroupRoomPage(){
               <div style={{position:'absolute',inset:0,display:activeTab==='files'?'flex':'none',flexDirection:'column'}}>
                 <FilesTab groupId={groupId} currentUser={currentUser}/>
               </div>
-              {/* CallTab always mounted — WebRTC persists across tab switches */}
-              <div style={{position:'absolute',inset:0,display:activeTab==='call'?'flex':'none',flexDirection:'column'}}>
-                <CallTab groupId={groupId} currentUser={currentUser} isCtrl={isCtrl}/>
+              {/* CallTab: visibility toggle (NOT display:none) so video elements always render */}
+              <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',visibility:activeTab==='call'?'visible':'hidden'}}>
+                <CallTab groupId={groupId} currentUser={currentUser} isCtrl={isCtrl} activeTab={activeTab}/>
               </div>
               {isCtrl&&(
                 <div style={{position:'absolute',inset:0,display:activeTab==='settings'?'flex':'none',flexDirection:'column'}}>
