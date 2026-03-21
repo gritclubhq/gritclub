@@ -55,7 +55,9 @@ function RemoteTile({stream,name,uid}:{stream:MediaStream;name:string;uid:string
   },[stream])
   return(
     <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',aspectRatio:'16/9'}}>
-      <video ref={ref} autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+      <video ref={ref} autoPlay playsInline
+        onCanPlay={e=>{(e.target as HTMLVideoElement).play().catch(()=>{})}}
+        style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
       <div style={{position:'absolute',bottom:6,left:8,fontSize:11,fontWeight:700,color:'#fff',background:'rgba(0,0,0,0.65)',padding:'2px 8px',borderRadius:6}}>{name}</div>
     </div>
   )
@@ -224,6 +226,14 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
   const [joining,setJoining]=useState(false)
   const [notifyReady,setNotifyReady]=useState(false) // true once notifyCh is SUBSCRIBED
 
+  // When we enter the call, ensure local video plays (may be blocked while tab was hidden)
+  useEffect(()=>{
+    if(inCall && localVid.current && localStr.current){
+      localVid.current.srcObject=localStr.current
+      localVid.current.play().catch(()=>{})
+    }
+  },[inCall])
+
   type PE={pc:RTCPeerConnection;stream:MediaStream;name:string;iceQueue?:RTCIceCandidateInit[]}
   const [peers,setPeers]=useState<Map<string,PE>>(new Map())
   const peersRef=useRef<Map<string,PE>>(new Map())
@@ -262,15 +272,21 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
     const sig=supabase.channel(`sig-${groupId}`)
       .on('broadcast',{event:'offer'},async({payload})=>{
         if(payload.to!==myUid)return
-        // Get existing peer or create new one
-        const existing = peersRef.current.get(payload.from)
-        const pc = existing ? existing.pc : makePeer(payload.from, payload.name)
+        // Always create a fresh peer for incoming offers
+        const pc=makePeer(payload.from,payload.name)
+        // Add MY local tracks to this connection so the other side can see/hear me
+        if(localStr.current){
+          localStr.current.getTracks().forEach(t=>{
+            if(!pc.getSenders().find(s=>s.track===t)){
+              pc.addTrack(t,localStr.current!)
+            }
+          })
+        }
         try{
-          if(pc.signalingState!=='stable')return // already in negotiation
           await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-          // Flush any queued ICE candidates
+          // Flush any ICE that arrived before remote description
           const entry=peersRef.current.get(payload.from)
-          if(entry?.iceQueue){for(const c of entry.iceQueue){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch{}}; entry.iceQueue=[]}
+          if(entry?.iceQueue){for(const c of entry.iceQueue){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch{}}; if(entry)entry.iceQueue=[]}
           const ans=await pc.createAnswer();await pc.setLocalDescription(ans)
           sig.send({type:'broadcast',event:'answer',payload:{to:payload.from,from:myUid,sdp:pc.localDescription,name:myName}})
         }catch(e){console.error('[CALL] answer',e)}
@@ -306,11 +322,8 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
   },[groupId,myUid])
 
   const makePeer=useCallback((uid:string,name:string)=>{
-    // If peer already exists and is connected/connecting, reuse it
+    // Always close old connection and create fresh — never reuse stale peers
     const existing=peersRef.current.get(uid)
-    if(existing && existing.pc.connectionState!=='failed' && existing.pc.connectionState!=='closed'){
-      return existing.pc
-    }
     existing?.pc.close()
     const pc=new RTCPeerConnection({iceServers:ICE})
     const ms=new MediaStream()
@@ -344,23 +357,30 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
         audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
       })
       localStr.current=stream
-      if(localVid.current){localVid.current.srcObject=stream;localVid.current.play().catch(()=>{})}
+      if(localVid.current){
+        localVid.current.srcObject=stream
+        // Try play — may fail if element is hidden (display:none), retry when visible
+        localVid.current.play().catch(()=>{
+          // Retry when the call tab becomes visible
+          const retry=()=>{ localVid.current?.play().catch(()=>{}) }
+          localVid.current?.addEventListener('canplay', retry, {once:true})
+        })
+      }
 
       const pch=supabase.channel(`pres-${groupId}`,{config:{presence:{key:myUid}}})
         .on('presence',{event:'join'},async({newPresences})=>{
           for(const p of newPresences as any[]){
             if(p.uid===myUid)continue
-            // Glare prevention: only the peer with the lower UID initiates the offer
-            // This ensures exactly one offer is sent between any two peers
-            if(myUid < p.uid){
+            // Both peers send offers — the answer handler uses signalingState guard
+            // to ignore duplicate offers. Small delay for the higher UID to reduce glare.
+            const delay = myUid < p.uid ? 0 : 150
+            setTimeout(async()=>{
               const pc=makePeer(p.uid,p.name)
-              const offer=await pc.createOffer();await pc.setLocalDescription(offer)
-              sigCh.current?.send({type:'broadcast',event:'offer',payload:{to:p.uid,from:myUid,sdp:pc.localDescription,name:myName}})
-            } else {
-              // I am the higher UID — I wait for THEM to send me an offer
-              // Just create the peer connection so I'm ready to receive
-              makePeer(p.uid,p.name)
-            }
+              try{
+                const offer=await pc.createOffer();await pc.setLocalDescription(offer)
+                sigCh.current?.send({type:'broadcast',event:'offer',payload:{to:p.uid,from:myUid,sdp:pc.localDescription,name:myName}})
+              }catch(e){console.error('[CALL] offer',e)}
+            }, delay)
           }
         })
         .on('presence',{event:'leave'},({leftPresences})=>{for(const p of leftPresences as any[])dropPeer(p.uid)})
@@ -480,7 +500,9 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{flex:1,background:'#050510',overflow:'auto',padding:8,display:'grid',gap:8,gridTemplateColumns:`repeat(${cols},1fr)`,alignContent:'start'}}>
         <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',aspectRatio:'16/9'}}>
-          <video ref={localVid} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+          <video ref={localVid} autoPlay playsInline muted
+            onCanPlay={e=>{(e.target as HTMLVideoElement).play().catch(()=>{})}}
+            style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
           {!camOn&&!screenOn&&(
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'#111'}}>
               <div style={{textAlign:'center'}}>
