@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Search, Plus, Users, Lock, Globe, X, Loader2,
   Upload, ChevronRight, Check, AlertCircle, Crown,
@@ -236,11 +236,12 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: {
 
       if (gErr || !group) throw gErr
 
-      // Add creator as owner member
+      // Add creator as owner — always active, never pending
       await supabase.from('group_members').insert({
         group_id: group.id,
         user_id:  currentUserId,
         role:     'owner',
+        status:   'active',
       })
 
       onCreated(group.id)
@@ -564,6 +565,12 @@ export default function GroupsPage() {
   const [activeTab,      setActiveTab]      = useState<'discover'|'mine'>('discover')
   const [showCreate,     setShowCreate]     = useState(false)
   const [showUpgrade,    setShowUpgrade]    = useState(false)
+  const [showPendingBanner, setShowPendingBanner] = useState(false)
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams?.get('pending') === '1') setShowPendingBanner(true)
+  }, [searchParams])
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user: u } }) => {
@@ -587,8 +594,13 @@ export default function GroupsPage() {
       .select('group_id, status, role')
       .eq('user_id', uid)
 
-    const activeMemberIds  = new Set((memberships || []).filter((m: any) => m.status === 'active' || !m.status).map((m: any) => m.group_id))
-    const pendingMemberIds = new Set((memberships || []).filter((m: any) => m.status === 'pending').map((m: any) => m.group_id))
+    // Treat as active: status='active', status=null/undefined (old rows), or owner/admin role
+    const activeMemberIds  = new Set((memberships || []).filter((m: any) =>
+      m.status === 'active' || !m.status || m.role === 'owner' || m.role === 'admin'
+    ).map((m: any) => m.group_id))
+    const pendingMemberIds = new Set((memberships || []).filter((m: any) =>
+      m.status === 'pending' && m.role !== 'owner' && m.role !== 'admin'
+    ).map((m: any) => m.group_id))
 
     const enriched = (allGroups || []).map(g => ({
       ...g,
@@ -668,7 +680,22 @@ export default function GroupsPage() {
       <div className="min-h-full" style={{ background: C.bg }}>
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-5">
 
-          {/* Header */}
+          {/* Pending banner */}
+          {showPendingBanner && (
+            <div className="flex items-center justify-between gap-3 p-4 rounded-2xl"
+              style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <div className="flex items-center gap-3">
+                <span style={{ fontSize: 20 }}>⏳</span>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: C.gold }}>Join request sent</p>
+                  <p className="text-xs" style={{ color: C.textMuted }}>The group owner will review your request. You&apos;ll be notified when approved.</p>
+                </div>
+              </div>
+              <button onClick={() => setShowPendingBanner(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+          )}
+
+        {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: C.gold }}>
