@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import {
   Search, Plus, Users, Lock, Globe, X, Loader2,
   Upload, ChevronRight, Check, AlertCircle, Crown,
@@ -566,11 +566,13 @@ export default function GroupsPage() {
   const [showCreate,     setShowCreate]     = useState(false)
   const [showUpgrade,    setShowUpgrade]    = useState(false)
   const [showPendingBanner, setShowPendingBanner] = useState(false)
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (searchParams?.get('pending') === '1') setShowPendingBanner(true)
-  }, [searchParams])
+
+    if (typeof window !== 'undefined' && window.location.search.includes('pending=1')) {
+      setShowPendingBanner(true)
+    }
+  }, [])
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user: u } }) => {
