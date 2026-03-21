@@ -224,7 +224,7 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
   const [joining,setJoining]=useState(false)
   const [notifyReady,setNotifyReady]=useState(false) // true once notifyCh is SUBSCRIBED
 
-  type PE={pc:RTCPeerConnection;stream:MediaStream;name:string}
+  type PE={pc:RTCPeerConnection;stream:MediaStream;name:string;iceQueue?:RTCIceCandidateInit[]}
   const [peers,setPeers]=useState<Map<string,PE>>(new Map())
   const peersRef=useRef<Map<string,PE>>(new Map())
   const localVid=useRef<HTMLVideoElement>(null)
@@ -262,9 +262,15 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
     const sig=supabase.channel(`sig-${groupId}`)
       .on('broadcast',{event:'offer'},async({payload})=>{
         if(payload.to!==myUid)return
-        const pc=makePeer(payload.from,payload.name)
+        // Get existing peer or create new one
+        const existing = peersRef.current.get(payload.from)
+        const pc = existing ? existing.pc : makePeer(payload.from, payload.name)
         try{
+          if(pc.signalingState!=='stable')return // already in negotiation
           await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          // Flush any queued ICE candidates
+          const entry=peersRef.current.get(payload.from)
+          if(entry?.iceQueue){for(const c of entry.iceQueue){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch{}}; entry.iceQueue=[]}
           const ans=await pc.createAnswer();await pc.setLocalDescription(ans)
           sig.send({type:'broadcast',event:'answer',payload:{to:payload.from,from:myUid,sdp:pc.localDescription,name:myName}})
         }catch(e){console.error('[CALL] answer',e)}
@@ -272,12 +278,25 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
       .on('broadcast',{event:'answer'},async({payload})=>{
         if(payload.to!==myUid)return
         const e=peersRef.current.get(payload.from)
-        if(e?.pc.signalingState==='have-local-offer')try{await e.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))}catch{}
+        if(!e||e.pc.signalingState!=='have-local-offer')return
+        try{
+          await e.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          // Flush queued ICE
+          if(e.iceQueue){for(const c of e.iceQueue){try{await e.pc.addIceCandidate(new RTCIceCandidate(c))}catch{}}; e.iceQueue=[]}
+        }catch(e){console.error('[CALL] setRemoteDesc answer',e)}
       })
       .on('broadcast',{event:'ice'},async({payload})=>{
         if(payload.to!==myUid)return
         const e=peersRef.current.get(payload.from)
-        if(e)try{await e.pc.addIceCandidate(new RTCIceCandidate(payload.candidate))}catch{}
+        if(!e)return
+        // Only add ICE after remote description is set
+        if(e.pc.remoteDescription){
+          try{await e.pc.addIceCandidate(new RTCIceCandidate(payload.candidate))}catch{}
+        } else {
+          // Queue it — will be flushed after setRemoteDescription
+          if(!e.iceQueue)e.iceQueue=[]
+          e.iceQueue.push(payload.candidate)
+        }
       })
       .on('broadcast',{event:'peer-left'},({payload})=>{dropPeer(payload.uid)})
       .subscribe()
@@ -287,7 +306,12 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
   },[groupId,myUid])
 
   const makePeer=useCallback((uid:string,name:string)=>{
-    peersRef.current.get(uid)?.pc.close()
+    // If peer already exists and is connected/connecting, reuse it
+    const existing=peersRef.current.get(uid)
+    if(existing && existing.pc.connectionState!=='failed' && existing.pc.connectionState!=='closed'){
+      return existing.pc
+    }
+    existing?.pc.close()
     const pc=new RTCPeerConnection({iceServers:ICE})
     const ms=new MediaStream()
     peersRef.current.set(uid,{pc,stream:ms,name})
@@ -326,9 +350,17 @@ function CallTab({groupId,currentUser,isCtrl}:{groupId:string;currentUser:any;is
         .on('presence',{event:'join'},async({newPresences})=>{
           for(const p of newPresences as any[]){
             if(p.uid===myUid)continue
-            const pc=makePeer(p.uid,p.name)
-            const offer=await pc.createOffer();await pc.setLocalDescription(offer)
-            sigCh.current?.send({type:'broadcast',event:'offer',payload:{to:p.uid,from:myUid,sdp:pc.localDescription,name:myName}})
+            // Glare prevention: only the peer with the lower UID initiates the offer
+            // This ensures exactly one offer is sent between any two peers
+            if(myUid < p.uid){
+              const pc=makePeer(p.uid,p.name)
+              const offer=await pc.createOffer();await pc.setLocalDescription(offer)
+              sigCh.current?.send({type:'broadcast',event:'offer',payload:{to:p.uid,from:myUid,sdp:pc.localDescription,name:myName}})
+            } else {
+              // I am the higher UID — I wait for THEM to send me an offer
+              // Just create the peer connection so I'm ready to receive
+              makePeer(p.uid,p.name)
+            }
           }
         })
         .on('presence',{event:'leave'},({leftPresences})=>{for(const p of leftPresences as any[])dropPeer(p.uid)})
