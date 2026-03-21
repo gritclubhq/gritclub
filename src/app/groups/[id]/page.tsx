@@ -617,10 +617,13 @@ export default function GroupRoomPage(){
 
       if(!mem||dead){router.push('/groups');return}
 
-      if(mem.status==='pending'){router.push('/groups?pending=1');return}
-
-      // Normalise: 'host' from old code = owner
+      // Normalise role first: 'host' from old code = owner
       const role=mem.role==='host'?'owner':(mem.role||'member')
+
+      // Block pending members — but NEVER block owner or admin regardless of status
+      if(mem.status==='pending' && role!=='owner' && role!=='admin'){
+        router.push('/groups?pending=1');return
+      }
       setMyRole(role);setAccess(true)
 
       const{data:mems}=await supabase.from('group_members')
