@@ -483,56 +483,54 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
     : 1
   const EMOJIS = ['👍','❤️','😂','😮','🔥','👏','🎉','💡']
 
-  // ── No active call ────────────────────────────────────────────────────────
-  if(!callActive&&!inCall) return(
-    <div style={{flex:1,height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
-      <div style={{width:64,height:64,borderRadius:'50%',background:C.blueDim,display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <PhoneCall style={{width:28,height:28,color:C.blueL}}/>
-      </div>
-      <div style={{textAlign:'center'}}>
-        <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:6}}>No active call</p>
-        <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>
-          {isCtrl?'Start a call — all members will be notified instantly':'Waiting for the owner or admin to start a call'}
-        </p>
-      </div>
-      {isCtrl&&(
-        <button onClick={startCall} disabled={joining||!notifyReady}
-          style={{display:'flex',alignItems:'center',gap:8,padding:'12px 32px',borderRadius:24,border:'none',background:notifyReady?`linear-gradient(135deg,${C.green},#059669)`:'rgba(16,185,129,0.3)',color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:joining||!notifyReady?'not-allowed':'pointer',opacity:joining?0.6:1,boxShadow:notifyReady?'0 4px 20px rgba(16,185,129,0.35)':'none'}}>
-          {joining?<Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/>:<PhoneCall style={{width:16,height:16}}/>}
-          {joining?'Starting...':'Start Group Call'}
-        </button>
-      )}
-    </div>
-  )
-
-  // ── Call active, not joined ───────────────────────────────────────────────
-  if(callActive&&!inCall) return(
-    <div style={{flex:1,height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
-      <div style={{width:64,height:64,borderRadius:'50%',background:C.greenDim,display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <Phone style={{width:28,height:28,color:C.green}}/>
-      </div>
-      <div style={{textAlign:'center'}}>
-        <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:6}}>Group call is live</p>
-        <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>Join to see and hear everyone</p>
-      </div>
-      <div style={{display:'flex',gap:12}}>
-        <button onClick={doJoin} disabled={joining}
-          style={{display:'flex',alignItems:'center',gap:8,padding:'12px 28px',borderRadius:24,border:'none',background:C.green,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:'pointer',opacity:joining?0.6:1,boxShadow:'0 4px 16px rgba(16,185,129,0.3)'}}>
-          {joining?<Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/>:<Phone style={{width:16,height:16}}/>}
-          {joining?'Joining...':'Join Call'}
-        </button>
-        {isCtrl&&(
-          <button onClick={endCall} style={{display:'flex',alignItems:'center',gap:6,padding:'12px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-            <X style={{width:15,height:15}}/>End for All
-          </button>
-        )}
-      </div>
-    </div>
-  )
-
-  // ── In call UI ────────────────────────────────────────────────────────────
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
+      {/* Pre-call states rendered inline */}
+      {(!callActive&&!inCall) && (
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
+          <div style={{width:64,height:64,borderRadius:'50%',background:C.blueDim,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <PhoneCall style={{width:28,height:28,color:C.blueL}}/>
+          </div>
+          <div style={{textAlign:'center'}}>
+            <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:6}}>No active call</p>
+            <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>
+              {isCtrl?'Start a call — all members will be notified instantly':'Waiting for the owner or admin to start a call'}
+            </p>
+          </div>
+          {isCtrl&&(
+            <button onClick={startCall} disabled={joining||!notifyReady}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'12px 32px',borderRadius:24,border:'none',background:notifyReady?`linear-gradient(135deg,${C.green},#059669)`:'rgba(16,185,129,0.3)',color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:joining||!notifyReady?'not-allowed':'pointer',opacity:joining?0.6:1,boxShadow:notifyReady?'0 4px 20px rgba(16,185,129,0.35)':'none'}}>
+              {joining?<Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/>:<PhoneCall style={{width:16,height:16}}/>}
+              {joining?'Starting...':'Start Group Call'}
+            </button>
+          )}
+        </div>
+      )}
+      {(callActive&&!inCall) && (
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
+          <div style={{width:64,height:64,borderRadius:'50%',background:C.greenDim,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <Phone style={{width:28,height:28,color:C.green}}/>
+          </div>
+          <div style={{textAlign:'center'}}>
+            <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:6}}>Group call is live</p>
+            <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>Join to see and hear everyone</p>
+          </div>
+          <div style={{display:'flex',gap:12}}>
+            <button onClick={doJoin} disabled={joining}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'12px 28px',borderRadius:24,border:'none',background:C.green,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:'pointer',opacity:joining?0.6:1,boxShadow:'0 4px 16px rgba(16,185,129,0.3)'}}>
+              {joining?<Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/>:<Phone style={{width:16,height:16}}/>}
+              {joining?'Joining...':'Join Call'}
+            </button>
+            {isCtrl&&(
+              <button onClick={endCall} style={{display:'flex',alignItems:'center',gap:6,padding:'12px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+                <X style={{width:15,height:15}}/>End for All
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {/* In-call UI — hidden when not in call */}
+      <div style={{display:inCall?'flex':'none',flexDirection:'column',flex:1,position:'relative'}}>
 
       {/* Reaction rain overlay */}
       <div style={{position:'absolute',inset:0,zIndex:50,pointerEvents:'none',overflow:'hidden'}}>
@@ -672,6 +670,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
         )}
       </div>
       <style>{`@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-120px)}}`}</style>
+      </div>{/* end in-call div */}
     </div>
   )
 }
