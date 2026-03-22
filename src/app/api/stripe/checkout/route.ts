@@ -4,10 +4,69 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { eventId, tier = 'general', userId } = await req.json()
+    const body = await req.json()
+    const { eventId, userId, userEmail, amount, eventName, planId } = body
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gritclub.live'
+
+    // ── PLAN / SUBSCRIPTION purchase ─────────────────────────────────────────
+    if (planId) {
+      const PLANS: Record<string, { name: string; monthly: number; yearly: number; priceIdMonthly?: string; priceIdYearly?: string }> = {
+        basic: {
+          name: 'GritClub Basic',
+          monthly: 1000,  // $10.00 in cents
+          yearly:  7000,  // $70.00 in cents
+        },
+        premium_plus: {
+          name: 'GritClub Premium Plus',
+          monthly: 1700,  // $17.00 in cents
+          yearly:  20400, // $204.00 in cents
+        },
+      }
+
+      const plan = PLANS[planId]
+      if (!plan) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+
+      const isYearly = body.billing === 'yearly'
+      const unitAmount = isYearly ? plan.yearly : plan.monthly
+      const interval = isYearly ? 'year' : 'month'
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'subscription',
+        customer_email: userEmail,
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: plan.name,
+                description: isYearly
+                  ? `Annual plan — save ${planId === 'basic' ? '42%' : '20%'}`
+                  : 'Monthly plan — cancel anytime',
+              },
+              unit_amount: unitAmount,
+              recurring: { interval },
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          userId: userId || '',
+          planId,
+          billing: isYearly ? 'yearly' : 'monthly',
+          type: 'plan',
+        },
+        success_url: `${appUrl}/dashboard?plan_success=${planId}`,
+        cancel_url:  `${appUrl}/pricing?cancelled=1`,
+      })
+
+      return NextResponse.json({ url: session.url })
+    }
+
+    // ── EVENT TICKET purchase ─────────────────────────────────────────────────
     const supabase = createClient()
 
-    // Get event details
     const { data: event } = await supabase
       .from('events')
       .select('*')
@@ -18,46 +77,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // Get user details
-    const { data: user } = await supabase
-      .from('users')
-      .select('email, stripe_id')
-      .eq('id', userId)
-      .single()
+    // Stripe needs CENTS. If price stored as dollars (e.g. 5), multiply by 100.
+    // If stored as cents already (e.g. 500), use as-is.
+    // We detect: if price < 500, assume dollars; otherwise assume cents.
+    const rawPrice = amount ?? event.price ?? 0
+    const priceInCents = rawPrice < 500 ? Math.round(rawPrice * 100) : Math.round(rawPrice)
 
-    // VIP tier = 3x price, general = standard price
-    const price = tier === 'vip' ? event.price * 3 : event.price
+    if (priceInCents < 50) {
+      return NextResponse.json({ error: 'Minimum charge is $0.50' }, { status: 400 })
+    }
 
-    // Platform takes 20% — Stripe application_fee_amount is in cents
-    const platformFee = Math.round(price * 0.20)
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
-      customer_email: user?.email,
+      customer_email: userEmail,
       line_items: [
         {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${event.title}${tier === 'vip' ? ' — VIP Access' : ''}`,
-              description: tier === 'vip'
-                ? 'Lifetime replay + networking lounge + direct Q&A'
-                : 'Live stream access',
+              name: eventName || event.title || 'GritClub Event',
+              description: 'Live event access — GritClub',
             },
-            unit_amount: price,
+            unit_amount: priceInCents,
           },
           quantity: 1,
         },
       ],
       metadata: {
-        eventId,
-        userId,
-        tier,
-        platformFee: platformFee.toString(),
+        eventId: eventId || '',
+        userId:  userId || '',
+        type: 'ticket',
       },
       success_url: `${appUrl}/events/${eventId}?success=1`,
       cancel_url:  `${appUrl}/events/${eventId}?cancelled=1`,
