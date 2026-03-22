@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   // ── checkout.session.completed ──────────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.CheckoutSession
+    const session = event.data.object as Stripe.Checkout.Session
     const meta    = session.metadata || {}
 
     // ── TICKET purchase ──────────────────────────────────────────────────────
