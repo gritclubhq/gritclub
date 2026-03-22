@@ -324,28 +324,75 @@ export default function LandingPage() {
         className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 scan-line"
         style={{ paddingTop: '64px' }}
       >
-        {/* Grid background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-          }}
-        />
+        {/* Network background — professional founder/networking theme */}
+        <div className="absolute inset-0" style={{overflow:'hidden'}}>
+          <svg width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
+            style={{position:'absolute',inset:0,opacity:0.18}}>
+            <defs>
+              <radialGradient id="nodeBlue" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor="#2563EB" stopOpacity="0"/>
+              </radialGradient>
+              <radialGradient id="nodeRed" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#FF3B3B" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor="#FF3B3B" stopOpacity="0"/>
+              </radialGradient>
+              <radialGradient id="nodeGold" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#FFD700" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor="#FFD700" stopOpacity="0"/>
+              </radialGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            {/* Connection lines */}
+            <line x1="200" y1="150" x2="420" y2="280" stroke="#38BDF8" strokeWidth="0.8" strokeOpacity="0.4"/>
+            <line x1="420" y1="280" x2="650" y2="180" stroke="#38BDF8" strokeWidth="0.8" strokeOpacity="0.4"/>
+            <line x1="650" y1="180" x2="850" y2="320" stroke="#2563EB" strokeWidth="0.8" strokeOpacity="0.4"/>
+            <line x1="850" y1="320" x2="1100" y2="200" stroke="#FF3B3B" strokeWidth="0.8" strokeOpacity="0.35"/>
+            <line x1="1100" y1="200" x2="1280" y2="350" stroke="#FF3B3B" strokeWidth="0.8" strokeOpacity="0.35"/>
+            <line x1="420" y1="280" x2="380" y2="500" stroke="#38BDF8" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="380" y1="500" x2="580" y2="620" stroke="#2563EB" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="580" y1="620" x2="780" y2="520" stroke="#FFD700" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="780" y1="520" x2="1050" y2="600" stroke="#FFD700" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="1050" y1="600" x2="1280" y2="350" stroke="#FF3B3B" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="650" y1="180" x2="580" y2="620" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6"/>
+            <line x1="850" y1="320" x2="780" y2="520" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6"/>
+            <line x1="140" y1="620" x2="380" y2="500" stroke="#38BDF8" strokeWidth="0.7" strokeOpacity="0.25"/>
+            <line x1="140" y1="620" x2="200" y2="150" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+            <line x1="1050" y1="600" x2="1050" y2="750" stroke="#FF3B3B" strokeWidth="0.7" strokeOpacity="0.25"/>
+            <line x1="780" y1="520" x2="850" y2="750" stroke="#FFD700" strokeWidth="0.7" strokeOpacity="0.25"/>
+            <line x1="300" y1="750" x2="580" y2="620" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>
+            {/* People/avatar nodes — circles with person silhouettes */}
+            {[
+              [200,150,22,'#38BDF8'],[420,280,28,'#38BDF8'],[650,180,20,'#2563EB'],
+              [850,320,24,'#FF3B3B'],[1100,200,26,'#FF3B3B'],[1280,350,18,'#FF3B3B'],
+              [380,500,22,'#38BDF8'],[580,620,20,'#2563EB'],[780,520,26,'#FFD700'],
+              [1050,600,22,'#FF3B3B'],[140,620,18,'#38BDF8'],[1050,750,18,'#FF3B3B'],
+              [850,750,16,'#FFD700'],[300,750,16,'rgba(255,255,255,0.5)'],[720,380,14,'rgba(255,255,255,0.4)'],
+              [500,420,14,'rgba(255,255,255,0.4)'],[960,440,14,'rgba(255,255,255,0.4)'],
+            ].map(([cx,cy,r,color],i) => (
+              <g key={i} filter="url(#glow)">
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={color as string} strokeWidth="1.5" opacity="0.7"/>
+                <circle cx={cx} cy={cy} r={(r as number)*0.35} fill={color as string} opacity="0.5"/>
+                {/* head */}
+                <circle cx={cx} cy={(cy as number)-(r as number)*0.25} r={(r as number)*0.28} fill={color as string} opacity="0.55"/>
+                {/* shoulders arc */}
+                <path d={`M ${(cx as number)-(r as number)*0.45} ${(cy as number)+(r as number)*0.5} Q ${cx} ${(cy as number)+(r as number)*0.15} ${(cx as number)+(r as number)*0.45} ${(cy as number)+(r as number)*0.5}`}
+                  fill={color as string} opacity="0.35"/>
+              </g>
+            ))}
+            {/* Glow bursts at key intersections */}
+            <circle cx="420" cy="280" r="40" fill="url(#nodeBlue)" opacity="0.35"/>
+            <circle cx="850" cy="320" r="35" fill="url(#nodeRed)" opacity="0.3"/>
+            <circle cx="780" cy="520" r="35" fill="url(#nodeGold)" opacity="0.28"/>
+            <circle cx="1100" cy="200" r="30" fill="url(#nodeRed)" opacity="0.25"/>
+          </svg>
+          {/* Subtle left-to-right color split: blue left, red-orange right */}
+          <div style={{position:'absolute',inset:0,background:'linear-gradient(105deg, rgba(37,99,235,0.08) 0%, transparent 45%, rgba(255,59,59,0.06) 100%)'}}/>
+        </div>
 
-        {/* Red diagonal accent */}
-        <div
-          className="absolute"
-          style={{
-            top: '10%', right: '-5%',
-            width: '40%', height: '60%',
-            background: 'linear-gradient(135deg, rgba(255,59,59,0.04), transparent)',
-            transform: 'skewX(-15deg)',
-          }}
-        />
 
         {/* Live counter badge */}
         <div
