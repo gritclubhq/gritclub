@@ -37,11 +37,12 @@ export async function POST(req: NextRequest) {
       }).select().single()
 
       // Update event attendee count
-      await supabase.rpc('increment_event_attendees', { eid: meta.eventId }).catch(() => {
-        supabase.from('events').select('current_attendees').eq('id', meta.eventId).single().then(({ data }) => {
-          supabase.from('events').update({ current_attendees: (data?.current_attendees || 0) + 1 }).eq('id', meta.eventId)
-        })
-      })
+      try {
+        await supabase.rpc('increment_event_attendees', { eid: meta.eventId })
+      } catch {
+        const { data: ev2 } = await supabase.from('events').select('current_attendees').eq('id', meta.eventId).single()
+        await supabase.from('events').update({ current_attendees: (ev2?.current_attendees || 0) + 1 }).eq('id', meta.eventId)
+      }
 
       // Send confirmation email
       if (ticket && session.customer_email) {
