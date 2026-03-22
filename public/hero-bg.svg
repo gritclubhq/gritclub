@@ -1,0 +1,79 @@
+<svg width="1400" height="900" viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+    <stop offset="0%" stop-color="#0D1628"/>
+    <stop offset="100%" stop-color="#050810"/>
+  </radialGradient>
+  <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#2563EB" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.2"/>
+    <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="glow3" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="blur1"><feGaussianBlur stdDeviation="40"/></filter>
+</defs>
+<rect width="1400" height="900" fill="url(#bg)"/>
+<ellipse cx="700" cy="380" rx="500" ry="320" fill="url(#glow1)" filter="url(#blur1)"/>
+<ellipse cx="200" cy="200" rx="300" ry="200" fill="url(#glow3)" filter="url(#blur1)"/>
+<ellipse cx="1150" cy="600" rx="280" ry="200" fill="url(#glow2)" filter="url(#blur1)"/>
+<g opacity="0.06" stroke="#4B6EBA" stroke-width="0.5">
+  <line x1="0" y1="200" x2="1400" y2="200"/><line x1="0" y1="300" x2="1400" y2="300"/>
+  <line x1="0" y1="400" x2="1400" y2="400"/><line x1="0" y1="500" x2="1400" y2="500"/>
+  <line x1="0" y1="600" x2="1400" y2="600"/><line x1="0" y1="700" x2="1400" y2="700"/>
+  <line x1="140" y1="0" x2="140" y2="900"/><line x1="280" y1="0" x2="280" y2="900"/>
+  <line x1="420" y1="0" x2="420" y2="900"/><line x1="560" y1="0" x2="560" y2="900"/>
+  <line x1="700" y1="0" x2="700" y2="900"/><line x1="840" y1="0" x2="840" y2="900"/>
+  <line x1="980" y1="0" x2="980" y2="900"/><line x1="1120" y1="0" x2="1120" y2="900"/>
+  <line x1="1260" y1="0" x2="1260" y2="900"/>
+</g>
+<g opacity="0.18" stroke="#3B82F6" stroke-width="1" fill="none" stroke-dasharray="6 4">
+  <line x1="700" y1="420" x2="320" y2="200"/>
+  <line x1="700" y1="420" x2="1100" y2="180"/>
+  <line x1="700" y1="420" x2="1050" y2="620"/>
+  <line x1="700" y1="420" x2="350" y2="640"/>
+  <line x1="700" y1="420" x2="150" y2="500"/>
+  <line x1="700" y1="420" x2="1250" y2="400"/>
+  <line x1="700" y1="420" x2="580" y2="120"/>
+  <line x1="700" y1="420" x2="820" y2="750"/>
+</g>
+<g opacity="0.1" stroke="#F59E0B" stroke-width="0.8" fill="none">
+  <line x1="320" y1="200" x2="1100" y2="180"/>
+  <line x1="1100" y1="180" x2="1250" y2="400"/>
+  <line x1="350" y1="640" x2="820" y2="750"/>
+  <line x1="150" y1="500" x2="350" y2="640"/>
+  <line x1="1050" y1="620" x2="1250" y2="400"/>
+</g>
+<!-- Central node -->
+<circle cx="700" cy="420" r="48" fill="#2563EB" opacity="0.12"/>
+<circle cx="700" cy="420" r="32" fill="#2563EB" opacity="0.22"/>
+<circle cx="700" cy="420" r="18" fill="#3B82F6" opacity="0.85"/>
+<circle cx="700" cy="420" r="6" fill="#fff" opacity="0.95"/>
+<!-- Outer nodes -->
+<circle cx="320" cy="200" r="20" fill="#2563EB" opacity="0.28"/><circle cx="320" cy="200" r="11" fill="#60A5FA" opacity="0.85"/><circle cx="320" cy="200" r="4" fill="#fff" opacity="0.9"/>
+<circle cx="580" cy="120" r="14" fill="#7C3AED" opacity="0.32"/><circle cx="580" cy="120" r="7" fill="#A78BFA" opacity="0.85"/>
+<circle cx="1100" cy="180" r="22" fill="#F59E0B" opacity="0.22"/><circle cx="1100" cy="180" r="12" fill="#FBBF24" opacity="0.85"/><circle cx="1100" cy="180" r="4" fill="#fff" opacity="0.9"/>
+<circle cx="1250" cy="400" r="15" fill="#7C3AED" opacity="0.28"/><circle cx="1250" cy="400" r="8" fill="#A78BFA" opacity="0.85"/>
+<circle cx="1050" cy="620" r="18" fill="#10B981" opacity="0.25"/><circle cx="1050" cy="620" r="9" fill="#34D399" opacity="0.85"/>
+<circle cx="820" cy="750" r="13" fill="#2563EB" opacity="0.22"/><circle cx="820" cy="750" r="7" fill="#60A5FA" opacity="0.85"/>
+<circle cx="350" cy="640" r="17" fill="#F59E0B" opacity="0.22"/><circle cx="350" cy="640" r="9" fill="#FBBF24" opacity="0.85"/>
+<circle cx="150" cy="500" r="11" fill="#7C3AED" opacity="0.28"/><circle cx="150" cy="500" r="6" fill="#A78BFA" opacity="0.85"/>
+<!-- Micro nodes -->
+<g opacity="0.4">
+  <circle cx="470" cy="280" r="3" fill="#3B82F6"/>
+  <circle cx="890" cy="300" r="3" fill="#FBBF24"/>
+  <circle cx="1160" cy="520" r="3" fill="#34D399"/>
+  <circle cx="600" cy="680" r="3" fill="#A78BFA"/>
+  <circle cx="240" cy="380" r="3" fill="#3B82F6"/>
+  <circle cx="980" cy="440" r="3" fill="#FBBF24"/>
+  <circle cx="420" cy="160" r="2.5" fill="#60A5FA"/>
+  <circle cx="750" cy="640" r="2.5" fill="#A78BFA"/>
+  <circle cx="1180" cy="310" r="2.5" fill="#34D399"/>
+</g>
+<rect x="0" y="550" width="1400" height="350" fill="url(#bg)" opacity="0.55"/>
+</svg>
