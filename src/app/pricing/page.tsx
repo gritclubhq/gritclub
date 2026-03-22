@@ -322,7 +322,7 @@ export default function PricingPage() {
                   onClick={()=>handleCta(plan)}
                   disabled={loading === plan.id}
                   style={{
-                    width:'100%',padding:'12px',borderRadius:12,border:'none',cursor:'pointer',
+                    width:'100%',padding:'12px',borderRadius:12,cursor:'pointer',
                     fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,
                     display:'flex',alignItems:'center',justifyContent:'center',gap:6,
                     transition:'opacity .15s, transform .15s',
