@@ -66,7 +66,7 @@ export default function LandingPage() {
       num: '03',
       title: 'LIVE EVENTS',
       sub: 'Host. Earn. Repeat.',
-      desc: 'Ticket-gated live sessions. Screen share, whiteboard, blackboard, greenboard. You keep 80%.',
+      desc: 'Ticket-gated live sessions. Screen share, whiteboard, blackboard, greenboard. You keep 50%.',
       icon: '▶',
       color: '#38BDF8',
     },
@@ -81,16 +81,16 @@ export default function LandingPage() {
   ]
 
   const stats = [
-    { val: 2400, suffix: '+', label: 'Founders' },
-    { val: 340, suffix: '+', label: 'Events Hosted' },
-    { val: 84, suffix: 'K', label: 'Revenue Shared ($)' },
-    { val: 99, suffix: '%', label: 'Keep After Cut' },
+    { val: 50, suffix: '%', label: 'Host Revenue Share' },
+    { val: 0, suffix: '', label: 'Setup Fees' },
+    { val: 30, suffix: 's', label: 'To Go Live' },
+    { val: 100, suffix: '%', label: 'Feature Access' },
   ]
 
   const testimonials = [
-    { name: 'Sarah Chen', role: 'CEO, BuildFast', text: 'GritClub is what LinkedIn pretends to be. Real founders, raw conversations, actual value.' },
-    { name: 'Marcus Webb', role: 'Investor & Operator', text: 'Made 3 co-founder connections at one event. The room quality is unlike anything else.' },
-    { name: 'Jake Harris', role: 'Founder, Nifty50', text: '$329 from my first event. Keeping 80% is genuinely fair. No other platform comes close.' },
+    { name: 'Early Member', role: 'SaaS Founder', text: 'Finally a platform where the conversations are worth having. No noise, no vanity — just builders talking real numbers.' },
+    { name: 'Beta Host', role: 'Operator & Educator', text: 'The live room is incredibly smooth. I ran my first paid session within 24 hours of signing up.' },
+    { name: 'Founding Member', role: 'Product Builder', text: 'GritClub groups are where my best co-founder conversations happen. The file sharing and calls are built right.' },
   ]
 
   return (
@@ -98,6 +98,10 @@ export default function LandingPage() {
       className="min-h-screen overflow-x-hidden"
       style={{
         background: '#070B14',
+        backgroundImage: 'url(/hero-bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        backgroundBlendMode: 'overlay',
         fontFamily: "'Syne', 'DM Sans', sans-serif",
         color: '#E8EAF0',
       }}
@@ -296,15 +300,20 @@ export default function LandingPage() {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          {['About', 'Events', 'Groups', 'Network'].map(item => (
+          {[
+            { label: 'Events', href: '/events' },
+            { label: 'Groups', href: '/groups' },
+            { label: 'Pricing', href: '/pricing' },
+            { label: 'Sign In', href: '/auth/login' },
+          ].map(item => (
             <a
-              key={item}
-              href="#"
-              style={{ fontFamily: 'DM Sans', fontSize: '13px', color: 'rgba(232,234,240,0.6)', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s' }}
+              key={item.label}
+              href={item.href}
+              style={{ fontFamily: 'DM Sans', fontSize: '13px', color: 'rgba(232,234,240,0.6)', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s', textDecoration: 'none' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#E8EAF0')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(232,234,240,0.6)')}
             >
-              {item}
+              {item.label}
             </a>
           ))}
         </div>
@@ -408,7 +417,7 @@ export default function LandingPage() {
         >
           <span className="w-2 h-2 rounded-full bg-red-500" style={{ animation: 'pulse-ring 1.5s ease-out infinite', display: 'inline-block' }} />
           <span className="w-2 h-2 rounded-full bg-red-500 absolute left-[14px]" />
-          3 FOUNDERS LIVE RIGHT NOW
+          LIVE EVENTS AVAILABLE NOW
         </div>
 
         {/* Main headline */}
@@ -648,7 +657,7 @@ export default function LandingPage() {
             {[
               { step: '01', title: 'JOIN THE CIRCLE', desc: 'Sign in with Google or magic link. Your profile is your reputation. Build it.' },
               { step: '02', title: 'FIND YOUR PEOPLE', desc: 'Browse founders by industry and mindset. Send a connection. Form a group. Start building together.' },
-              { step: '03', title: 'HOST & EARN', desc: 'Create a ticketed event. Go live. Screen share, whiteboard, chat with your audience. Keep 80%.' },
+              { step: '03', title: 'HOST & EARN', desc: 'Create a ticketed event. Go live. Screen share, whiteboard, chat with your audience. Keep 50%.' },
             ].map((s) => (
               <div key={s.step} className="relative text-center px-6">
                 <div
@@ -724,12 +733,12 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              { name: 'AI Founders Circle', cat: 'AI & Tech', members: 12, premium: true },
-              { name: 'SaaS Growth Hackers', cat: 'Growth', members: 8, premium: true },
-              { name: 'Fundraising Masters', cat: 'Fundraising', members: 4, premium: false },
-              { name: 'Product Builders Guild', cat: 'Product', members: 15, premium: true },
-              { name: 'Climate Tech Pioneers', cat: 'Impact', members: 6, premium: true },
-              { name: 'HealthTech Innovators', cat: 'HealthTech', members: 3, premium: false },
+              { name: 'AI Founders Circle', cat: 'AI & Tech', members: 5, premium: true },
+              { name: 'SaaS Growth Hackers', cat: 'Growth', members: 4, premium: true },
+              { name: 'Fundraising Prep', cat: 'Fundraising', members: 3, premium: false },
+              { name: 'Product Builders', cat: 'Product', members: 5, premium: true },
+              { name: 'Climate Tech', cat: 'Impact', members: 2, premium: true },
+              { name: 'HealthTech Builders', cat: 'HealthTech', members: 3, premium: false },
             ].map((g, i) => (
               <div
                 key={i}
