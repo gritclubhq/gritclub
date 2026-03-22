@@ -8,7 +8,8 @@ import {
   MessageSquare, Folder, Video, Send, Upload, Download, Trash2,
   Users, Crown, Mic, MicOff, VideoOff, PhoneOff, Monitor, MonitorOff,
   Loader2, Lock, Globe, ChevronLeft, Shield, Zap,
-  Phone, PhoneCall, X, Settings, AlertTriangle, Check, UserMinus, Hand
+  Phone, PhoneCall, X, Settings, AlertTriangle, Check, UserMinus, Hand,
+  Maximize2, Minimize2
 } from 'lucide-react'
 
 const C = {
@@ -230,6 +231,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
   const [raiseHand,   setRaiseHand]   = useState(false)
   const [hands,       setHands]       = useState<{uid:string;name:string}[]>([])
   const [mutedAll,    setMutedAll]    = useState(false)
+  const [isFullscreen,setIsFullscreen]= useState(false)
   const [spotlitUid,  setSpotlitUid]  = useState<string|null>(null)
   const [reactions,   setReactions]   = useState<{uid:string;emoji:string;ts:number}[]>([])
 
@@ -543,7 +545,8 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
       )}
 
       {/* In-call UI */}
-      <div style={{display:inCall?'flex':'none',flexDirection:'column',flex:1,position:'relative'}}>
+      <div style={{display:inCall?'flex':'none',flexDirection:'column',flex:1,position:'relative',
+        ...(isFullscreen?{position:'fixed',inset:0,zIndex:9999,background:'#050510'}:{})}}>
 
         {/* Reaction rain */}
         <div style={{position:'absolute',inset:0,zIndex:50,pointerEvents:'none',overflow:'hidden'}}>
@@ -554,13 +557,14 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
           ))}
         </div>
 
-        {/* Video grid */}
-        <div style={{flex:1,background:'#050510',overflow:'auto',padding:8,display:'grid',gap:8,
-          gridTemplateColumns:spotlitUid&&orderedPeers.length>0?'2fr 1fr':`repeat(${cols},1fr)`,
-          alignContent:'start'}}>
+        {/* Video grid — Zoom style: fills all available height */}
+        <div style={{flex:1,background:'#050510',overflow:'hidden',padding:8,display:'grid',gap:6,
+          gridTemplateColumns:spotlitUid&&orderedPeers.length>0?'3fr 1fr':`repeat(${cols},1fr)`,
+          gridAutoRows:spotlitUid?'1fr':'1fr',
+          minHeight:0}}>
 
           {/* My tile */}
-          <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',aspectRatio:'16/9'}}>
+          <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',minHeight:120}}>
             <video ref={localVid} autoPlay playsInline muted
               style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
             {!camOn&&!screenOn && (
@@ -581,7 +585,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
           {orderedPeers.map(([uid,{stream,name}]) => {
             const isSpotlit = uid===spotlitUid
             return (
-              <div key={uid} style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',aspectRatio:'16/9',
+              <div key={uid} style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',minHeight:120,
                 gridColumn:isSpotlit?'1':'auto',
                 gridRow:isSpotlit?'1 / span 3':'auto',
                 outline:isSpotlit?`2px solid ${C.gold}`:'none'}}>
@@ -658,6 +662,10 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
               <MicOff style={{width:18,height:18}}/>
             </button>
           )}
+          <button onClick={()=>setIsFullscreen(f=>!f)} title={isFullscreen?'Exit fullscreen':'Fullscreen'}
+            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${C.border}`,background:isFullscreen?C.blueDim:C.card,color:isFullscreen?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            {isFullscreen ? <Minimize2 style={{width:18,height:18}}/> : <Maximize2 style={{width:18,height:18}}/>}
+          </button>
           <button onClick={()=>doLeave()}
             style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
             <PhoneOff style={{width:15,height:15}}/>Leave
