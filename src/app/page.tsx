@@ -98,7 +98,7 @@ export default function LandingPage() {
       className="min-h-screen overflow-x-hidden"
       style={{
         background: '#070B14',
-        backgroundImage: 'url(/hero-bg.jpg)',
+        backgroundImage: 'url(/hero-bg.svg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
         backgroundBlendMode: 'overlay',
