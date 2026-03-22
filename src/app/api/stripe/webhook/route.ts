@@ -1,102 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { stripe } from '@/lib/stripe/config'
+import { createClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-04-10' })
-
-// Use service role key here — webhook runs server-side, bypasses RLS
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function POST(req: NextRequest) {
-  const body      = await req.text()
-  const signature = req.headers.get('stripe-signature')!
+  const body = await req.text()
+  const sig  = req.headers.get('stripe-signature')!
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch (err: any) {
-    console.error('Webhook signature error:', err.message)
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    return NextResponse.json({ error: `Webhook error: ${err.message}` }, { status: 400 })
   }
 
+  const supabase = createClient()
+
+  // ── checkout.session.completed ──────────────────────────────────────────────
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
+    const session = event.data.object as Stripe.CheckoutSession
+    const meta    = session.metadata || {}
 
-    const userId    = session.metadata?.userId    || session.client_reference_id
-    const eventId   = session.metadata?.eventId
-    const userEmail = session.customer_email || session.metadata?.userEmail
-    const amount    = session.amount_total || 0
+    // ── TICKET purchase ──────────────────────────────────────────────────────
+    if (meta.type === 'ticket' && meta.eventId && meta.userId) {
+      const amountPaid = session.amount_total || 0
 
-    if (!userId || !eventId) {
-      return NextResponse.json({ received: true })
-    }
-
-    // 1. Create ticket in Supabase
-    const { data: ticket } = await supabase
-      .from('tickets')
-      .upsert({
-        user_id:           userId,
-        event_id:          eventId,
-        amount:            amount,
-        status:            'paid',
-        ticket_type:       'general',
+      // Insert ticket
+      const { data: ticket } = await supabase.from('tickets').insert({
+        user_id:     meta.userId,
+        event_id:    meta.eventId,
+        amount:      amountPaid,
+        status:      'paid',
+        ticket_type: 'general',
         stripe_session_id: session.id,
-      }, { onConflict: 'user_id,event_id' })
-      .select('id')
-      .single()
+      }).select().single()
 
-    // 2. Increment event attendee count
-    try {
-      await supabase.rpc('increment_event_attendees', { p_event_id: eventId })
-    } catch {
-      // Fallback if RPC doesn't exist
-      const { data: ev } = await supabase.from('events').select('current_attendees, total_sold').eq('id', eventId).single()
-      if (ev) {
-        await supabase.from('events').update({
-          current_attendees: (ev.current_attendees || 0) + 1,
-          total_sold:        (ev.total_sold || 0) + 1,
-        }).eq('id', eventId)
-      }
-    }
+      // Update event attendee count
+      await supabase.rpc('increment_event_attendees', { eid: meta.eventId }).catch(() => {
+        supabase.from('events').select('current_attendees').eq('id', meta.eventId).single().then(({ data }) => {
+          supabase.from('events').update({ current_attendees: (data?.current_attendees || 0) + 1 }).eq('id', meta.eventId)
+        })
+      })
 
-    // 3. Send confirmation email
-    if (userEmail) {
-      try {
-        // Fetch event + user details for the email
-        const [{ data: ev }, { data: user }] = await Promise.all([
-          supabase.from('events').select('title, start_time, users(full_name, email)').eq('id', eventId).single(),
-          supabase.from('users').select('full_name').eq('id', userId).single(),
-        ])
-
-        const host = (ev as any)?.users || {}
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gritclub.live'
-
-        await fetch(`${appUrl}/api/email`, {
-          method:  'POST',
+      // Send confirmation email
+      if (ticket && session.customer_email) {
+        const { data: ev } = await supabase.from('events').select('title, start_time, users(full_name)').eq('id', meta.eventId).single()
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: 'paid_ticket',
-            to:   userEmail,
-            data: {
-              eventTitle: ev?.title || 'GritClub Event',
-              eventDate:  ev?.start_time ? new Date(ev.start_time).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '',
-              eventTime:  ev?.start_time ? new Date(ev.start_time).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : '',
-              hostName:   host.full_name || host.email?.split('@')[0] || 'GritClub Host',
-              userName:   user?.full_name || userEmail.split('@')[0],
-              ticketId:   ticket?.id || session.id,
-              amount,
-              appUrl,
-            },
+            type:    'paid_ticket',
+            to:      session.customer_email,
+            eventId: meta.eventId,
+            ticketId: ticket.id,
+            amount:  amountPaid,
           }),
-        })
-      } catch (emailErr) {
-        // Email failure must never fail the webhook
-        console.error('Failed to send paid ticket email:', emailErr)
+        }).catch(() => {})
       }
     }
+
+    // ── PLAN subscription ─────────────────────────────────────────────────────
+    if (meta.type === 'plan' && meta.userId && meta.planId) {
+      const isPremiumPlus = meta.planId === 'premium_plus'
+      await supabase.from('users').update({
+        is_premium:    true,
+        premium_tier:  meta.planId,
+        premium_since: new Date().toISOString(),
+        stripe_customer_id: session.customer as string,
+      }).eq('id', meta.userId)
+    }
+  }
+
+  // ── customer.subscription.deleted (cancellation) ────────────────────────────
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object as Stripe.Subscription
+    const customerId = sub.customer as string
+    await supabase.from('users').update({
+      is_premium:   false,
+      premium_tier: null,
+    }).eq('stripe_customer_id', customerId)
   }
 
   return NextResponse.json({ received: true })
