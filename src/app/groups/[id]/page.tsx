@@ -687,19 +687,34 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
 function SettingsTab({group,myRole,currentUser,onDeleted}:{group:any;myRole:string;currentUser:any;onDeleted:()=>void}) {
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
-  const isOwner = myRole==='owner'
+  const isOwner = myRole==='owner' || myRole==='admin'
   const required = 'delete the group'
 
   const deleteGroup = async () => {
     if (confirmText!==required) return
     setDeleting(true)
-    await supabase.from('group_messages').delete().eq('group_id',group.id)
-    await supabase.from('group_files').delete().eq('group_id',group.id)
-    await supabase.from('group_members').delete().eq('group_id',group.id)
-    await supabase.from('group_calls').delete().eq('group_id',group.id)
-    await supabase.from('groups').delete().eq('id',group.id)
-    setDeleting(false)
-    onDeleted()
+    try {
+      // Delete child records first (RLS allows owner/admin to delete their group's data)
+      await supabase.from('group_messages').delete().eq('group_id',group.id)
+      await supabase.from('group_files').delete().eq('group_id',group.id)
+      await supabase.from('group_calls').delete().eq('group_id',group.id)
+      // Delete all members (including self) 
+      await supabase.from('group_members').delete().eq('group_id',group.id)
+      // Finally delete the group itself
+      const { error } = await supabase.from('groups').delete().eq('id',group.id)
+      if (error) {
+        // RLS fallback: try matching on owner_id too
+        const { error: e2 } = await supabase.from('groups').delete()
+          .or(`created_by.eq.${currentUser?.id},owner_id.eq.${currentUser?.id}`)
+          .eq('id',group.id)
+        if (e2) { alert('Delete failed. Please contact support.'); setDeleting(false); return }
+      }
+      setDeleting(false)
+      onDeleted()
+    } catch (err: any) {
+      alert('Error deleting group: ' + err.message)
+      setDeleting(false)
+    }
   }
 
   return (
