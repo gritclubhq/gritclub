@@ -212,7 +212,7 @@ export default function RecordingsPage() {
     init()
   }, [])
 
-  const handleWatch = (rec: any) => {
+  const handleWatch = async (rec: any) => {
     const daysAgo = rec.created_at
       ? Math.floor((Date.now() - new Date(rec.created_at).getTime()) / (1000*60*60*24))
       : 999
@@ -220,6 +220,7 @@ export default function RecordingsPage() {
       setShowUpgrade(true)
       return
     }
+    // Route to replay page which generates fresh signed URL
     router.push(`/events/${rec.event_id}/replay`)
   }
 
