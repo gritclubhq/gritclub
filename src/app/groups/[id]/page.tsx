@@ -50,15 +50,51 @@ function Av({user,size=32}:{user:any;size?:number}) {
 
 function RemoteTile({stream,name,uid}:{stream:MediaStream;name:string;uid:string}) {
   const ref = useRef<HTMLVideoElement>(null)
+  const [needsClick, setNeedsClick] = useState(false)
+
   useEffect(() => {
-    if (ref.current) { ref.current.srcObject = stream; ref.current.play().catch(()=>{}) }
+    const vid = ref.current
+    if (!vid) return
+    // Always reassign srcObject so new tracks are picked up
+    vid.srcObject = stream
+    vid.muted = false
+    vid.volume = 1.0
+    const tryPlay = () => {
+      vid.play().catch(err => {
+        if (err.name === 'NotAllowedError') {
+          // Autoplay blocked — mute and try again, show click-to-unmute
+          vid.muted = true
+          vid.play().catch(() => {})
+          setNeedsClick(true)
+        }
+      })
+    }
+    tryPlay()
+    // Re-try when new tracks arrive
+    stream.onaddtrack = () => { vid.srcObject = stream; tryPlay() }
+    return () => { stream.onaddtrack = null }
   }, [stream])
+
+  const handleUnmute = () => {
+    if (!ref.current) return
+    ref.current.muted = false
+    ref.current.volume = 1.0
+    ref.current.play().catch(() => {})
+    setNeedsClick(false)
+  }
+
   return (
-    <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',aspectRatio:'16/9'}}>
+    <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',width:'100%',height:'100%'}}>
       <video ref={ref} autoPlay playsInline
-        onCanPlay={e=>{(e.target as HTMLVideoElement).play().catch(()=>{})}}
         style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
       <div style={{position:'absolute',bottom:6,left:8,fontSize:11,fontWeight:700,color:'#fff',background:'rgba(0,0,0,0.65)',padding:'2px 8px',borderRadius:6}}>{name}</div>
+      {needsClick && (
+        <button onClick={handleUnmute}
+          style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.6)',border:'none',cursor:'pointer',flexDirection:'column',gap:8}}>
+          <span style={{fontSize:32}}>🔇</span>
+          <span style={{fontSize:13,color:'#fff',fontWeight:600,fontFamily:'DM Sans,sans-serif'}}>Tap to hear audio</span>
+        </button>
+      )}
     </div>
   )
 }
@@ -342,8 +378,12 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
     setPeers(new Map(peersRef.current))
     localStr.current?.getTracks().forEach(t => pc.addTrack(t, localStr.current!))
     pc.ontrack = e => {
-      e.streams[0]?.getTracks().forEach(t => { if (!ms.getTrackById(t.id)) ms.addTrack(t) })
-      peersRef.current.set(uid, {...peersRef.current.get(uid)!, stream:ms})
+      // Add tracks to the MediaStream
+      const incoming = e.streams[0] || new MediaStream([e.track])
+      incoming.getTracks().forEach(t => { if (!ms.getTrackById(t.id)) ms.addTrack(t) })
+      // Create a NEW stream reference each time so React detects the change
+      const fresh = new MediaStream(ms.getTracks())
+      peersRef.current.set(uid, {...peersRef.current.get(uid)!, stream:fresh})
       setPeers(new Map(peersRef.current))
     }
     pc.onicecandidate = ({candidate}) => {
@@ -390,6 +430,24 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
         .on('presence',{event:'leave'},({leftPresences}) => { for (const p of leftPresences as any[]) dropPeer(p.uid) })
         .subscribe(async s => { if (s==='SUBSCRIBED') await pch.track({uid:myUid,name:myName}) })
       presCh.current = pch
+
+      // Re-negotiate with any peers already connected (they may have joined before us)
+      // This ensures they get our audio+video tracks
+      peersRef.current.forEach(async (entry, uid) => {
+        if (stream) {
+          stream.getTracks().forEach(t => {
+            if (!entry.pc.getSenders().find(s => s.track === t)) {
+              entry.pc.addTrack(t, stream)
+            }
+          })
+          try {
+            const offer = await entry.pc.createOffer()
+            await entry.pc.setLocalDescription(offer)
+            sigCh.current?.send({type:'broadcast',event:'offer',payload:{to:uid,from:myUid,sdp:entry.pc.localDescription,name:myName}})
+          } catch {}
+        }
+      })
+
       setInCall(true)
     } catch(err:any) {
       if (err.name==='NotAllowedError') alert('Camera/mic access denied. Please allow in your browser settings.')
@@ -570,8 +628,8 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
           WebkitOverflowScrolling:'touch'}}>
 
           {/* My tile */}
-          <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',minHeight:120}}>
-            <video ref={localVid} autoPlay playsInline muted
+          <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',minHeight:0,height:'100%'}}>
+            <video ref={localVid} autoPlay playsInline muted={true}
               style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
             {!camOn&&!screenOn && (
               <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'#111'}}>
