@@ -548,8 +548,10 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
       )}
 
       {/* In-call UI */}
-      <div style={{display:inCall?'flex':'none',flexDirection:'column',flex:1,position:'relative',
-        ...(isFullscreen?{position:'fixed',inset:0,zIndex:9999,background:'#050510'}:{})}}>
+      <div style={{display:inCall?'flex':'none',flexDirection:'column',
+        ...(isFullscreen
+          ? {position:'fixed',inset:0,zIndex:9999,background:'#050510',height:'100dvh'}
+          : {flex:1,minHeight:0,height:'100%'})}}>
 
         {/* Reaction rain */}
         <div style={{position:'absolute',inset:0,zIndex:50,pointerEvents:'none',overflow:'hidden'}}>
@@ -560,11 +562,12 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
           ))}
         </div>
 
-        {/* Video grid — Zoom style: fills all available height */}
+        {/* Video grid — fills all available height, controls always visible */}
         <div style={{flex:1,background:'#050510',overflow:'hidden',padding:8,display:'grid',gap:6,
           gridTemplateColumns:spotlitUid&&orderedPeers.length>0?'3fr 1fr':`repeat(${cols},1fr)`,
-          gridAutoRows:spotlitUid?'1fr':'1fr',
-          minHeight:0}}>
+          gridAutoRows:'1fr',
+          minHeight:0,
+          WebkitOverflowScrolling:'touch'}}>
 
           {/* My tile */}
           <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',minHeight:120}}>
