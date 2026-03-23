@@ -220,6 +220,9 @@ function FilesTab({groupId,currentUser}:{groupId:string;currentUser:any}) {
 
 // ─── CALL ─────────────────────────────────────────────────────────────────────
 function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentUser:any;isCtrl:boolean;activeTab:string}) {
+  const [winW, setWinW] = useState(typeof window!=='undefined'?window.innerWidth:1200)
+  useEffect(()=>{const h=()=>setWinW(window.innerWidth);window.addEventListener('resize',h);return()=>window.removeEventListener('resize',h)},[])
+  const isMob = winW < 640
   const [callActive,  setCallActive]  = useState(false)
   const [callId,      setCallId]      = useState<string|null>(null)
   const [inCall,      setInCall]      = useState(false)
@@ -616,66 +619,68 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
           </div>
         )}
 
-        {/* Controls */}
-        <div style={{flexShrink:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'center',gap:8,flexWrap:'wrap'}}>
-          <button onClick={toggleMic} title={micOn?'Mute':'Unmute'}
-            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${micOn?C.border:C.red+'55'}`,background:micOn?C.card:C.redDim,color:micOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            {micOn ? <Mic style={{width:18,height:18}}/> : <MicOff style={{width:18,height:18}}/>}
-          </button>
-          <button onClick={toggleCam} title={camOn?'Camera off':'Camera on'}
-            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${camOn?C.border:C.red+'55'}`,background:camOn?C.card:C.redDim,color:camOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            {camOn ? <Video style={{width:18,height:18}}/> : <VideoOff style={{width:18,height:18}}/>}
-          </button>
-          <button onClick={toggleScreen} title={screenOn?'Stop sharing':'Share screen'}
-            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(37,99,235,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            {screenOn ? <MonitorOff style={{width:18,height:18}}/> : <Monitor style={{width:18,height:18}}/>}
-          </button>
-          <button onClick={toggleRaiseHand} title={raiseHand?'Lower hand':'Raise hand'}
-            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${raiseHand?C.gold+'55':C.border}`,background:raiseHand?C.goldDim:C.card,color:raiseHand?C.gold:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <Hand style={{width:18,height:18}}/>
-          </button>
-          {/* Reactions picker */}
-          <div style={{position:'relative'}}>
-            <button title="Reactions"
-              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${C.border}`,background:C.card,color:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:18}}
-              onClick={()=>{ const el=document.getElementById(`ep-${myUid}`); if(el) el.style.display=el.style.display==='flex'?'none':'flex' }}>
-              &#128522;
+        {/* Controls — fully responsive for mobile */}
+        <div style={{flexShrink:0,background:C.surface,borderTop:`1px solid ${C.border}`,padding:isMob?'8px 8px':'10px 16px'}}>
+          {/* Row 1: core controls */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:isMob?6:8,flexWrap:'nowrap',marginBottom:isMob?6:0}}>
+            <button onClick={toggleMic} title={micOn?'Mute':'Unmute'}
+              style={{width:isMob?40:44,height:isMob?40:44,borderRadius:'50%',border:`1px solid ${micOn?C.border:C.red+'55'}`,background:micOn?C.card:C.redDim,color:micOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              {micOn ? <Mic style={{width:17,height:17}}/> : <MicOff style={{width:17,height:17}}/>}
             </button>
-            <div id={`ep-${myUid}`} style={{display:'none',position:'absolute',bottom:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:8,gap:4,flexWrap:'wrap',width:180,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:30}}>
-              {EMOJIS.map((e,idx) => (
-                <button key={idx}
-                  onClick={()=>{ sendReaction(e); const el=document.getElementById(`ep-${myUid}`); if(el)el.style.display='none' }}
-                  style={{width:36,height:36,borderRadius:8,border:'none',background:'transparent',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center'}}
-                  onMouseEnter={ev=>(ev.currentTarget.style.background=C.surface)}
-                  onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
-                  {e}
-                </button>
-              ))}
+            <button onClick={toggleCam} title={camOn?'Camera off':'Camera on'}
+              style={{width:isMob?40:44,height:isMob?40:44,borderRadius:'50%',border:`1px solid ${camOn?C.border:C.red+'55'}`,background:camOn?C.card:C.redDim,color:camOn?C.text:C.red,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              {camOn ? <Video style={{width:17,height:17}}/> : <VideoOff style={{width:17,height:17}}/>}
+            </button>
+            {!isMob && <button onClick={toggleScreen} title={screenOn?'Stop sharing':'Share screen'}
+              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(37,99,235,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              {screenOn ? <MonitorOff style={{width:17,height:17}}/> : <Monitor style={{width:17,height:17}}/>}
+            </button>}
+            <button onClick={toggleRaiseHand} title={raiseHand?'Lower hand':'Raise hand'}
+              style={{width:isMob?40:44,height:isMob?40:44,borderRadius:'50%',border:`1px solid ${raiseHand?C.gold+'55':C.border}`,background:raiseHand?C.goldDim:C.card,color:raiseHand?C.gold:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              <Hand style={{width:17,height:17}}/>
+            </button>
+            {/* Reactions */}
+            <div style={{position:'relative',flexShrink:0}}>
+              <button title="Reactions"
+                style={{width:isMob?40:44,height:isMob?40:44,borderRadius:'50%',border:`1px solid ${C.border}`,background:C.card,color:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:17}}
+                onClick={()=>{ const el=document.getElementById(`ep-${myUid}`); if(el) el.style.display=el.style.display==='flex'?'none':'flex' }}>
+                &#128522;
+              </button>
+              <div id={`ep-${myUid}`} style={{display:'none',position:'absolute',bottom:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:8,gap:4,flexWrap:'wrap',width:180,boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:30}}>
+                {EMOJIS.map((e,idx) => (
+                  <button key={idx}
+                    onClick={()=>{ sendReaction(e); const el=document.getElementById(`ep-${myUid}`); if(el)el.style.display='none' }}
+                    style={{width:36,height:36,borderRadius:8,border:'none',background:'transparent',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center'}}
+                    onMouseEnter={ev=>(ev.currentTarget.style.background=C.surface)}
+                    onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
+                    {e}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif',padding:'0 4px'}}>
-            <Users style={{width:13,height:13}}/>{peerList.length+1}
-          </div>
-          {isCtrl && (
-            <button onClick={muteAll} title="Mute everyone"
-              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${mutedAll?C.red+'55':C.border}`,background:mutedAll?C.redDim:C.card,color:mutedAll?C.red:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-              <MicOff style={{width:18,height:18}}/>
+            <div style={{display:'flex',alignItems:'center',gap:3,fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif',padding:'0 2px',flexShrink:0}}>
+              <Users style={{width:12,height:12}}/>{peerList.length+1}
+            </div>
+            {isCtrl && !isMob && <button onClick={muteAll} title="Mute everyone"
+              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${mutedAll?C.red+'55':C.border}`,background:mutedAll?C.redDim:C.card,color:mutedAll?C.red:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              <MicOff style={{width:17,height:17}}/>
+            </button>}
+            <button onClick={()=>setIsFullscreen(f=>!f)} title={isFullscreen?'Exit fullscreen':'Fullscreen'}
+              style={{width:isMob?40:44,height:isMob?40:44,borderRadius:'50%',border:`1px solid ${C.border}`,background:isFullscreen?C.blueDim:C.card,color:isFullscreen?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              {isFullscreen ? <Minimize2 style={{width:17,height:17}}/> : <Maximize2 style={{width:17,height:17}}/>}
             </button>
-          )}
-          <button onClick={()=>setIsFullscreen(f=>!f)} title={isFullscreen?'Exit fullscreen':'Fullscreen'}
-            style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${C.border}`,background:isFullscreen?C.blueDim:C.card,color:isFullscreen?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            {isFullscreen ? <Minimize2 style={{width:18,height:18}}/> : <Maximize2 style={{width:18,height:18}}/>}
-          </button>
-          <button onClick={()=>doLeave()}
-            style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-            <PhoneOff style={{width:15,height:15}}/>Leave
-          </button>
-          {isCtrl && (
-            <button onClick={endCall}
-              style={{display:'flex',alignItems:'center',gap:6,padding:'10px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-              <X style={{width:15,height:15}}/>End for All
+            {/* Leave button — always visible */}
+            <button onClick={()=>doLeave()}
+              style={{display:'flex',alignItems:'center',gap:5,padding:isMob?'9px 14px':'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:isMob?12:13,cursor:'pointer',flexShrink:0,boxShadow:'0 2px 12px rgba(239,68,68,0.35)'}}>
+              <PhoneOff style={{width:14,height:14}}/>Leave
             </button>
-          )}
+            {isCtrl && (
+              <button onClick={endCall}
+                style={{display:'flex',alignItems:'center',gap:5,padding:isMob?'9px 14px':'10px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:isMob?12:13,cursor:'pointer',flexShrink:0}}>
+                <X style={{width:14,height:14}}/>{isMob?'End All':'End for All'}
+              </button>
+            )}
+          </div>
         </div>
         <style>{`@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-140px) scale(1.4)}}`}</style>
       </div>
