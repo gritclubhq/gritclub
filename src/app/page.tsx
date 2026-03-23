@@ -48,7 +48,7 @@ export default function LandingPage() {
 
         @keyframes fadeUp   { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
-        @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        @keyframes pulse    { 0%,100%{opacity:1} 80%{opacity:0.5} }
         @keyframes float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
         @keyframes spin     { from{transform:rotate(0)} to{transform:rotate(360deg)} }
         @keyframes shimmer  { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
@@ -192,7 +192,7 @@ export default function LandingPage() {
         {/* Honest stats row */}
         <div style={{ display: 'flex', gap: isMobile ? 24 : 48, flexWrap: 'wrap', justifyContent: 'center' }}>
           {[
-            { val: 50, suffix: '%', label: 'Revenue you keep as host' },
+            { val: 80, suffix: '%', label: 'Revenue you keep as host' },
             { val: 0, suffix: ' setup fees', label: 'No contracts or setup fees' },
             { val: 30, suffix: 's', label: 'Average time to go live' },
           ].map(s => (
@@ -250,7 +250,7 @@ export default function LandingPage() {
               { n: '01', title: 'Sign in with Google', desc: 'One click with your Google account. No form to fill, no card required. Your profile is live instantly.' },
               { n: '02', title: 'Join or create groups', desc: 'Browse existing founder groups by category — AI, SaaS, HealthTech, Growth — or start your own in 30 seconds.' },
               { n: '03', title: 'Attend live events', desc: 'Buy a ticket to a live session or claim a free one. Join the live room directly from your dashboard.' },
-              { n: '04', title: 'Host and earn', desc: 'Apply to be a host. Create a ticketed event, go live, and keep 50% of every ticket sold. No minimums.' },
+              { n: '04', title: 'Host and earn', desc: 'Apply to be a host. Create a ticketed event, go live, and keep 80% of every ticket sold. No minimums.' },
             ].map((s, i) => (
               <div key={s.n} className="step-line" style={{ display: 'flex', gap: 20, paddingBottom: i < 3 ? 36 : 0 }}>
                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Syne', fontWeight: 800, fontSize: 13, color: '#fff', flexShrink: 0 }}>{s.n}</div>
@@ -275,11 +275,11 @@ export default function LandingPage() {
               <span style={{ color: '#F59E0B' }}>Start charging for it.</span>
             </h2>
             <p style={{ fontSize: 16, color: 'rgba(232,234,240,0.6)', lineHeight: 1.8, marginBottom: 32 }}>
-              Set your ticket price. Go live from your browser. Chat with your audience in real time. Screen share, whiteboard, or just talk. GritClub handles payments — you keep 50% of every ticket.
+              Set your ticket price. Go live from your browser. Chat with your audience in real time. Screen share, whiteboard, or just talk. GritClub handles payments — you keep 80% of every ticket.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 32 }}>
               {[
-                '50% revenue on every paid ticket',
+                '80% revenue on every paid ticket',
                 'Real-time payments — no delays',
                 'Screen share + whiteboard included',
                 'Cloud recording for every session',
