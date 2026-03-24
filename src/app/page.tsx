@@ -238,7 +238,7 @@ export default function LandingPage() {
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 2 : 4},1fr)`, gap: isMobile ? 24 : 40, maxWidth: 800, margin: '0 auto' }}>
             {[
-              { val: 50, suffix: '%', label: 'Revenue You Keep' },
+              { val: 80, suffix: '%', label: 'Revenue You Keep' },
               { val: 0, suffix: ' fees', label: 'No Setup Fees' },
               { val: 30, suffix: 's', label: 'To Go Live' },
               { val: 100, suffix: '%', label: 'Feature Access' },
