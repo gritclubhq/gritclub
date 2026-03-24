@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import {
-  Home, Ticket, Users, MessageSquare, User, BarChart2,
+  Home, Ticket, Users, MessageSquare, MessageCircle, User, BarChart2,
   Calendar, DollarSign, Shield, Menu, X, LogOut,
   Radio, Mic, Zap, UserCheck, BookOpen, Settings, Bell,
   ChevronRight, Crown, FileText
@@ -28,6 +28,7 @@ const AUDIENCE_NAV = [
   { href: '/dashboard/network',   label: 'Network',    icon: Users },
   { href: '/groups',              label: 'Groups',     icon: Zap },
   { href: '/dashboard/community', label: 'Community',  icon: MessageSquare },
+  { href: '/dashboard/messages',  label: 'Messages',   icon: MessageCircle },
   { href: '/dashboard/recordings', label: 'Recordings', icon: Video },
   { href: '/dashboard/profile',   label: 'Profile',    icon: User },
 ]
