@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import {
-  Send, Search, Paperclip, Image as ImageIcon, X,
+  Send, Search, Paperclip, X,
   Loader2, MessageCircle, ArrowLeft, Check, CheckCheck,
-  File, Download, MoreVertical, Smile
+  File, Download
 } from 'lucide-react'
 
 const C = {
@@ -64,8 +64,6 @@ function FilePreview({url,name,size,type,isOwn}:{url:string;name:string;size:num
 
 export default function DMPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const targetUserId = searchParams.get('user')
 
   const [me, setMe] = useState<any>(null)
   const [convos, setConvos] = useState<any[]>([])
@@ -90,21 +88,25 @@ export default function DMPage() {
   const isMobile = winW < 768
 
   useEffect(()=>{
+    // Read ?user= from URL using window.location (no Suspense needed)
+    const targetUserId = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('user')
+      : null
+
     ;(async()=>{
       const {data:{user:u}} = await supabase.auth.getUser()
       if(!u){router.push('/auth/login');return}
       setMe(u);meRef.current=u
 
-      // Load conversations with partner info
       await loadConvos(u.id)
 
-      // If ?user= param, open that DM directly
       if(targetUserId){
         await openOrCreateConvo(u.id, targetUserId)
       }
       setLoading(false)
     })()
     return()=>{ if(msgChannel.current) supabase.removeChannel(msgChannel.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
 
   const loadConvos = async (uid:string) => {
@@ -125,7 +127,6 @@ export default function DMPage() {
   const openOrCreateConvo = async (myId:string, partnerId:string) => {
     const {data:convId} = await supabase.rpc('get_or_create_dm',{uid_a:myId,uid_b:partnerId})
     if(convId){
-      // Load conversation with partner data
       const {data:conv} = await supabase
         .from('dm_conversations')
         .select(`*, user_a_data:users!dm_conversations_user_a_fkey(id,full_name,email,photo_url), user_b_data:users!dm_conversations_user_b_fkey(id,full_name,email,photo_url)`)
@@ -142,7 +143,6 @@ export default function DMPage() {
     setActiveConvo(conv)
     setMobileView('chat')
 
-    // Load messages
     const {data:msgs} = await supabase
       .from('dm_messages')
       .select('*')
@@ -152,19 +152,13 @@ export default function DMPage() {
     setMessages(msgs||[])
     setTimeout(()=>chatBottom.current?.scrollIntoView({behavior:'smooth'}),100)
 
-    // Mark messages as read
     if(msgs?.length && myId){
       const unread = msgs.filter(m=>m.sender_id!==myId&&!(m.read_by||[]).includes(myId))
-      if(unread.length){
-        await supabase.from('dm_messages').update({read_by:supabase.rpc as any})
-        // Simple approach: mark all as read by inserting uid to read_by array
-        for(const m of unread){
-          await supabase.from('dm_messages').update({read_by:[...(m.read_by||[]),myId]}).eq('id',m.id)
-        }
+      for(const m of unread){
+        await supabase.from('dm_messages').update({read_by:[...(m.read_by||[]),myId]}).eq('id',m.id)
       }
     }
 
-    // Subscribe to new messages in this convo
     if(msgChannel.current) supabase.removeChannel(msgChannel.current)
     const ch = supabase.channel(`dm-${conv.id}`)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages',filter:`conversation_id=eq.${conv.id}`},
@@ -201,7 +195,6 @@ export default function DMPage() {
   const sendFile = async (file:File) => {
     if(!activeConvo||!me) return
     setUploading(true)
-    const ext = file.name.split('.').pop()
     const path = `${me.id}/${activeConvo.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._]/g,'_')}`
     const {error} = await supabase.storage.from('dm-files').upload(path,file,{contentType:file.type})
     if(!error){
@@ -254,10 +247,8 @@ export default function DMPage() {
     </DashboardLayout>
   )
 
-  // ── Conversations sidebar ────────────────────────────────────────
   const ConvoList = () => (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.surface,borderRight:`1px solid ${C.border}`}}>
-      {/* Header */}
       <div style={{padding:'16px 16px 12px',borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
           <h2 style={{fontSize:18,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif'}}>Messages</h2>
@@ -265,20 +256,19 @@ export default function DMPage() {
             <Search style={{width:16,height:16}}/>
           </button>
         </div>
-        {/* Search/New DM */}
         {showSearch ? (
           <div>
             <div style={{position:'relative'}}>
               <Search style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:C.textDim}}/>
               <input autoFocus value={searchQ} onChange={e=>{setSearchQ(e.target.value);searchUsers(e.target.value)}}
-                placeholder="Find people by name or email..."
+                placeholder="Find people..."
                 style={{width:'100%',padding:'9px 12px 9px 32px',borderRadius:10,border:`1px solid ${C.border}`,background:C.card,color:C.text,fontSize:13,outline:'none',fontFamily:'DM Sans,sans-serif'}}/>
             </div>
             {allUsers.length>0&&(
               <div style={{marginTop:8,borderRadius:10,background:C.card,border:`1px solid ${C.border}`,overflow:'hidden'}}>
                 {allUsers.map(u=>(
                   <button key={u.id} onClick={()=>startConvoWith(u)}
-                    style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'transparent',border:'none',cursor:'pointer',textAlign:'left',transition:'background 0.15s'}}
+                    style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'transparent',border:'none',cursor:'pointer',textAlign:'left'}}
                     onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.04)')}
                     onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                     <Avatar user={u} size={32}/>
@@ -301,7 +291,6 @@ export default function DMPage() {
         )}
       </div>
 
-      {/* Conversations list */}
       <div style={{flex:1,overflowY:'auto'}}>
         {filteredConvos.length===0&&!showSearch&&(
           <div style={{textAlign:'center',padding:'48px 20px'}}>
@@ -332,10 +321,8 @@ export default function DMPage() {
     </div>
   )
 
-  // ── Chat window ─────────────────────────────────────────────────
   const ChatWindow = () => (
     <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.bg}}>
-      {/* Chat header */}
       <div style={{padding:'12px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:12,background:C.surface,flexShrink:0}}>
         {isMobile&&(
           <button onClick={()=>setMobileView('list')} style={{background:'none',border:'none',cursor:'pointer',color:C.textMuted,padding:4,display:'flex'}}>
@@ -349,13 +336,12 @@ export default function DMPage() {
         </div>
       </div>
 
-      {/* Messages */}
       <div style={{flex:1,overflowY:'auto',padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
         {messages.length===0&&(
           <div style={{textAlign:'center',paddingTop:40}}>
             <Avatar user={activeConvo?.partner} size={56}/>
             <p style={{fontSize:15,fontWeight:600,color:C.text,marginTop:12,fontFamily:'Syne,sans-serif'}}>{getName(activeConvo?.partner)}</p>
-            <p style={{fontSize:13,color:C.textMuted,marginTop:6,fontFamily:'DM Sans,sans-serif'}}>This is the start of your conversation</p>
+            <p style={{fontSize:13,color:C.textMuted,marginTop:6,fontFamily:'DM Sans,sans-serif'}}>Start of your conversation</p>
           </div>
         )}
         {messages.map(msg=>{
@@ -394,31 +380,27 @@ export default function DMPage() {
         <div ref={chatBottom}/>
       </div>
 
-      {/* Input bar */}
       <div style={{padding:'12px 14px',borderTop:`1px solid ${C.border}`,background:C.surface,flexShrink:0}}>
         <div style={{display:'flex',alignItems:'flex-end',gap:10,background:C.card,borderRadius:16,border:`1px solid ${C.border}`,padding:'8px 12px'}}>
-          {/* Attachment button */}
           <button onClick={()=>fileInput.current?.click()} disabled={uploading}
-            style={{width:32,height:32,borderRadius:8,border:'none',background:'transparent',color:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'color 0.15s'}}
+            style={{width:32,height:32,borderRadius:8,border:'none',background:'transparent',color:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}
             onMouseEnter={e=>(e.currentTarget.style.color=C.blueL)} onMouseLeave={e=>(e.currentTarget.style.color=C.textMuted)}>
             <Paperclip style={{width:18,height:18}}/>
           </button>
           <input ref={fileInput} type="file" style={{display:'none'}} accept="*/*"
             onChange={e=>{const f=e.target.files?.[0];if(f)sendFile(f);e.target.value=''}}/>
-          {/* Text input */}
           <textarea value={text} onChange={e=>setText(e.target.value)}
             onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}}
             placeholder={`Message ${getName(activeConvo?.partner)}...`}
             rows={1} maxLength={2000}
             style={{flex:1,background:'transparent',border:'none',color:C.text,fontSize:14,fontFamily:'DM Sans,sans-serif',outline:'none',resize:'none',lineHeight:1.5,maxHeight:120,overflowY:'auto'}}
             onInput={e=>{const t=e.target as HTMLTextAreaElement;t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px'}}/>
-          {/* Send button */}
           <button onClick={sendMessage} disabled={!text.trim()||sending}
             style={{width:32,height:32,borderRadius:8,border:'none',background:text.trim()?C.blue:'transparent',color:text.trim()?'#fff':C.textDim,display:'flex',alignItems:'center',justifyContent:'center',cursor:text.trim()?'pointer':'default',flexShrink:0,transition:'all 0.15s'}}>
             {sending?<Loader2 style={{width:16,height:16,animation:'spin 0.8s linear infinite'}}/>:<Send style={{width:16,height:16}}/>}
           </button>
         </div>
-        <p style={{fontSize:10,color:C.textDim,textAlign:'center',marginTop:6,fontFamily:'DM Sans,sans-serif'}}>Enter to send · Shift+Enter for new line · Attach files up to 50MB</p>
+        <p style={{fontSize:10,color:C.textDim,textAlign:'center',marginTop:6,fontFamily:'DM Sans,sans-serif'}}>Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   )
@@ -443,13 +425,11 @@ export default function DMPage() {
     <DashboardLayout>
       <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}} *{box-sizing:border-box}`}</style>
       <div style={{display:'flex',height:'100%',overflow:'hidden'}}>
-        {/* Sidebar — always shown on desktop, conditional on mobile */}
         {(!isMobile || mobileView==='list') && (
           <div style={{width:isMobile?'100%':320,flexShrink:0,height:'100%',overflow:'hidden'}}>
             <ConvoList/>
           </div>
         )}
-        {/* Main chat — always shown on desktop, conditional on mobile */}
         {(!isMobile || mobileView==='chat') && (
           <div style={{flex:1,height:'100%',overflow:'hidden'}}>
             {activeConvo ? <ChatWindow/> : <EmptyState/>}
