@@ -48,7 +48,7 @@ export default function LandingPage() {
   const features = [
     { num: '01', title: 'Network with Intent', desc: 'Connect with founders, operators, and builders who share your drive. Browse by industry and mindset. Build relationships that move your business forward.', icon: '🤝', color: '#3B82F6' },
     { num: '02', title: 'Private Groups', desc: 'Create invite-only circles with your trusted network. Video calls, file sharing, shared notes, and persistent chat. First 5 members free forever.', icon: '👥', color: '#F59E0B' },
-    { num: '03', title: 'Host Live Events', desc: 'Monetize your expertise. Run ticketed sessions with screen share and whiteboard. Set your price, we handle payments. You keep 50%.', icon: '🎯', color: '#10B981' },
+    { num: '03', title: 'Host Live Events', desc: 'Monetize your expertise. Run ticketed sessions with screen share and whiteboard. Set your price, we handle payments. You keep 80%.', icon: '🎯', color: '#10B981' },
     { num: '04', title: 'Attend & Learn', desc: 'Access exclusive sessions from operators and builders. Every session recorded for Premium Plus members. No ticket needed with Premium Plus.', icon: '🎓', color: '#8B5CF6' },
   ]
 
@@ -56,7 +56,7 @@ export default function LandingPage() {
     { icon: '🎨', title: 'Whiteboard & Screen Share', desc: 'Draw diagrams, share your screen, engage visually with your audience' },
     { icon: '💬', title: 'Live Chat & Moderation', desc: 'Real-time audience chat with slow mode, mute, and ban controls' },
     { icon: '📹', title: 'Auto Recording', desc: 'Every session saved automatically. Premium members replay anytime.' },
-    { icon: '💰', title: '50% Revenue Share', desc: 'Transparent pricing. No hidden fees. Payments sent after each event.' },
+    { icon: '💰', title: '80% Revenue Share', desc: 'Transparent pricing. No hidden fees. Payments sent after each event.' },
   ]
 
   const pricingPlans = [
@@ -306,7 +306,7 @@ export default function LandingPage() {
                 Monetize Your <span className="gradient-text">Expertise</span>
               </h2>
               <p style={{ fontSize: isMobile ? 16 : 19, color: 'rgba(255,255,255,0.65)', lineHeight: 1.8, marginBottom: 36 }}>
-                Turn your knowledge into revenue. Host ticketed live events with screen sharing, whiteboard, and real-time chat. Set your price, we handle everything else. You keep 50% of every ticket sold.
+                Turn your knowledge into revenue. Host ticketed live events with screen sharing, whiteboard, and real-time chat. Set your price, we handle everything else. You keep 80% of every ticket sold.
               </p>
               <Link href="/dashboard/become-host">
                 <button className="btn-primary">Start Hosting →</button>
