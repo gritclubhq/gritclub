@@ -576,25 +576,25 @@ export default function GroupsPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user: u } }) => {
-      if (!u) return
-      setCurrentUser(u)
-      await loadGroups(u.id)
+      setCurrentUser(u || null)
+      // Load groups for everyone — logged in or not
+      await loadGroups(u?.id || null)
       setLoading(false)
     })
   }, [])
 
-  const loadGroups = async (uid: string) => {
-    // All groups
+  const loadGroups = async (uid: string | null) => {
+    // All groups — visible to everyone
     const { data: allGroups } = await supabase
       .from('groups')
       .select('*')
       .order('created_at', { ascending: false })
 
-    // User's memberships (only active ones count as joined)
-    const { data: memberships } = await supabase
+    // User's memberships only if logged in
+    const { data: memberships } = uid ? await supabase
       .from('group_members')
       .select('group_id, status, role')
-      .eq('user_id', uid)
+      .eq('user_id', uid) : { data: [] }
 
     // Treat as active: status='active', status=null/undefined (old rows), or owner/admin role
     const activeMemberIds  = new Set((memberships || []).filter((m: any) =>
