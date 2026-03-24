@@ -5,14 +5,13 @@ import { createServerClient } from '@supabase/ssr'
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
-  // Refresh session on every request so cookies stay fresh
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -23,7 +22,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh the session — this keeps users logged in
   await supabase.auth.getUser()
 
   return response
