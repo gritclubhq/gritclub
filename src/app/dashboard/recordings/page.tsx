@@ -10,11 +10,11 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
-  border:'rgba(255,255,255,0.07)', text:'#F0F4FF',
-  textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueL:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
+  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
+  border:'rgba(255,255,255,0.07)', text:'#E8EAF0',
+  textMuted:'#8A9BBF', textDim:'#3D4F6E',
+  blue:'#FF3B3B', blueL:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
+  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
   purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
   green:'#10B981',
@@ -87,7 +87,7 @@ function RecordingCard({ rec, isPremium, onWatch }: { rec: any; isPremium: boole
 
   return (
     <div style={{ borderRadius:20, background:C.card, border:`1px solid ${C.border}`, overflow:'hidden', display:'flex', flexDirection:'column', transition:'border-color 0.15s' }}
-      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(37,99,235,0.3)')}
+      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,59,59,0.3)')}
       onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = C.border)}>
 
       {/* Thumbnail */}
@@ -117,7 +117,7 @@ function RecordingCard({ rec, isPremium, onWatch }: { rec: any; isPremium: boole
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '1')}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '0')}>
             <button onClick={() => onWatch(rec)}
-              style={{ width:52, height:52, borderRadius:'50%', border:'none', cursor:'pointer', background:'rgba(37,99,235,0.9)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 20px rgba(37,99,235,0.5)' }}>
+              style={{ width:52, height:52, borderRadius:'50%', border:'none', cursor:'pointer', background:'rgba(37,99,235,0.9)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 20px rgba(255,59,59,0.5)' }}>
               <Play style={{ width:22, height:22, color:'#fff', marginLeft:2 }}/>
             </button>
           </div>
@@ -253,7 +253,7 @@ export default function RecordingsPage() {
               </button>
             )}
             {isPremium && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: C.goldDim, border: `1px solid rgba(245,158,11,0.3)` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: C.goldDim, border: `1px solid rgba(255,215,0,0.3)` }}>
                 <Crown style={{ width: 14, height: 14, color: C.gold }}/>
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, fontFamily: 'DM Sans,sans-serif' }}>Pro Access</span>
               </div>
@@ -266,7 +266,7 @@ export default function RecordingsPage() {
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search recordings by title or host..."
               style={{ width: '100%', padding: '11px 14px 11px 40px', borderRadius: 12, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 13, fontFamily: 'DM Sans,sans-serif', outline: 'none', boxSizing: 'border-box' }}
-              onFocus={e => (e.target.style.borderColor = 'rgba(37,99,235,0.5)')}
+              onFocus={e => (e.target.style.borderColor = 'rgba(255,59,59,0.5)')}
               onBlur={e  => (e.target.style.borderColor = C.border)}/>
           </div>
 
