@@ -13,11 +13,11 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
-  border:'rgba(255,255,255,0.07)', borderFocus:'rgba(37,99,235,0.5)',
-  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueL:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
+  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
+  border:'rgba(255,255,255,0.07)', borderFocus:'rgba(255,59,59,0.5)',
+  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
+  blue:'#FF3B3B', blueL:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
+  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
   green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
   purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
@@ -34,7 +34,7 @@ const ICE: RTCIceServer[] = [
 type Tab = 'chat' | 'files' | 'call' | 'settings'
 const getName  = (u:any) => u?.full_name||u?.email?.split('@')[0]||'User'
 const getInits = (u:any) => getName(u).slice(0,2).toUpperCase()
-const AC = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AC = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
 const ac  = (id:string) => AC[(id?.charCodeAt(0)||0)%AC.length]
 const fmtB = (b:number) => b<1024?`${b}B`:b<1048576?`${(b/1024).toFixed(1)}KB`:`${(b/1048576).toFixed(1)}MB`
 const ago  = (ts:string) => { const m=Math.floor((Date.now()-new Date(ts).getTime())/60000); return m<1?'now':m<60?`${m}m`:m<1440?`${Math.floor(m/60)}h ago`:`${Math.floor(m/1440)}d ago` }
@@ -642,7 +642,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
             <div style={{position:'absolute',bottom:6,left:8,fontSize:11,fontWeight:700,color:'#fff',background:'rgba(0,0,0,0.65)',padding:'2px 8px',borderRadius:6}}>
               You{!micOn?' 🔇':''}
             </div>
-            {screenOn && <div style={{position:'absolute',top:6,right:8,fontSize:10,fontWeight:700,color:C.blueL,background:'rgba(37,99,235,0.2)',padding:'2px 8px',borderRadius:6,border:'1px solid rgba(37,99,235,0.4)'}}>Sharing</div>}
+            {screenOn && <div style={{position:'absolute',top:6,right:8,fontSize:10,fontWeight:700,color:C.blueL,background:'rgba(255,59,59,0.2)',padding:'2px 8px',borderRadius:6,border:'1px solid rgba(255,59,59,0.4)'}}>Sharing</div>}
           </div>
 
           {/* Remote tiles */}
@@ -668,11 +668,11 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
 
         {/* Raised hands bar */}
         {isCtrl&&hands.length>0 && (
-          <div style={{flexShrink:0,background:'rgba(245,158,11,0.1)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
+          <div style={{flexShrink:0,background:'rgba(255,215,0,0.1)',borderTop:'1px solid rgba(255,215,0,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
             <Hand style={{width:14,height:14,color:C.gold,flexShrink:0}}/>
             <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0}}>Raised hands:</span>
             {hands.map((h,i) => (
-              <div key={h.uid} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:20,background:'rgba(245,158,11,0.15)',fontSize:11,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0,whiteSpace:'nowrap'}}>
+              <div key={h.uid} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:20,background:'rgba(255,215,0,0.15)',fontSize:11,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0,whiteSpace:'nowrap'}}>
                 {i+1}. {h.name}
                 <button onClick={()=>dismissHand(h.uid)} style={{background:'none',border:'none',cursor:'pointer',color:C.textDim,padding:0,marginLeft:2,fontSize:10}}>&#10005;</button>
               </div>
@@ -693,7 +693,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
               {camOn ? <Video style={{width:17,height:17}}/> : <VideoOff style={{width:17,height:17}}/>}
             </button>
             {!isMob && <button onClick={toggleScreen} title={screenOn?'Stop sharing':'Share screen'}
-              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(37,99,235,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(255,59,59,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
               {screenOn ? <MonitorOff style={{width:17,height:17}}/> : <Monitor style={{width:17,height:17}}/>}
             </button>}
             <button onClick={toggleRaiseHand} title={raiseHand?'Lower hand':'Raise hand'}
@@ -1003,7 +1003,7 @@ export default function GroupRoomPage() {
                       Requests ({pendingMembers.length})
                     </p>
                     {pendingMembers.map(m => (
-                      <div key={m.id} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 8px',borderRadius:8,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.15)',marginBottom:2}}>
+                      <div key={m.id} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 8px',borderRadius:8,background:'rgba(255,215,0,0.06)',border:'1px solid rgba(255,215,0,0.15)',marginBottom:2}}>
                         <Av user={m.users} size={22}/>
                         <div style={{flex:1,minWidth:0}}>
                           <p style={{fontSize:11,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'DM Sans,sans-serif'}}>{getName(m.users)}</p>
