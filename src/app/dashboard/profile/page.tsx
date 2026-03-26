@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import { useRouter } from 'next/navigation'
 import {
   Camera, Upload, Loader2, Check, AlertCircle,
-  Mail, Phone, Shield, LogOut, X, ExternalLink,
+  Mail, Shield, LogOut, X, ExternalLink,
   Trash2, AlertTriangle, Eye, EyeOff
 } from 'lucide-react'
 
@@ -151,7 +151,6 @@ export default function ProfilePage() {
   const [showDeleteModal,  setShowDeleteModal]  = useState(false)
   const [deleting,         setDeleting]         = useState(false)
   const [errors,           setErrors]           = useState<Record<string,string>>({})
-  const [uploadingBanner,  setUploadingBanner]  = useState(false)
   const [uploadingPhoto,   setUploadingPhoto]   = useState(false)
 
   const [fullName,   setFullName]   = useState('')
@@ -162,9 +161,7 @@ export default function ProfilePage() {
   const [linkedin,   setLinkedin]   = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [showEmail,  setShowEmail]  = useState(false)
-  const [showPhone,  setShowPhone]  = useState(false)
   const [photoUrl,   setPhotoUrl]   = useState<string|null>(null)
-  const [bannerUrl,  setBannerUrl]  = useState<string|null>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle'|'checking'|'available'|'taken'>('idle')
   const checkTimeout = useRef<NodeJS.Timeout>()
 
@@ -183,9 +180,7 @@ export default function ProfilePage() {
         setLinkedin(prof.linkedin || '')
         setWebsiteUrl(prof.website_url || '')
         setShowEmail(prof.show_email || false)
-        setShowPhone(prof.show_phone || false)
         setPhotoUrl(prof.photo_url || u.user_metadata?.avatar_url || null)
-        setBannerUrl(prof.banner_url || null)
       }
       setLoading(false)
     })
@@ -215,12 +210,6 @@ export default function ProfilePage() {
     return supabase.storage.from('profile-images').getPublicUrl(path).data.publicUrl
   }
 
-  const handleBannerFile = async (file: File) => {
-    setUploadingBanner(true)
-    const url = await uploadImage(file, `${user.id}/banner.${file.name.split('.').pop()}`)
-    if (url) setBannerUrl(url); setUploadingBanner(false)
-  }
-
   const handlePhotoFile = async (file: File) => {
     setUploadingPhoto(true)
     const url = await uploadImage(file, `${user.id}/avatar.${file.name.split('.').pop()}`)
@@ -242,10 +231,9 @@ export default function ProfilePage() {
         bio: sanitize(bio.trim()), profile_bio: sanitize(bio.trim()),
         instagram: sanitize(instagram.trim())||null, twitter: sanitize(twitter.trim())||null,
         linkedin: sanitize(linkedin.trim())||null, website_url: sanitize(websiteUrl.trim())||null,
-        show_email: showEmail, show_phone: showPhone, updated_at: new Date().toISOString(),
+        show_email: showEmail, updated_at: new Date().toISOString(),
       }
       if (photoUrl)  updates.photo_url  = photoUrl
-      if (bannerUrl) updates.banner_url = bannerUrl
       const { error } = await supabase.from('users').update(updates).eq('id', user.id)
       if (error) throw error
       setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -308,34 +296,32 @@ export default function ProfilePage() {
               <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueLight, fontFamily:'DM Sans,sans-serif', marginBottom:2 }}>Account</p>
               <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em' }}>Your Profile</h1>
             </div>
-            <button onClick={handleSave} disabled={saving||uploadingBanner||uploadingPhoto}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingBanner||uploadingPhoto)?0.6:1 }}>
+            <button onClick={handleSave} disabled={saving||uploadingPhoto}
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingPhoto)?0.6:1 }}>
               {saving?<><Loader2 style={{ width:15, height:15, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:15, height:15 }} /> Saved!</>:'Save Changes'}
             </button>
           </div>
 
-          {/* Banner + Avatar */}
-          <div style={{ borderRadius:20, overflow:'hidden', background:C.card, border:`1px solid ${C.border}` }}>
-            <div style={{ aspectRatio:'4/1', minHeight:100 }}>
-              <ImageDrop current={bannerUrl} onFile={handleBannerFile} loading={uploadingBanner} label="Upload Banner" />
-            </div>
-            <div style={{ padding:'0 24px 20px' }}>
-              <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginTop:-36, marginBottom:12 }}>
-                <div style={{ position:'relative', width:72, height:72 }}>
-                  <div style={{ width:72, height:72, borderRadius:'50%', overflow:'hidden', border:`3px solid ${C.card}` }}>
-                    <ImageDrop current={photoUrl} onFile={handlePhotoFile} loading={uploadingPhoto} rounded label="Photo" />
-                  </div>
-                  <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, borderRadius:'50%', background:C.blue, border:`2px solid ${C.card}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <Camera style={{ width:12, height:12, color:'#fff' }} />
-                  </div>
+          {/* Avatar */}
+          <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}` }}>
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:16 }}>Profile Photo</p>
+            <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+              <div style={{ position:'relative', width:72, height:72, flexShrink:0 }}>
+                <div style={{ width:72, height:72, borderRadius:'50%', overflow:'hidden', border:`3px solid ${C.card}` }}>
+                  <ImageDrop current={photoUrl} onFile={handlePhotoFile} loading={uploadingPhoto} rounded label="Photo" />
                 </div>
+                <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, borderRadius:'50%', background:C.blue, border:`2px solid ${C.card}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <Camera style={{ width:12, height:12, color:'#fff' }} />
+                </div>
+              </div>
+              <div>
+                <p style={{ fontWeight:700, fontSize:17, color:C.text, fontFamily:'Syne,sans-serif', margin:0 }}>{fullName||'Your Name'}</p>
+                {username && <p style={{ fontSize:13, color:C.blueLight, fontFamily:'DM Sans,sans-serif', margin:'2px 0 0' }}>@{username}</p>}
+                <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:'2px 0 0' }}>{user?.email}</p>
                 {profile?.role && (
-                  <span style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:8, background:profile.role==='admin'?C.redDim:profile.role==='host'?C.goldDim:C.blueDim, color:profile.role==='admin'?C.red:profile.role==='host'?C.gold:C.blueLight, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.08em' }}>{profile.role}</span>
+                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:6, background:profile.role==='admin'?C.redDim:profile.role==='host'?C.goldDim:C.blueDim, color:profile.role==='admin'?C.red:profile.role==='host'?C.gold:C.blueLight, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.08em', display:'inline-block', marginTop:4 }}>{profile.role}</span>
                 )}
               </div>
-              <p style={{ fontWeight:700, fontSize:17, color:C.text, fontFamily:'Syne,sans-serif' }}>{fullName||'Your Name'}</p>
-              {username && <p style={{ fontSize:13, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>@{username}</p>}
-              <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>{user?.email}</p>
             </div>
           </div>
 
@@ -407,21 +393,16 @@ export default function ProfilePage() {
           {/* Privacy */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:10 }}>
             <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Privacy</p>
-            {[
-              { label:'Show Email on Profile', value:showEmail, onChange:setShowEmail, icon:Mail },
-              { label:'Show Phone on Profile', value:showPhone, onChange:setShowPhone, icon:Phone },
-            ].map(t => (
-              <div key={t.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${t.value?'rgba(37,99,235,0.3)':C.border}`, cursor:'pointer' }}
-                onClick={() => t.onChange(!t.value)}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <t.icon style={{ width:15, height:15, color:t.value?C.blueLight:C.textDim }} />
-                  <span style={{ fontSize:13, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{t.label}</span>
-                </div>
-                <div style={{ width:40, height:22, borderRadius:11, background:t.value?C.blue:C.border, position:'relative', flexShrink:0 }}>
-                  <div style={{ position:'absolute', top:2, width:18, height:18, borderRadius:'50%', background:'#fff', left:t.value?20:2, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)' }} />
-                </div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${showEmail?'rgba(255,59,59,0.3)':C.border}`, cursor:'pointer' }}
+              onClick={() => setShowEmail(!showEmail)}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <Mail style={{ width:15, height:15, color:showEmail?C.red:C.textDim }} />
+                <span style={{ fontSize:13, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Show Email on Profile</span>
               </div>
-            ))}
+              <div style={{ width:40, height:22, borderRadius:11, background:showEmail?C.red:C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
+                <div style={{ position:'absolute', top:2, width:18, height:18, borderRadius:'50%', background:'#fff', left:showEmail?20:2, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)' }} />
+              </div>
+            </div>
           </div>
 
           {/* Account & Danger Zone */}
@@ -472,7 +453,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Save button */}
-          <button onClick={handleSave} disabled={saving||uploadingBanner||uploadingPhoto}
+          <button onClick={handleSave} disabled={saving||uploadingPhoto}
             style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.7:1 }}>
             {saving?<><Loader2 style={{ width:16, height:16, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:16, height:16 }} /> Saved!</>:'Save Profile'}
           </button>
