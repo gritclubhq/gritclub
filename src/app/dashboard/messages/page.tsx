@@ -14,25 +14,25 @@ import {
 export const dynamic = 'force-dynamic'
 
 // ── Viewport export (replaces deprecated themeColor metadata) ───────────────
-export const viewport = { themeColor: '#0A0F1E' }
+export const viewport = { themeColor: '#070B14' }
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:       '#0A0F1E',
-  surface:  '#0D1428',
-  card:     '#111827',
+  bg:       '#070B14',
+  surface:  '#0D1420',
+  card:     '#0F1A2E',
   border:   'rgba(255,255,255,0.07)',
-  text:     '#F0F4FF',
-  textMuted:'#7B8DB0',
+  text:     '#E8EAF0',
+  textMuted:'#8A9BBF',
   textDim:  '#3D4F6E',
-  blue:     '#2563EB',
-  blueL:    '#3B82F6',
-  blueDim:  'rgba(37,99,235,0.12)',
-  gold:     '#F59E0B',
+  blue:     '#FF3B3B',
+  blueL:    '#FF5555',
+  blueDim:  'rgba(255,59,59,0.12)',
+  gold:     '#FFD700',
   green:    '#10B981',
 }
 
-const ACOLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const ACOLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
 const aBg      = (id: string) => ACOLORS[(id?.charCodeAt(0) || 0) % ACOLORS.length]
 const getName  = (u: any)    => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInit  = (u: any)    => getName(u).slice(0, 2).toUpperCase()
@@ -66,9 +66,9 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
 function RoleBadge({ role }: { role?: string }) {
   if (!role) return null
   const colors: Record<string, { bg: string; text: string }> = {
-    host:     { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B' },
+    host:     { bg: 'rgba(255,215,0,0.12)',  text: '#FFD700' },
     admin:    { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444' },
-    audience: { bg: 'rgba(37,99,235,0.12)',   text: '#3B82F6' },
+    audience: { bg: 'rgba(255,59,59,0.12)',   text: '#FF5555' },
   }
   const c = colors[role] || colors.audience
   return (
@@ -200,11 +200,10 @@ function DMPage() {
     setSending(true)
     const content = text.trim()
     setText('')
-    // Reset textarea height and restore focus
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.focus()
-    }
+    // Reset textarea height
+    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
+    // Refocus textarea after send so cursor stays
+    setTimeout(() => { textareaRef.current?.focus() }, 0)
 
     const msg = {
       id:              crypto.randomUUID(),
@@ -507,27 +506,29 @@ function DMPage() {
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={e => {
-              setText(e.target.value)
-              // Auto-resize without losing focus
-              const t = e.target as HTMLTextAreaElement
-              t.style.height = 'auto'
-              t.style.height = Math.min(t.scrollHeight, 120) + 'px'
-            }}
+            onChange={e => setText(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
             placeholder={`Message ${getName(activeConvo?.partner)}...`}
             rows={1}
             maxLength={2000}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             style={{
               flex: 1, background: 'transparent', border: 'none',
               color: C.text, fontSize: 14, fontFamily: 'DM Sans,sans-serif',
               outline: 'none', resize: 'none', lineHeight: 1.5,
               maxHeight: 120, overflowY: 'auto',
-              caretColor: C.blue,
+            }}
+            onInput={e => {
+              const t = e.target as HTMLTextAreaElement
+              t.style.height = 'auto'
+              t.style.height = Math.min(t.scrollHeight, 120) + 'px'
             }}
           />
           <button
-            onClick={sendMessage}
+            type="button"
+            onClick={e => { e.preventDefault(); sendMessage(); }}
             disabled={!text.trim() || sending}
             style={{
               width: 32, height: 32, borderRadius: 8, border: 'none',
@@ -603,8 +604,8 @@ function DMPage() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0A0F1E' }}>
-        <div style={{ width: 28, height: 28, border: '3px solid rgba(37,99,235,0.3)', borderTopColor: '#3B82F6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#070B14' }}>
+        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,59,59,0.3)', borderTopColor: '#FF5555', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
     }>
