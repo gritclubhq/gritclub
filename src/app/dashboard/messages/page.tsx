@@ -200,8 +200,11 @@ function DMPage() {
     setSending(true)
     const content = text.trim()
     setText('')
-    // Reset textarea height
-    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
+    // Reset textarea height and restore focus
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.focus()
+    }
 
     const msg = {
       id:              crypto.randomUUID(),
@@ -504,7 +507,13 @@ function DMPage() {
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={e => {
+              setText(e.target.value)
+              // Auto-resize without losing focus
+              const t = e.target as HTMLTextAreaElement
+              t.style.height = 'auto'
+              t.style.height = Math.min(t.scrollHeight, 120) + 'px'
+            }}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
             placeholder={`Message ${getName(activeConvo?.partner)}...`}
             rows={1}
@@ -514,11 +523,7 @@ function DMPage() {
               color: C.text, fontSize: 14, fontFamily: 'DM Sans,sans-serif',
               outline: 'none', resize: 'none', lineHeight: 1.5,
               maxHeight: 120, overflowY: 'auto',
-            }}
-            onInput={e => {
-              const t = e.target as HTMLTextAreaElement
-              t.style.height = 'auto'
-              t.style.height = Math.min(t.scrollHeight, 120) + 'px'
+              caretColor: C.blue,
             }}
           />
           <button
