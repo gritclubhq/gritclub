@@ -58,7 +58,7 @@ export default function LandingPage() {
       num: '01',
       title: 'NETWORK',
       sub: 'Find your tribe',
-      desc: 'Connect with founders who share your obsession. No cheerleaders. No tourists. Just builders.',
+      desc: 'Connect with high-performers who share your obsession. No spectators. No tourists. Just people who execute.',
       icon: '◈',
       color: '#FF3B3B',
     },
@@ -82,7 +82,7 @@ export default function LandingPage() {
       num: '04',
       title: 'DIRECT MESSAGES',
       sub: 'Real conversations',
-      desc: 'Slide into DMs with founders who matter. One-on-one or group threads. No algorithm. No noise. Just signal.',
+      desc: 'Slide into DMs with mentors and builders who matter. One-on-one or group threads. No algorithm. No noise. Just signal.',
       icon: '◉',
       color: '#A78BFA',
     },
@@ -96,9 +96,9 @@ export default function LandingPage() {
   ]
 
   const testimonials = [
-    { name: 'Early Member', role: 'SaaS Founder', text: 'Finally a platform where the conversations are worth having. No noise, no vanity — just builders talking real numbers.' },
-    { name: 'Beta Host', role: 'Operator & Educator', text: 'The live room is incredibly smooth. I ran my first paid session within 24 hours of signing up and kept 80% of revenue.' },
-    { name: 'Founding Member', role: 'Product Builder', text: 'GritClub DMs are where my best co-founder conversations happen. Direct, private, no distractions.' },
+    { name: 'Early Member', role: 'Entrepreneur', text: 'Finally a platform where the conversations are worth having. No noise, no vanity — just people who actually execute.' },
+    { name: 'Beta Host', role: 'Motivational Speaker', text: 'The live room is smooth as butter. I ran my first paid session within 24 hours. Kept 80% of every dollar. Nothing else comes close.' },
+    { name: 'Founding Member', role: 'Coach & Builder', text: 'GritClub DMs are where my best business conversations happen. Direct, private, and with people who have actually done the work.' },
   ]
 
   return (
@@ -399,7 +399,7 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section
         className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 scan-line overflow-hidden"
-        style={{ paddingTop: '64px' }}
+        style={{ paddingTop: '64px', background: 'linear-gradient(to bottom, #070B14 0%, #080E18 100%)' }}
       >
         {/* Animated moving grid */}
         <div
@@ -498,10 +498,11 @@ export default function LandingPage() {
           </svg>
 
           {/* Color atmosphere */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, rgba(37,99,235,0.07) 0%, transparent 45%, rgba(255,59,59,0.06) 100%)' }}/>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, rgba(56,189,248,0.06) 0%, rgba(255,59,59,0.04) 45%, rgba(255,215,0,0.05) 100%)' }}/>
 
           {/* Radial deep glow center */}
-          <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: '800px', height: '500px', background: 'radial-gradient(ellipse, rgba(255,59,59,0.08) 0%, transparent 70%)', pointerEvents: 'none' }}/>
+          <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: '900px', height: '600px', background: 'radial-gradient(ellipse, rgba(255,59,59,0.10) 0%, rgba(56,189,248,0.04) 40%, transparent 70%)', pointerEvents: 'none' }}/>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, rgba(7,11,20,1) 0%, rgba(7,11,20,0.5) 50%, transparent 100%)', pointerEvents: 'none' }}/>
         </div>
 
         {/* Orbiting particles */}
@@ -596,9 +597,9 @@ export default function LandingPage() {
             marginBottom: '48px',
           }}
         >
-          An exclusive circle for founders, coaches, operators, and driven individuals who are{' '}
-          <em style={{ color: 'rgba(232,234,240,0.85)', fontStyle: 'normal', fontWeight: 400 }}>on the rise.</em>
-          {' '}Host events, form groups, DM mentors, and surround yourself with people who refuse to be average.
+          Where driven people level up. Join founders, builders, motivators, and{' '}
+          <em style={{ color: 'rgba(232,234,240,0.85)', fontStyle: 'normal', fontWeight: 400 }}>high-performers who are obsessed with becoming more.</em>
+          {' '}Host events, form groups, DM mentors, and connect with people who share your hunger.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
@@ -658,7 +659,7 @@ export default function LandingPage() {
         <div className="ticker-inner">
           {[...Array(2)].map((_, i) => (
             <span key={i} style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '12px', letterSpacing: '0.2em', color: '#070B14' }}>
-              {['NETWORK WITH WINNERS', 'HOST LIVE EVENTS', 'KEEP 80%', 'CREATE GROUPS', 'SEND DIRECT MESSAGES', 'WHITEBOARD & SCREEN SHARE', 'FIRST 5 MEMBERS FREE', 'BUILD YOUR LEGACY', '80% REVENUE YOURS'].map(t => (
+              {['NETWORK WITH WINNERS', 'HOST LIVE EVENTS', 'KEEP 80%', 'CREATE GROUPS', 'SEND DIRECT MESSAGES', 'WHITEBOARD & SCREEN SHARE', 'ANYONE CAN HOST', 'LEVEL UP DAILY', '80% REVENUE YOURS'].map(t => (
                 <span key={t} style={{ padding: '0 40px' }}>★ {t}</span>
               ))}
             </span>
@@ -769,7 +770,7 @@ export default function LandingPage() {
                 TALK TO<br /><span style={{ color: '#A78BFA' }}>WHO MATTERS</span>
               </h2>
               <p style={{ fontFamily: 'DM Sans', fontWeight: 300, fontSize: '15px', color: 'rgba(232,234,240,0.55)', lineHeight: 1.8, marginBottom: '24px' }}>
-                Send direct messages to any founder on the platform. One-on-one or group threads — the fastest way to go from a live session to a real conversation.
+                Send direct messages to anyone on the platform. One-on-one or group threads — the fastest way to go from a live session to a real conversation with someone who can change your trajectory.
               </p>
               <div className="space-y-3" style={{ marginBottom: '32px' }}>
                 {[
@@ -880,24 +881,22 @@ export default function LandingPage() {
 
           {/* Two image cards side by side */}
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Card 1 — Real boardroom photo */}
+            {/* Card 1 — Real boardroom meeting photo */}
             <div
               style={{
                 position: 'relative',
-                height: '300px',
-                overflow: 'hidden',
+                height: '280px',
+                background: '#0D1A2D',
                 border: '1px solid rgba(56,189,248,0.15)',
+                overflow: 'hidden',
               }}
             >
-              <img
-                src="/hero-meeting.jpg"
-                alt="GritClub in-person meetup"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.88) 0%, rgba(7,11,20,0.3) 55%, transparent 100%)' }}/>
+              <img src="/hero-meeting.jpg" alt="GritClub members meeting" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.75 }} />
+              {/* Overlay gradient */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.8) 0%, transparent 50%)' }}/>
               <div style={{ position: 'absolute', bottom: '20px', left: '20px' }}>
-                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#38BDF8', letterSpacing: '0.05em', margin: 0 }}>IN-PERSON MEETUPS</p>
-                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.55)', margin: '4px 0 0' }}>GritClub members connecting IRL</p>
+                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#38BDF8', letterSpacing: '0.05em' }}>IN-PERSON MEETUPS</p>
+                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.45)' }}>GritClub members connecting IRL</p>
               </div>
             </div>
 
@@ -905,20 +904,18 @@ export default function LandingPage() {
             <div
               style={{
                 position: 'relative',
-                height: '300px',
+                height: '280px',
+                background: '#0D1A2D',
+                border: '1px solid rgba(255,215,0,0.12)',
                 overflow: 'hidden',
-                border: '1px solid rgba(255,215,0,0.15)',
               }}
             >
-              <img
-                src="/hero-aerial.jpg"
-                alt="GritClub collaborative energy"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.88) 0%, rgba(7,11,20,0.25) 55%, transparent 100%)' }}/>
+              <img src="/hero-aerial.jpg" alt="GritClub collaborative energy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.75 }} />
+
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.8) 0%, transparent 50%)' }}/>
               <div style={{ position: 'absolute', bottom: '20px', left: '20px' }}>
-                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#FFD700', letterSpacing: '0.05em', margin: 0 }}>COLLABORATIVE ENERGY</p>
-                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.55)', margin: '4px 0 0' }}>Real collaboration, real results</p>
+                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#FFD700', letterSpacing: '0.05em' }}>COLLABORATIVE ENERGY</p>
+                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.45)' }}>Real collaboration, real results</p>
               </div>
             </div>
           </div>
@@ -940,10 +937,10 @@ export default function LandingPage() {
             <div className="absolute top-8 left-[12%] right-[12%] hidden md:block" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(56,189,248,0.3), rgba(56,189,248,0.3), transparent)' }} />
 
             {[
-              { step: '01', title: 'JOIN', desc: 'Sign in with Google or magic link. Your profile is your reputation.' },
-              { step: '02', title: 'CONNECT', desc: 'Browse founders. Send a DM. Form a group. Start building together.' },
-              { step: '03', title: 'ATTEND', desc: 'Buy a ticket to a live session. Learn, network, ask questions in chat.' },
-              { step: '04', title: 'HOST & EARN', desc: 'Create a ticketed event. Go live. Keep 80% of every dollar earned.' },
+              { step: '01', title: 'JOIN', desc: 'Sign in with Google or magic link. Free to start, no credit card needed.' },
+              { step: '02', title: 'CONNECT', desc: 'Browse members. Send a DM. Form a mastermind group. Start leveling up together.' },
+              { step: '03', title: 'ATTEND', desc: 'Buy a ticket to a live session from top performers. Learn, network, ask real questions.' },
+              { step: '04', title: 'HOST & EARN', desc: 'Create a ticketed session. Go live. Keep 80% of every dollar. Anyone can host.' },
             ].map((s) => (
               <div key={s.step} className="relative text-center px-4">
                 <div
@@ -1087,7 +1084,7 @@ export default function LandingPage() {
               YOUR <span style={{ color: '#FFD700' }}>INNER CIRCLE</span>
             </h2>
             <p style={{ fontFamily: 'DM Sans', fontWeight: 300, fontSize: '15px', color: 'rgba(232,234,240,0.5)', maxWidth: '480px', margin: '16px auto 0', lineHeight: 1.7 }}>
-              First 5 members free. Scale beyond that and we grow together. Full chat, video call, shared notes — everything to run your operation.
+              First 5 members free. Scale beyond that and we grow together. Full chat, video call, shared notes — everything you need to run your circle.
             </p>
           </div>
 
@@ -1166,40 +1163,44 @@ export default function LandingPage() {
       {/* ── CTA ── */}
       <section
         className="relative px-6 md:px-12 py-32 text-center overflow-hidden"
-        style={{ background: '#FF3B3B' }}
+        style={{ background: '#070B14' }}
       >
         {/* Grid texture */}
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: 'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)',
+            backgroundImage: 'linear-gradient(rgba(255,59,59,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,59,0.06) 1px, transparent 1px)',
             backgroundSize: '40px 40px',
           }}
         />
+        {/* Red glow top */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(255,59,59,0.18) 0%, transparent 65%)', pointerEvents: 'none' }}/>
         {/* Animated shimmer */}
-        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at ${mousePos.x * 100}% ${mousePos.y * 100}%, rgba(255,255,255,0.08) 0%, transparent 60%)`, transition: 'background 0.1s' }}/>
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at ${mousePos.x * 100}% ${mousePos.y * 100}%, rgba(255,59,59,0.07) 0%, transparent 60%)`, transition: 'background 0.1s' }}/>
         <div className="relative">
-          <p style={{ fontFamily: 'DM Mono', fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(7,11,20,0.5)', marginBottom: '16px' }}>// YOUR MOVE</p>
-          <h2 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 'clamp(36px, 7vw, 88px)', letterSpacing: '-0.04em', color: '#070B14', lineHeight: 0.9, marginBottom: '24px' }}>
-            READY TO<br />RISE?
+          <p style={{ fontFamily: 'DM Mono', fontSize: '11px', letterSpacing: '0.2em', color: '#FF3B3B', marginBottom: '16px' }}>// YOUR MOVE</p>
+          <h2 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 'clamp(36px, 7vw, 88px)', letterSpacing: '-0.04em', color: '#E8EAF0', lineHeight: 0.9, marginBottom: '24px' }}>
+            READY TO<br /><span style={{ color: '#FF3B3B' }}>BECOME MORE?</span>
           </h2>
-          <p style={{ fontFamily: 'DM Sans', fontSize: '16px', color: 'rgba(7,11,20,0.7)', maxWidth: '440px', margin: '0 auto 16px', lineHeight: 1.7 }}>
-            Join 2,400+ high-performers already inside GritClub — founders, coaches, motivators, and people who refuse to settle.
-            No credit card required.
+          <p style={{ fontFamily: 'DM Sans', fontSize: '16px', color: 'rgba(232,234,240,0.6)', maxWidth: '460px', margin: '0 auto 16px', lineHeight: 1.7 }}>
+            Join 2,400+ high-performers already inside GritClub.
+            Founders. Builders. Motivators. Anyone obsessed with winning.
+            No credit card required to join.
           </p>
-          <p style={{ fontFamily: 'DM Mono', fontSize: '12px', color: 'rgba(7,11,20,0.55)', marginBottom: '40px', letterSpacing: '0.08em' }}>
+          <p style={{ fontFamily: 'DM Mono', fontSize: '12px', color: 'rgba(255,215,0,0.6)', marginBottom: '40px', letterSpacing: '0.08em' }}>
             HOST? KEEP 80% OF EVERY DOLLAR YOU EARN.
           </p>
           <Link href="/auth/login">
             <button
               style={{
                 fontFamily: 'Syne', fontWeight: 800, fontSize: '14px', letterSpacing: '0.15em',
-                padding: '16px 48px', background: '#070B14', color: '#FFD700', border: 'none', cursor: 'pointer',
+                padding: '16px 48px', background: '#FF3B3B', color: '#fff', border: 'none', cursor: 'pointer',
                 clipPath: 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)',
-                textTransform: 'uppercase', transition: 'opacity 0.2s',
+                textTransform: 'uppercase', transition: 'all 0.2s',
+                boxShadow: '0 0 40px rgba(255,59,59,0.3)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(255,59,59,0.5)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(255,59,59,0.3)'; }}
             >
               Enter GritClub →
             </button>
@@ -1222,7 +1223,7 @@ export default function LandingPage() {
               onMouseEnter={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.8)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,244,255,0.4)')}>Terms of Service</a>
           </div>
-          <p style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 12, color: 'rgba(240,244,255,0.2)' }}>© 2026 GritClub · gritclub.live · Hosts keep 80%</p>
+          <p style={{ fontFamily: 'DM Sans,sans-serif', fontSize: 12, color: 'rgba(240,244,255,0.2)' }}>© 2026 GritClub · gritclub.live · Anyone can host · Keep 80%</p>
         </div>
       </footer>
     </div>
