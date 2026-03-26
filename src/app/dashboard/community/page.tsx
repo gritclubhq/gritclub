@@ -220,22 +220,17 @@ function PeopleSearch({ currentUserId }: { currentUserId: string }) {
 // ─── Post Composer ────────────────────────────────────────────────────────────
 function Composer({ currentUser, profile, onPosted }: any) {
   const [text,     setText]     = useState('')
-
-  const [previews, setPreviews] = useState<string[]>([])
   const [posting,  setPosting]  = useState(false)
   const [expanded, setExpanded] = useState(false)
-
 
   const post = async () => {
     if (!text.trim() || posting || !currentUser) return
     setPosting(true)
     try {
-      }
       // Insert post — RLS allows all authenticated users to read (global)
       await supabase.from('posts').insert({
         user_id:        currentUser.id,
         content:        text.trim().slice(0, 2000),
-
         likes_count:    0,
         comments_count: 0,
       })
