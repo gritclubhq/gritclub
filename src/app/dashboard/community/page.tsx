@@ -11,26 +11,26 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#0A0F1E',
-  card:      '#111827',
-  surface:   '#0D1428',
+  bg:        '#070B14',
+  card:      '#0F1A2E',
+  surface:   '#0D1420',
   border:    'rgba(255,255,255,0.06)',
-  borderF:   'rgba(37,99,235,0.4)',
-  text:      '#F0F4FF',
-  textMuted: '#7B8DB0',
+  borderF:   'rgba(255,59,59,0.4)',
+  text:      '#E8EAF0',
+  textMuted: '#8A9BBF',
   textDim:   '#3D4F6E',
-  blue:      '#2563EB',
-  blueL:     '#3B82F6',
-  blueDim:   'rgba(37,99,235,0.12)',
-  gold:      '#F59E0B',
-  goldDim:   'rgba(245,158,11,0.1)',
+  blue:      '#FF3B3B',
+  blueL:     '#FF5555',
+  blueDim:   'rgba(255,59,59,0.12)',
+  gold:      '#FFD700',
+  goldDim:   'rgba(255,215,0,0.1)',
   red:       '#EF4444',
   redDim:    'rgba(239,68,68,0.1)',
   green:     '#10B981',
   greenDim:  'rgba(16,185,129,0.1)',
 }
 
-const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
 
 function getDisplayName(u: any): string {
@@ -75,8 +75,8 @@ function AnnouncementCard({ ann }: { ann: any }) {
   return (
     <div style={{
       borderRadius: 20, overflow: 'hidden',
-      background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,146,60,0.08))',
-      border: '1px solid rgba(245,158,11,0.3)',
+      background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(251,146,60,0.08))',
+      border: '1px solid rgba(255,215,0,0.3)',
     }}>
       {/* Banner image */}
       {ann.image_url && (
@@ -86,28 +86,28 @@ function AnnouncementCard({ ann }: { ann: any }) {
       <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(245,158,11,0.3)' }}>
-            <Megaphone style={{ width: 16, height: 16, color: '#F59E0B' }} />
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,215,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(255,215,0,0.3)' }}>
+            <Megaphone style={{ width: 16, height: 16, color: '#FFD700' }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
-              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#FFD700', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
+              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,215,0,0.15)', color: '#FFD700', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
             </div>
-            <p style={{ fontSize: 11, color: '#7B8DB0', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
+            <p style={{ fontSize: 11, color: '#8A9BBF', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
           </div>
         </div>
         {/* Content */}
         <div>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#F0F4FF', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#E8EAF0', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
           <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
         </div>
         {/* CTA button */}
         {ann.link_url && (
           <a href={ann.link_url} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.18)', color: '#F59E0B', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(245,158,11,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.28)')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.18)')}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(255,215,0,0.18)', color: '#FFD700', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(255,215,0,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(255,215,0,0.28)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(255,215,0,0.18)')}>
             {ann.link_label || 'Learn more'} →
           </a>
         )}
@@ -220,17 +220,22 @@ function PeopleSearch({ currentUserId }: { currentUserId: string }) {
 // ─── Post Composer ────────────────────────────────────────────────────────────
 function Composer({ currentUser, profile, onPosted }: any) {
   const [text,     setText]     = useState('')
+
+  const [previews, setPreviews] = useState<string[]>([])
   const [posting,  setPosting]  = useState(false)
   const [expanded, setExpanded] = useState(false)
+
 
   const post = async () => {
     if (!text.trim() || posting || !currentUser) return
     setPosting(true)
     try {
+      }
+      // Insert post — RLS allows all authenticated users to read (global)
       await supabase.from('posts').insert({
         user_id:        currentUser.id,
         content:        text.trim().slice(0, 2000),
-        image_urls:     [],
+
         likes_count:    0,
         comments_count: 0,
       })
@@ -258,10 +263,13 @@ function Composer({ currentUser, profile, onPosted }: any) {
             style={{ width: '100%', background: C.surface, border: `1px solid ${expanded ? C.borderF : C.border}`, borderRadius: 12, padding: '10px 14px', color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 14, lineHeight: 1.6, outline: 'none', resize: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
           />
 
+
+
           {expanded && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+              <div />
               <button onClick={post} disabled={posting || !text.trim()}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#FF3B3B', color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
                 {posting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
                 {posting ? 'Posting...' : 'Post'}
               </button>
