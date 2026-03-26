@@ -7,12 +7,12 @@ import { Check, X, Crown, Zap, Building2, Users, Video, Lock, Radio, Star } from
 import Link from 'next/link'
 
 const C = {
-  bg:'#070B14', surface:'#0D1428', card:'#0F1623',
+  bg:'#070B14', surface:'#0D1420', card:'#0F1623',
   cardHover:'#141e30', border:'rgba(255,255,255,0.06)',
-  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueL:'#3B82F6',
+  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
+  blue:'#FF3B3B', blueL:'#FF5555',
   purple:'#7C3AED', purpleL:'#8B5CF6',
-  gold:'#F59E0B', goldL:'#FCD34D',
+  gold:'#FFD700', goldL:'#FCD34D',
   red:'#EF4444', green:'#10B981',
 }
 
@@ -85,8 +85,8 @@ const PLANS = [
     yearlyPrice: 204,
     yearlySaving: '20%',
     color: C.gold,
-    glow: 'rgba(245,158,11,0.18)',
-    borderColor: 'rgba(245,158,11,0.5)',
+    glow: 'rgba(255,215,0,0.18)',
+    borderColor: 'rgba(255,215,0,0.5)',
     highlight: true,
     badge: '★ Most Popular',
     description: 'Total freedom on GritClub',
@@ -224,7 +224,7 @@ export default function PricingPage() {
 
         {/* Header */}
         <div style={{textAlign:'center',marginBottom:48}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',marginBottom:20}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(255,215,0,0.1)',border:'1px solid rgba(255,215,0,0.3)',marginBottom:20}}>
             <Star style={{width:12,height:12,color:C.gold}}/>
             <span style={{fontSize:11,fontWeight:700,color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase'}}>Simple, Transparent Pricing</span>
           </div>
@@ -301,7 +301,7 @@ export default function PricingPage() {
                 <div style={{flex:1,display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
                   {plan.features.map(f => (
                     <div key={f} style={{display:'flex',alignItems:'flex-start',gap:8}}>
-                      <div style={{width:16,height:16,borderRadius:'50%',background:plan.highlight?'rgba(245,158,11,0.15)':'rgba(16,185,129,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
+                      <div style={{width:16,height:16,borderRadius:'50%',background:plan.highlight?'rgba(255,215,0,0.15)':'rgba(16,185,129,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
                         <Check style={{width:9,height:9,color:plan.highlight?C.gold:C.green}}/>
                       </div>
                       <span style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>{f}</span>
