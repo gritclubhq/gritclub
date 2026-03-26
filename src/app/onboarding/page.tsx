@@ -7,19 +7,19 @@ import { Upload, Check, X, AlertCircle, User, AtSign, ChevronRight, Loader2 } fr
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#0A0F1E',
-  surface:   '#0D1428',
-  card:      '#111827',
+  bg:        '#070B14',
+  surface:   '#0D1420',
+  card:      '#0F1A2E',
   border:    'rgba(255,255,255,0.06)',
-  borderFocus:'rgba(37,99,235,0.5)',
-  text:      '#F0F4FF',
-  textMuted: '#7B8DB0',
+  borderFocus:'rgba(255,59,59,0.5)',
+  text:      '#E8EAF0',
+  textMuted: '#8A9BBF',
   textDim:   '#3D4F6E',
-  blue:      '#2563EB',
-  blueLight: '#3B82F6',
-  blueDim:   'rgba(37,99,235,0.12)',
-  gold:      '#F59E0B',
-  goldDim:   'rgba(245,158,11,0.12)',
+  blue:      '#FF3B3B',
+  blueLight: '#FF5555',
+  blueDim:   'rgba(255,59,59,0.12)',
+  gold:      '#FFD700',
+  goldDim:   'rgba(255,215,0,0.12)',
   red:       '#EF4444',
   redDim:    'rgba(239,68,68,0.1)',
   green:     '#10B981',
@@ -324,7 +324,7 @@ export default function OnboardingPage() {
         <div className="text-center mb-8">
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
-            style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
+            style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(255,59,59,0.2)` }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
             WELCOME TO GRITCLUB
@@ -469,7 +469,7 @@ export default function OnboardingPage() {
                   onClick={handleFinish}
                   disabled={saving || uploading || availStatus === 'taken' || availStatus === 'checking' || !username || !!userError}
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                  style={{ background: C.gold, color: '#0A0F1E' }}
+                  style={{ background: C.gold, color: '#070B14' }}
                 >
                   {saving ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
