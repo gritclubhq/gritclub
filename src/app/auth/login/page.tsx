@@ -3,23 +3,30 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Mail, Loader2, Check, ArrowRight, Chrome } from 'lucide-react'
+import { Mail, Loader2, Check, ArrowRight } from 'lucide-react'
 
+// Unified with landing page dark/red theme
 const C = {
-  bg:'#0A0F1E', card:'#111827', surface:'#0D1428',
-  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(37,99,235,0.5)',
-  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.08)',
+  bg:          '#070B14',
+  card:        '#0D1420',
+  surface:     '#111827',
+  border:      'rgba(255,255,255,0.07)',
+  borderFocus: 'rgba(255,59,59,0.5)',
+  text:        '#E8EAF0',
+  textMuted:   '#7B8DB0',
+  textDim:     '#3D4F6E',
+  red:         '#FF3B3B',
+  redDim:      'rgba(255,59,59,0.12)',
+  gold:        '#FFD700',
 }
 
 export default function LoginPage() {
-  const [email,       setEmail]       = useState('')
-  const [magicSent,   setMagicSent]   = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [googleLoad,  setGoogleLoad]  = useState(false)
-  const [error,       setError]       = useState('')
-  const [agreed,      setAgreed]      = useState(false)
+  const [email,      setEmail]      = useState('')
+  const [magicSent,  setMagicSent]  = useState(false)
+  const [loading,    setLoading]    = useState(false)
+  const [googleLoad, setGoogleLoad] = useState(false)
+  const [error,      setError]      = useState('')
+  const [agreed,     setAgreed]     = useState(false)
 
   const handleGoogle = async () => {
     if (!agreed) { setError('Please agree to the Terms & Privacy Policy first'); return }
@@ -28,9 +35,7 @@ export default function LoginPage() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-        },
+        queryParams: { access_type: 'offline' },
       },
     })
     if (error) { setError(error.message); setGoogleLoad(false) }
@@ -52,15 +57,15 @@ export default function LoginPage() {
   if (magicSent) return (
     <div style={{ minHeight:'100vh', background:C.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
       <div style={{ width:'100%', maxWidth:400, textAlign:'center' }}>
-        <div style={{ width:64, height:64, borderRadius:'50%', background:'rgba(37,99,235,0.12)', border:'2px solid rgba(37,99,235,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 24px' }}>
-          <Mail style={{ width:28, height:28, color:C.blueLight }} />
+        <div style={{ width:64, height:64, borderRadius:'50%', background:C.redDim, border:`2px solid rgba(255,59,59,0.3)`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 24px' }}>
+          <Mail style={{ width:28, height:28, color:C.red }} />
         </div>
         <h2 style={{ fontSize:22, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:10 }}>Check your email</h2>
         <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.7, marginBottom:20 }}>
           We sent a magic link to <strong style={{ color:C.text }}>{email}</strong>. Click it to sign in.
         </p>
         <button onClick={() => setMagicSent(false)}
-          style={{ fontSize:13, color:C.blueLight, background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+          style={{ fontSize:13, color:C.red, background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
           Use a different email
         </button>
       </div>
@@ -68,43 +73,45 @@ export default function LoginPage() {
   )
 
   return (
-    <div style={{ minHeight:'100vh', background:C.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-      <div style={{ width:'100%', maxWidth:420 }}>
+    <div style={{ minHeight:'100vh', background:C.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:20, position:'relative', overflow:'hidden' }}>
+      {/* Background glow matching landing page */}
+      <div style={{ position:'absolute', top:'30%', left:'50%', transform:'translateX(-50%)', width:'600px', height:'400px', background:'radial-gradient(ellipse, rgba(255,59,59,0.06) 0%, transparent 70%)', pointerEvents:'none' }} />
+      {/* Subtle grid */}
+      <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)', backgroundSize:'60px 60px', pointerEvents:'none' }} />
 
-        {/* Logo */}
+      <div style={{ width:'100%', maxWidth:420, position:'relative', zIndex:1 }}>
+        {/* Logo — matches landing page style */}
         <div style={{ textAlign:'center', marginBottom:40 }}>
           <div style={{ display:'inline-flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:44, height:44, borderRadius:14, background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <span style={{ fontSize:20 }}>⚡</span>
-            </div>
-            <span style={{ fontSize:28, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em' }}>
-              Grit<span style={{ color:C.gold }}>Club</span>
+            <div style={{ width:36, height:36, background:C.red, clipPath:'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Syne', fontWeight:800, fontSize:16, color:'#fff' }}>G</div>
+            <span style={{ fontSize:26, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em' }}>
+              GRIT<span style={{ color:C.red }}>CLUB</span>
             </span>
           </div>
-          <p style={{ fontSize:16, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:0 }}>
-            Live business events for founders
+          <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:0, letterSpacing:'0.05em' }}>
+            Where winners are made
           </p>
         </div>
 
         {/* Card */}
-        <div style={{ borderRadius:24, padding:32, background:C.card, border:`1px solid ${C.border}` }}>
-          <h1 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', textAlign:'center', marginBottom:6 }}>
+        <div style={{ borderRadius:4, padding:32, background:C.card, border:`1px solid ${C.border}` }}>
+          <h1 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', textAlign:'center', marginBottom:6, letterSpacing:'-0.02em' }}>
             Sign in to GritClub
           </h1>
           <p style={{ fontSize:13, color:C.textDim, fontFamily:'DM Sans,sans-serif', textAlign:'center', marginBottom:28 }}>
-            Join thousands of founders already building
+            Join thousands already on their way up
           </p>
 
           {error && (
-            <div style={{ padding:'10px 14px', borderRadius:10, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', marginBottom:16 }}>
-              <p style={{ fontSize:13, color:'#EF4444', fontFamily:'DM Sans,sans-serif', margin:0 }}>{error}</p>
+            <div style={{ padding:'10px 14px', borderRadius:4, background:'rgba(255,59,59,0.08)', border:'1px solid rgba(255,59,59,0.2)', marginBottom:16 }}>
+              <p style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif', margin:0 }}>{error}</p>
             </div>
           )}
 
           {/* Google */}
           <button onClick={handleGoogle} disabled={googleLoad}
-            style={{ width:'100%', padding:'13px', borderRadius:14, border:`1px solid ${C.border}`, cursor:googleLoad?'wait':'pointer', background:C.surface, color:C.text, fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:20, opacity:googleLoad?0.7:1, transition:'all 0.2s' }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor='rgba(37,99,235,0.4)'}
+            style={{ width:'100%', padding:'13px', borderRadius:4, border:`1px solid ${C.border}`, cursor:googleLoad?'wait':'pointer', background:C.surface, color:C.text, fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:20, opacity:googleLoad?0.7:1, transition:'all 0.2s' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor='rgba(255,59,59,0.35)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor=C.border}>
             {googleLoad ? (
               <Loader2 style={{ width:18, height:18, animation:'spin 1s linear infinite' }} />
@@ -135,36 +142,35 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                style={{ width:'100%', padding:'13px 14px 13px 42px', borderRadius:12, background:C.surface, border:`1px solid ${C.border}`, color:C.text, fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' }}
+                style={{ width:'100%', padding:'13px 14px 13px 42px', borderRadius:4, background:C.surface, border:`1px solid ${C.border}`, color:C.text, fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' }}
                 onFocus={e => (e.target.style.borderColor = C.borderFocus)}
                 onBlur={e => (e.target.style.borderColor = C.border)}
               />
             </div>
             <button type="submit" disabled={loading || !email.trim()}
-              style={{ width:'100%', padding:'13px', borderRadius:12, border:'none', cursor:loading||!email.trim()?'not-allowed':'pointer', background:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!email.trim()?0.5:1 }}>
+              style={{ width:'100%', padding:'13px', borderRadius:4, border:'none', cursor:loading||!email.trim()?'not-allowed':'pointer', background:C.red, color:'#070B14', fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:14, letterSpacing:'0.08em', textTransform:'uppercase', display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!email.trim()?0.5:1, clipPath:'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' }}>
               {loading ? <Loader2 style={{ width:16, height:16, animation:'spin 1s linear infinite' }} /> : <ArrowRight style={{ width:16, height:16 }} />}
               {loading ? 'Sending...' : 'Send Magic Link'}
             </button>
           </form>
 
           {/* Terms */}
-          <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginTop:20, padding:'12px 14px', borderRadius:10, background:C.surface, border:`1px solid ${agreed?'rgba(37,99,235,0.3)':C.border}`, cursor:'pointer' }}
+          <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginTop:20, padding:'12px 14px', borderRadius:4, background:C.surface, border:`1px solid ${agreed?'rgba(255,59,59,0.3)':C.border}`, cursor:'pointer' }}
             onClick={() => setAgreed(!agreed)}>
-            <div style={{ width:18, height:18, borderRadius:5, border:`2px solid ${agreed?C.blue:C.textDim}`, background:agreed?C.blue:'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
-              {agreed && <Check style={{ width:11, height:11, color:'#fff' }} />}
+            <div style={{ width:18, height:18, borderRadius:3, border:`2px solid ${agreed?C.red:C.textDim}`, background:agreed?C.red:'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+              {agreed && <Check style={{ width:11, height:11, color:'#070B14' }} />}
             </div>
             <p style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', lineHeight:1.5, margin:0 }}>
-              I agree to GritClub's{' '}
-              <Link href="/terms" target="_blank" style={{ color:C.blueLight, textDecoration:'none' }}>Terms of Service</Link>
+              I agree to GritClub&apos;s{' '}
+              <Link href="/terms" target="_blank" style={{ color:C.red, textDecoration:'none' }}>Terms of Service</Link>
               {' '}and{' '}
-              <Link href="/privacy" target="_blank" style={{ color:C.blueLight, textDecoration:'none' }}>Privacy Policy</Link>
+              <Link href="/privacy" target="_blank" style={{ color:C.red, textDecoration:'none' }}>Privacy Policy</Link>
             </p>
           </div>
         </div>
 
-        {/* Fix note for Google branding */}
         <p style={{ textAlign:'center', fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginTop:20 }}>
-          © 2026 GritClub · Live business events for founders
+          © 2026 GritClub · gritclub.live · Hosts keep 80%
         </p>
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
