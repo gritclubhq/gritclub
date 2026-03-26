@@ -596,9 +596,9 @@ export default function LandingPage() {
             marginBottom: '48px',
           }}
         >
-          An exclusive circle for founders, operators, and builders who are{' '}
-          <em style={{ color: 'rgba(232,234,240,0.85)', fontStyle: 'normal', fontWeight: 400 }}>actually building.</em>
-          {' '}Host events, form groups, DM founders, and network with people who share your obsession.
+          An exclusive circle for founders, coaches, operators, and driven individuals who are{' '}
+          <em style={{ color: 'rgba(232,234,240,0.85)', fontStyle: 'normal', fontWeight: 400 }}>on the rise.</em>
+          {' '}Host events, form groups, DM mentors, and surround yourself with people who refuse to be average.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
@@ -658,7 +658,7 @@ export default function LandingPage() {
         <div className="ticker-inner">
           {[...Array(2)].map((_, i) => (
             <span key={i} style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '12px', letterSpacing: '0.2em', color: '#070B14' }}>
-              {['NETWORK WITH BUILDERS', 'HOST LIVE EVENTS', 'KEEP 80%', 'CREATE GROUPS', 'SEND DIRECT MESSAGES', 'WHITEBOARD & SCREEN SHARE', 'FIRST 5 MEMBERS FREE', 'BUILD IN PUBLIC', '80% REVENUE YOURS'].map(t => (
+              {['NETWORK WITH WINNERS', 'HOST LIVE EVENTS', 'KEEP 80%', 'CREATE GROUPS', 'SEND DIRECT MESSAGES', 'WHITEBOARD & SCREEN SHARE', 'FIRST 5 MEMBERS FREE', 'BUILD YOUR LEGACY', '80% REVENUE YOURS'].map(t => (
                 <span key={t} style={{ padding: '0 40px' }}>★ {t}</span>
               ))}
             </span>
@@ -701,7 +701,7 @@ export default function LandingPage() {
           <div className="mb-16">
             <p style={{ fontFamily: 'DM Mono', fontSize: '11px', letterSpacing: '0.2em', color: '#FF3B3B', marginBottom: '12px' }}>// WHAT YOU GET</p>
             <h2 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 'clamp(32px, 5vw, 56px)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-              BUILT FOR<br /><span style={{ color: '#FF3B3B' }}>BUILDERS</span>
+              BUILT FOR<br /><span style={{ color: '#FF3B3B' }}>WINNERS</span>
             </h2>
           </div>
 
@@ -880,117 +880,45 @@ export default function LandingPage() {
 
           {/* Two image cards side by side */}
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Card 1 — Boardroom meeting evoked with CSS */}
+            {/* Card 1 — Real boardroom photo */}
             <div
               style={{
                 position: 'relative',
-                height: '280px',
-                background: 'linear-gradient(135deg, #0D1A2D 0%, #162030 100%)',
-                border: '1px solid rgba(56,189,248,0.15)',
+                height: '300px',
                 overflow: 'hidden',
+                border: '1px solid rgba(56,189,248,0.15)',
               }}
             >
-              {/* Laptop / meeting scene abstraction */}
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {/* Simplified boardroom scene */}
-                <svg viewBox="0 0 400 220" style={{ width: '100%', height: '100%', opacity: 0.6 }}>
-                  {/* Table */}
-                  <ellipse cx="200" cy="155" rx="160" ry="35" fill="none" stroke="rgba(56,189,248,0.3)" strokeWidth="1"/>
-                  {/* Laptops on table */}
-                  {[60, 120, 180, 240, 300, 340].map((x, i) => (
-                    <g key={i}>
-                      <rect x={x-16} y="130" width="32" height="22" rx="2" fill="rgba(56,189,248,0.1)" stroke="rgba(56,189,248,0.25)" strokeWidth="0.8"/>
-                      <rect x={x-14} y="132" width="28" height="18" rx="1" fill="rgba(56,189,248,0.08)"/>
-                      {/* Screen glow */}
-                      <rect x={x-10} y="134" width="20" height="14" rx="1" fill={i % 2 === 0 ? 'rgba(56,189,248,0.15)' : 'rgba(255,59,59,0.12)'}/>
-                    </g>
-                  ))}
-                  {/* People silhouettes sitting */}
-                  {[70, 130, 200, 270, 330].map((x, i) => (
-                    <g key={i}>
-                      {/* Head */}
-                      <circle cx={x} cy="105" r="10" fill={i === 2 ? 'rgba(255,215,0,0.4)' : 'rgba(56,189,248,0.25)'}/>
-                      {/* Body */}
-                      <path d={`M ${x-14} 145 Q ${x-6} 125 ${x} 115 Q ${x+6} 125 ${x+14} 145`} fill={i === 2 ? 'rgba(255,215,0,0.2)' : 'rgba(56,189,248,0.12)'} stroke="none"/>
-                    </g>
-                  ))}
-                  {/* Presenter standing */}
-                  <circle cx="200" cy="65" r="13" fill="rgba(255,59,59,0.5)"/>
-                  <path d="M 178 110 Q 188 85 200 75 Q 212 85 222 110" fill="rgba(255,59,59,0.25)"/>
-                  {/* Screen behind presenter */}
-                  <rect x="155" y="30" width="90" height="55" rx="2" fill="rgba(255,59,59,0.08)" stroke="rgba(255,59,59,0.2)" strokeWidth="1"/>
-                  <text x="200" y="60" textAnchor="middle" fontFamily="DM Mono" fontSize="8" fill="rgba(255,59,59,0.5)">GRITCLUB</text>
-                  {/* Gift bags (from original image) */}
-                  {[100, 155, 245, 300].map((x, i) => (
-                    <g key={i}>
-                      <rect x={x-6} y="138" width="12" height="14" rx="1" fill={i % 2 === 0 ? 'rgba(255,107,53,0.3)' : 'rgba(255,215,0,0.25)'} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>
-                      <path d={`M ${x-4} 138 Q ${x} 134 ${x+4} 138`} stroke={i % 2 === 0 ? '#FF6B35' : '#FFD700'} strokeWidth="0.8" fill="none"/>
-                    </g>
-                  ))}
-                </svg>
-              </div>
-              {/* Overlay gradient */}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.8) 0%, transparent 50%)' }}/>
+              <img
+                src="/hero-meeting.jpg"
+                alt="GritClub in-person meetup"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.88) 0%, rgba(7,11,20,0.3) 55%, transparent 100%)' }}/>
               <div style={{ position: 'absolute', bottom: '20px', left: '20px' }}>
-                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#38BDF8', letterSpacing: '0.05em' }}>IN-PERSON MEETUPS</p>
-                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.45)' }}>GritClub members connecting IRL</p>
+                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#38BDF8', letterSpacing: '0.05em', margin: 0 }}>IN-PERSON MEETUPS</p>
+                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.55)', margin: '4px 0 0' }}>GritClub members connecting IRL</p>
               </div>
             </div>
 
-            {/* Card 2 — Energy / collaboration scene */}
+            {/* Card 2 — Real aerial collaboration photo */}
             <div
               style={{
                 position: 'relative',
-                height: '280px',
-                background: 'linear-gradient(135deg, #0D1A2D 0%, #1A1230 100%)',
-                border: '1px solid rgba(255,215,0,0.12)',
+                height: '300px',
                 overflow: 'hidden',
+                border: '1px solid rgba(255,215,0,0.15)',
               }}
             >
-              <div style={{ position: 'absolute', inset: 0 }}>
-                <svg viewBox="0 0 400 220" style={{ width: '100%', height: '100%', opacity: 0.7 }}>
-                  {/* Energy wave visualization — referencing the glowing overhead view image */}
-                  <defs>
-                    <radialGradient id="waveGrad" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#FFD700" stopOpacity="0.8"/>
-                      <stop offset="100%" stopColor="#FF6B35" stopOpacity="0"/>
-                    </radialGradient>
-                  </defs>
-                  {/* Flowing energy waves between tables */}
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <path
-                      key={i}
-                      d={`M 20 ${60 + i*24} C 80 ${40 + i*24}, 160 ${90 + i*18}, 200 ${55 + i*22} S 320 ${30 + i*28}, 380 ${60 + i*20}`}
-                      fill="none"
-                      stroke={i % 2 === 0 ? `rgba(255,215,0,${0.4 - i*0.05})` : `rgba(56,189,248,${0.35 - i*0.04})`}
-                      strokeWidth={1.5 - i*0.2}
-                    />
-                  ))}
-                  {/* Table shapes (overhead view) */}
-                  {[
-                    { x: 60, y: 90, w: 80, h: 45 },
-                    { x: 200, y: 70, w: 80, h: 45 },
-                    { x: 310, y: 110, w: 70, h: 40 },
-                  ].map((t, i) => (
-                    <g key={i}>
-                      <rect x={t.x} y={t.y} width={t.w} height={t.h} rx="4" fill="rgba(26,36,56,0.8)" stroke={i === 0 ? 'rgba(255,215,0,0.25)' : 'rgba(56,189,248,0.2)'} strokeWidth="1"/>
-                      {/* People around table (overhead dots) */}
-                      {[[-20,0],[20,0],[0,-20],[0,20]].map(([dx,dy], j) => (
-                        <circle key={j} cx={t.x + t.w/2 + dx} cy={t.y + t.h/2 + dy} r="6"
-                          fill={`rgba(${i === 1 ? '255,215,0' : '56,189,248'},0.4)`}/>
-                      ))}
-                      {/* Globe/monitor at center */}
-                      <circle cx={t.x + t.w/2} cy={t.y + t.h/2} r="8" fill={`rgba(${i === 2 ? '255,59,59' : '255,215,0'},0.15)`} stroke={`rgba(${i === 2 ? '255,59,59' : '255,215,0'},0.3)`} strokeWidth="1"/>
-                    </g>
-                  ))}
-                  {/* Central energy glow */}
-                  <circle cx="200" cy="115" r="30" fill="url(#waveGrad)" opacity="0.4"/>
-                </svg>
-              </div>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.8) 0%, transparent 50%)' }}/>
+              <img
+                src="/hero-aerial.jpg"
+                alt="GritClub collaborative energy"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,11,20,0.88) 0%, rgba(7,11,20,0.25) 55%, transparent 100%)' }}/>
               <div style={{ position: 'absolute', bottom: '20px', left: '20px' }}>
-                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#FFD700', letterSpacing: '0.05em' }}>COLLABORATIVE ENERGY</p>
-                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.45)' }}>Real collaboration, real results</p>
+                <p style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '14px', color: '#FFD700', letterSpacing: '0.05em', margin: 0 }}>COLLABORATIVE ENERGY</p>
+                <p style={{ fontFamily: 'DM Sans', fontSize: '12px', color: 'rgba(232,234,240,0.55)', margin: '4px 0 0' }}>Real collaboration, real results</p>
               </div>
             </div>
           </div>
@@ -1253,11 +1181,11 @@ export default function LandingPage() {
         <div className="relative">
           <p style={{ fontFamily: 'DM Mono', fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(7,11,20,0.5)', marginBottom: '16px' }}>// YOUR MOVE</p>
           <h2 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 'clamp(36px, 7vw, 88px)', letterSpacing: '-0.04em', color: '#070B14', lineHeight: 0.9, marginBottom: '24px' }}>
-            READY TO<br />BUILD?
+            READY TO<br />RISE?
           </h2>
-          <p style={{ fontFamily: 'DM Sans', fontSize: '16px', color: 'rgba(7,11,20,0.7)', maxWidth: '400px', margin: '0 auto 16px', lineHeight: 1.7 }}>
-            Join 2,400+ founders already inside GritClub.
-            No credit card required to join.
+          <p style={{ fontFamily: 'DM Sans', fontSize: '16px', color: 'rgba(7,11,20,0.7)', maxWidth: '440px', margin: '0 auto 16px', lineHeight: 1.7 }}>
+            Join 2,400+ high-performers already inside GritClub — founders, coaches, motivators, and people who refuse to settle.
+            No credit card required.
           </p>
           <p style={{ fontFamily: 'DM Mono', fontSize: '12px', color: 'rgba(7,11,20,0.55)', marginBottom: '40px', letterSpacing: '0.08em' }}>
             HOST? KEEP 80% OF EVERY DOLLAR YOU EARN.
