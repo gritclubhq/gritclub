@@ -8,21 +8,21 @@ import {
   Heart, MessageCircle, UserPlus, Check,
   UserCheck, Loader2, ChevronLeft, Globe,
   ExternalLink, Instagram, Twitter, Linkedin,
-  Share2, Users, Calendar, MessageSquare
+  Share2, Users, Calendar
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
+  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
   border:'rgba(255,255,255,0.06)',
-  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
+  text:'#E8EAF0', textMuted:'#7B8DB0', textDim:'#3D4F6E',
+  blue:'#FF3B3B', blueLight:'#3B82F6', blueDim:'rgba(255,59,59,0.12)',
+  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
   green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
   purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const timeAgo = (ts: string) => {
@@ -253,10 +253,9 @@ export default function PublicProfilePage() {
               </button>
               {currentUser && (
                 <>
-                  <button onClick={() => router.push(`/dashboard/messages?user=${targetId}`)}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,59,59,0.35)`, cursor:'pointer', background:'rgba(255,59,59,0.08)', color:'#FF5555', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13 }}>
-                    <MessageSquare style={{ width:13, height:13 }} />
-                    Message
+                  <button onClick={() => router.push(`/dashboard/messages?user=${profile.id}`)}
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,59,59,0.35)`, cursor:'pointer', background:'rgba(255,59,59,0.1)', color:'#FF3B3B', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13 }}>
+                    <MessageCircle style={{ width:13, height:13 }} /> Message
                   </button>
                   <button onClick={handleFollow} disabled={followLoading}
                     style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10, border:`1px solid ${isFollowing?C.purple:C.border}`, cursor:'pointer', background:isFollowing?C.purpleDim:'transparent', color:isFollowing?C.purple:C.textMuted, fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13, opacity:followLoading?0.6:1 }}>
