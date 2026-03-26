@@ -253,7 +253,7 @@ export default function PublicProfilePage() {
               </button>
               {currentUser && (
                 <>
-                  <button onClick={() => router.push(`/dashboard/messages?user=${userId}`)}
+                  <button onClick={() => router.push(`/dashboard/messages?user=${targetId}`)}
                     style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,59,59,0.35)`, cursor:'pointer', background:'rgba(255,59,59,0.08)', color:'#FF5555', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13 }}>
                     <MessageSquare style={{ width:13, height:13 }} />
                     Message
