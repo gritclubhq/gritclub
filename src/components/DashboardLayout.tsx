@@ -14,9 +14,9 @@ import NotificationBell from '@/components/NotificationBell'
 
 const C = {
   bg: '#070B14', sidebar: '#0D1420',
-  card: 'rgba(13,20,32,0.95)',
-  border: 'rgba(255,255,255,0.07)', hover: 'rgba(255,255,255,0.04)',
-  active: 'rgba(255,59,59,0.1)', activeBorder: '#FF3B3B',
+  card: 'rgba(17,28,50,0.9)',
+  border: 'rgba(255,255,255,0.06)', hover: 'rgba(255,255,255,0.04)',
+  active: 'rgba(255,59,59,0.12)', activeBorder: '#FF3B3B',
   text: '#E8EAF0', textMuted: '#7B8DB0', textDim: '#3D4F6E',
   blue: '#FF3B3B', blueLight: '#FF5555', blueDim: 'rgba(255,59,59,0.12)',
   gold: '#FFD700', red: '#EF4444', redDim: 'rgba(239,68,68,0.1)',
@@ -161,19 +161,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <div style={{ padding: '20px 16px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: '#FF3B3B', clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'Syne', fontWeight: 800, fontSize: 14, color: '#fff' }}>
-            G
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #1D4ED8, #2563EB)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Mic style={{ width: 16, height: 16, color: '#fff' }} />
           </div>
           <div>
-            <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 17, color: C.text, letterSpacing: '-0.02em' }}>
-              GRIT<span style={{ color: '#FF3B3B' }}>CLUB</span>
+            <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 17, color: C.text }}>
+              Grit<span style={{ color: C.gold }}>Club</span>
             </span>
             {role && (
               <div style={{ marginTop: 2 }}>
                 <span style={{
                   fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 5,
                   fontFamily: 'DM Sans,sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase',
-                  background: role === 'admin' ? 'rgba(239,68,68,0.12)' : role === 'host' ? 'rgba(245,158,11,0.12)' : C.blueDim,
+                  background: role === 'admin' ? 'rgba(239,68,68,0.12)' : role === 'host' ? 'rgba(255,215,0,0.12)' : C.blueDim,
                   color:      role === 'admin' ? C.red : role === 'host' ? C.gold : C.blueLight,
                 }}>{role}</span>
               </div>
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/pricing" onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
             <div
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 12, color: C.gold, fontFamily: 'DM Sans,sans-serif', fontSize: 13, cursor: 'pointer' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.08)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,215,0,0.08)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
               <Crown style={{ width: 16, height: 16 }} />
@@ -269,8 +269,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button onClick={() => setMobileOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, padding: 4 }}>
               <Menu style={{ width: 22, height: 22 }} />
             </button>
-            <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 18, color: C.text, letterSpacing: '-0.02em' }}>
-              GRIT<span style={{ color: '#FF3B3B' }}>CLUB</span>
+            <span style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 18, color: C.text }}>
+              Grit<span style={{ color: C.gold }}>Club</span>
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {user && <NotificationBell userId={user.id} />}
