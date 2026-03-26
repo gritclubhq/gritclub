@@ -7,11 +7,11 @@ import Link from 'next/link'
 import { Search, Radio, Lock, Globe, X, Loader2, Calendar, Users, Tag, ChevronRight, Zap } from 'lucide-react'
 
 const C = {
-  bg:         '#0A0F1E', surface:    '#0D1428', card:       '#111827', cardHover:  '#141E35',
-  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(37,99,235,0.3)',
-  text:       '#F0F4FF', textMuted:  '#7B8DB0', textDim:    '#3D4F6E',
-  blue:       '#2563EB', blueLight:  '#3B82F6', blueDim:    'rgba(37,99,235,0.12)',
-  gold:       '#F59E0B', goldDim:    'rgba(245,158,11,0.1)',
+  bg:         '#070B14', surface:    '#0D1420', card:       '#0F1A2E', cardHover:  '#0D1A2E',
+  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(255,59,59,0.3)',
+  text:       '#E8EAF0', textMuted:  '#8A9BBF', textDim:    '#3D4F6E',
+  blue:       '#FF3B3B', blueLight:  '#FF5555', blueDim:    'rgba(255,59,59,0.12)',
+  gold:       '#FFD700', goldDim:    'rgba(255,215,0,0.1)',
   red:        '#EF4444', redDim:     'rgba(239,68,68,0.1)',
   green:      '#10B981', greenDim:   'rgba(16,185,129,0.1)',
 }
@@ -38,7 +38,7 @@ function EventCard({ event, currentUserId }: { event: any; currentUserId: string
       <div
         className="rounded-2xl overflow-hidden transition-all duration-200 flex flex-col cursor-pointer"
         style={{ background: C.card, border: `1px solid ${isLive ? 'rgba(239,68,68,0.25)' : C.border}` }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${isLive ? 'rgba(239,68,68,0.08)' : 'rgba(37,99,235,0.08)'}` }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${isLive ? 'rgba(239,68,68,0.08)' : 'rgba(255,59,59,0.08)'}` }}
         onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.25)' : C.border; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
       >
         {/* Banner */}
@@ -139,7 +139,7 @@ function EventCard({ event, currentUserId }: { event: any; currentUserId: string
               style={{
                 background: isLive ? C.red     : soldOut ? C.border   : C.blueDim,
                 color:      isLive ? '#fff'    : soldOut ? C.textDim  : C.blueLight,
-                border:     `1px solid ${isLive ? C.red : soldOut ? C.border : 'rgba(37,99,235,0.2)'}`,
+                border:     `1px solid ${isLive ? C.red : soldOut ? C.border : 'rgba(255,59,59,0.2)'}`,
               }}>
               {isLive ? 'Join Now →' : soldOut ? 'Sold Out' : 'Get Ticket →'}
             </div>
@@ -232,7 +232,7 @@ export default function EventsPage() {
               {isHost && (
                 <Link href="/host/create">
                   <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                    style={{ background: C.gold, color: '#0A0F1E' }}>
+                    style={{ background: C.gold, color: '#070B14' }}>
                     <Zap className="w-4 h-4" /> Create Event
                   </button>
                 </Link>
