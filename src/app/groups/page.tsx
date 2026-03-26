@@ -12,20 +12,20 @@ import {
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
-  bg:         '#0A0F1E',
-  surface:    '#0D1428',
-  card:       '#111827',
-  cardHover:  '#141E35',
+  bg:         '#070B14',
+  surface:    '#0D1420',
+  card:       '#0F1A2E',
+  cardHover:  '#0D1A2E',
   border:     'rgba(255,255,255,0.06)',
-  borderHover:'rgba(37,99,235,0.3)',
-  text:       '#F0F4FF',
-  textMuted:  '#7B8DB0',
+  borderHover:'rgba(255,59,59,0.3)',
+  text:       '#E8EAF0',
+  textMuted:  '#8A9BBF',
   textDim:    '#3D4F6E',
-  blue:       '#2563EB',
-  blueLight:  '#3B82F6',
-  blueDim:    'rgba(37,99,235,0.12)',
-  gold:       '#F59E0B',
-  goldDim:    'rgba(245,158,11,0.1)',
+  blue:       '#FF3B3B',
+  blueLight:  '#FF5555',
+  blueDim:    'rgba(255,59,59,0.12)',
+  gold:       '#FFD700',
+  goldDim:    'rgba(255,215,0,0.1)',
   red:        '#EF4444',
   redDim:     'rgba(239,68,68,0.1)',
   green:      '#10B981',
@@ -110,15 +110,15 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full max-w-sm mx-4 rounded-2xl p-6 shadow-2xl text-center"
-        style={{ background: C.card, border: `1px solid rgba(245,158,11,0.3)` }}
+        style={{ background: C.card, border: `1px solid rgba(255,215,0,0.3)` }}
       >
         {/* Glow */}
         <div className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245,158,11,0.08), transparent 60%)' }} />
+          style={{ background: 'radial-gradient(circle at 50% 0%, rgba(255,215,0,0.08), transparent 60%)' }} />
 
         <div className="relative">
           <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-            style={{ background: C.goldDim, border: `1px solid rgba(245,158,11,0.3)` }}>
+            style={{ background: C.goldDim, border: `1px solid rgba(255,215,0,0.3)` }}>
             <Crown className="w-7 h-7" style={{ color: C.gold }} />
           </div>
 
@@ -146,7 +146,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
 
           <button
             className="w-full py-3 rounded-xl text-sm font-bold mb-2 transition-all hover:opacity-90"
-            style={{ background: C.gold, color: '#0A0F1E' }}
+            style={{ background: C.gold, color: '#070B14' }}
           >
             Upgrade Now →
           </button>
@@ -360,7 +360,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: {
           {/* Privacy */}
           <div
             className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all"
-            style={{ background: C.surface, border: `1px solid ${isPrivate ? 'rgba(245,158,11,0.3)' : C.border}` }}
+            style={{ background: C.surface, border: `1px solid ${isPrivate ? 'rgba(255,215,0,0.3)' : C.border}` }}
             onClick={() => setIsPrivate(p => !p)}
           >
             <div className="flex items-center gap-3">
@@ -396,7 +396,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: {
           {/* Free tier notice */}
           <div
             className="flex items-start gap-3 p-3 rounded-xl"
-            style={{ background: C.blueDim, border: `1px solid rgba(37,99,235,0.2)` }}
+            style={{ background: C.blueDim, border: `1px solid rgba(255,59,59,0.2)` }}
           >
             <Zap className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: C.blueLight }} />
             <p className="text-xs leading-relaxed" style={{ color: C.blueLight }}>
@@ -529,20 +529,20 @@ function GroupCard({ group, currentUserId, onJoin }: {
             <button
               onClick={() => router.push(`/groups/${group.id}`)}
               className="w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
+              style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(255,59,59,0.2)` }}
             >
               Open Group →
             </button>
           ) : isPending ? (
             <div className="w-full py-2.5 rounded-xl text-xs font-bold text-center"
-              style={{ background: C.goldDim, color: C.gold, border: `1px solid rgba(245,158,11,0.3)` }}>
+              style={{ background: C.goldDim, color: C.gold, border: `1px solid rgba(255,215,0,0.3)` }}>
               ⏳ Request Pending
             </div>
           ) : (
             <button
               onClick={() => onJoin(group)}
               className="w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: group.is_private ? C.goldDim : C.blue, color: group.is_private ? C.gold : '#fff', border: group.is_private ? `1px solid rgba(245,158,11,0.3)` : 'none' }}
+              style={{ background: group.is_private ? C.goldDim : C.blue, color: group.is_private ? C.gold : '#fff', border: group.is_private ? `1px solid rgba(255,215,0,0.3)` : 'none' }}
             >
               {group.is_private ? '🔒 Request to Join' : 'Join Group'}
             </button>
@@ -685,7 +685,7 @@ export default function GroupsPage() {
           {/* Pending banner */}
           {showPendingBanner && (
             <div className="flex items-center justify-between gap-3 p-4 rounded-2xl"
-              style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)' }}>
               <div className="flex items-center gap-3">
                 <span style={{ fontSize: 20 }}>⏳</span>
                 <div>
@@ -713,7 +713,7 @@ export default function GroupsPage() {
             <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 flex-shrink-0"
-              style={{ background: C.gold, color: '#0A0F1E' }}
+              style={{ background: C.gold, color: '#070B14' }}
             >
               <Plus className="w-4 h-4" /> Create Group
             </button>
@@ -722,7 +722,7 @@ export default function GroupsPage() {
           {/* Free tier info */}
           <div
             className="flex items-center gap-3 px-4 py-3 rounded-xl"
-            style={{ background: C.blueDim, border: `1px solid rgba(37,99,235,0.2)` }}
+            style={{ background: C.blueDim, border: `1px solid rgba(255,59,59,0.2)` }}
           >
             <Zap className="w-4 h-4 flex-shrink-0" style={{ color: C.blueLight }} />
             <p className="text-xs" style={{ color: C.blueLight }}>
@@ -823,7 +823,7 @@ export default function GroupsPage() {
                 <button
                   onClick={() => setShowCreate(true)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                  style={{ background: C.gold, color: '#0A0F1E' }}
+                  style={{ background: C.gold, color: '#070B14' }}
                 >
                   <Plus className="w-4 h-4" /> Create First Group
                 </button>
