@@ -8,7 +8,7 @@ import {
   Heart, MessageCircle, UserPlus, Check,
   UserCheck, Loader2, ChevronLeft, Globe,
   ExternalLink, Instagram, Twitter, Linkedin,
-  Share2, Users, Calendar
+  Share2, Users, Calendar, MessageSquare
 } from 'lucide-react'
 
 const C = {
@@ -253,6 +253,11 @@ export default function PublicProfilePage() {
               </button>
               {currentUser && (
                 <>
+                  <button onClick={() => router.push(`/dashboard/messages?user=${userId}`)}
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,59,59,0.35)`, cursor:'pointer', background:'rgba(255,59,59,0.08)', color:'#FF5555', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13 }}>
+                    <MessageSquare style={{ width:13, height:13 }} />
+                    Message
+                  </button>
                   <button onClick={handleFollow} disabled={followLoading}
                     style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10, border:`1px solid ${isFollowing?C.purple:C.border}`, cursor:'pointer', background:isFollowing?C.purpleDim:'transparent', color:isFollowing?C.purple:C.textMuted, fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13, opacity:followLoading?0.6:1 }}>
                     {followLoading && <Loader2 style={{ width:13, height:13, animation:'spin 1s linear infinite' }} />}
