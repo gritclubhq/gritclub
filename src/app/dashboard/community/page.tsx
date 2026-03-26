@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import DashboardLayout from '@/components/DashboardLayout'
 import {
   Heart, MessageCircle, Share2, Send, Trash2,
   MoreHorizontal, Globe, Users, Search, X,
-  Loader2, UserPlus, Check, Image as ImageIcon, ChevronDown, Megaphone
+  Loader2, UserPlus, Check, ChevronDown, Megaphone
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -220,51 +220,21 @@ function PeopleSearch({ currentUserId }: { currentUserId: string }) {
 // ─── Post Composer ────────────────────────────────────────────────────────────
 function Composer({ currentUser, profile, onPosted }: any) {
   const [text,     setText]     = useState('')
-  const [images,   setImages]   = useState<File[]>([])
-  const [previews, setPreviews] = useState<string[]>([])
   const [posting,  setPosting]  = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const addImages = (files: FileList | null) => {
-    if (!files) return
-    const valid = Array.from(files).filter(f => f.type.startsWith('image/') && f.size < 10 * 1024 * 1024).slice(0, 4 - images.length)
-    setImages(p => [...p, ...valid].slice(0, 4))
-    valid.forEach(f => {
-      const r = new FileReader()
-      r.onload = e => setPreviews(p => [...p, e.target?.result as string].slice(0, 4))
-      r.readAsDataURL(f)
-    })
-  }
-
-  const removeImg = (i: number) => {
-    setImages(p => p.filter((_, j) => j !== i))
-    setPreviews(p => p.filter((_, j) => j !== i))
-  }
 
   const post = async () => {
-    if ((!text.trim() && images.length === 0) || posting || !currentUser) return
+    if (!text.trim() || posting || !currentUser) return
     setPosting(true)
     try {
-      // Upload images to storage
-      const imageUrls: string[] = []
-      for (const img of images) {
-        const path = `posts/${currentUser.id}/${Date.now()}_${img.name.replace(/[^a-zA-Z0-9._]/g, '_')}`
-        const { error } = await supabase.storage.from('post-images').upload(path, img, { contentType: img.type })
-        if (!error) {
-          const { data } = supabase.storage.from('post-images').getPublicUrl(path)
-          imageUrls.push(data.publicUrl)
-        }
-      }
-      // Insert post — RLS allows all authenticated users to read (global)
       await supabase.from('posts').insert({
         user_id:        currentUser.id,
         content:        text.trim().slice(0, 2000),
-        image_urls:     imageUrls,
+        image_urls:     [],
         likes_count:    0,
         comments_count: 0,
       })
-      setText(''); setImages([]); setPreviews([]); setExpanded(false)
+      setText(''); setExpanded(false)
       onPosted()
     } catch (err: any) {
       alert('Post failed: ' + err.message)
@@ -288,30 +258,10 @@ function Composer({ currentUser, profile, onPosted }: any) {
             style={{ width: '100%', background: C.surface, border: `1px solid ${expanded ? C.borderF : C.border}`, borderRadius: 12, padding: '10px 14px', color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 14, lineHeight: 1.6, outline: 'none', resize: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
           />
 
-          {previews.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: previews.length === 1 ? '1fr' : '1fr 1fr', gap: 6, marginTop: 8 }}>
-              {previews.map((src, i) => (
-                <div key={i} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: previews.length === 1 ? '16/9' : '1/1' }}>
-                  <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => removeImg(i)}
-                    style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                    <X style={{ width: 11, height: 11 }} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
           {expanded && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-              <button onClick={() => fileRef.current?.click()} disabled={images.length >= 4}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 10, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, opacity: images.length >= 4 ? 0.4 : 1 }}>
-                <ImageIcon style={{ width: 14, height: 14 }} />
-                Photo {images.length > 0 && `(${images.length}/4)`}
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => addImages(e.target.files)} />
-              <button onClick={post} disabled={posting || (!text.trim() && images.length === 0)}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || (!text.trim() && images.length === 0)) ? 0.5 : 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button onClick={post} disabled={posting || !text.trim()}
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
                 {posting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
                 {posting ? 'Posting...' : 'Post'}
               </button>
