@@ -10,17 +10,17 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827', cardHover:'#141E35',
-  border:'rgba(255,255,255,0.06)', borderHover:'rgba(37,99,235,0.3)',
-  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
+  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E', cardHover:'#0D1A2E',
+  border:'rgba(255,255,255,0.06)', borderHover:'rgba(255,59,59,0.3)',
+  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
+  blue:'#FF3B3B', blueLight:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
+  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
   green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
   purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInitials = (u: any) => getName(u).slice(0,2).toUpperCase()
@@ -68,7 +68,7 @@ function SuggestionCard({ user, onConnect, onDismiss, actionState }: any) {
 
       {/* Reason */}
       {user.suggestion_reason && (
-        <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:8, background:C.blueDim, border:'1px solid rgba(37,99,235,0.15)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:8, background:C.blueDim, border:'1px solid rgba(255,59,59,0.15)' }}>
           <Zap style={{ width:12, height:12, color:C.blueLight, flexShrink:0 }} />
           <p style={{ fontSize:11, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>{user.suggestion_reason}</p>
         </div>
@@ -385,7 +385,7 @@ export default function NetworkPage() {
                     <Search style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', width:16, height:16, color:C.textDim }} />
                     <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search by name, @handle, or email..."
                       style={{ width:'100%', padding:'12px 14px 12px 42px', borderRadius:14, background:C.card, border:`1px solid ${C.border}`, color:C.text, fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' }}
-                      onFocus={e=>(e.target.style.borderColor='rgba(37,99,235,0.5)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
+                      onFocus={e=>(e.target.style.borderColor='rgba(255,59,59,0.5)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
                     {search && <button onClick={()=>{setSearch('');if(currentUser)loadDiscover(currentUser.id,'')}} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:C.textDim }}><X style={{ width:14, height:14 }} /></button>}
                   </div>
                   {people.length === 0 ? (
@@ -448,7 +448,7 @@ export default function NetworkPage() {
                   ) : pending.map(c => {
                     const sender = c['users!connections_user1_id_fkey'] || c.users || {}
                     return (
-                      <div key={c.id} style={{ display:'flex', alignItems:'center', gap:12, padding:16, borderRadius:16, background:C.card, border:`1px solid rgba(245,158,11,0.2)` }}>
+                      <div key={c.id} style={{ display:'flex', alignItems:'center', gap:12, padding:16, borderRadius:16, background:C.card, border:`1px solid rgba(255,215,0,0.2)` }}>
                         <a href={`/profile/${c.user1_id}`} style={{ textDecoration:'none', flexShrink:0 }}>
                           <Avatar u={sender} size={44} />
                         </a>
