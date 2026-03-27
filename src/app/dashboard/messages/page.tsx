@@ -10,33 +10,28 @@ import {
   Loader2, MessageCircle, ArrowLeft, Check, CheckCheck,
 } from 'lucide-react'
 
-// ── Vercel fix: force dynamic rendering (no static pre-render) ──────────────
 export const dynamic = 'force-dynamic'
-
-// ── Viewport export (replaces deprecated themeColor metadata) ───────────────
 export const viewport = { themeColor: '#070B14' }
 
-// ── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:       '#070B14',
-  surface:  '#0D1420',
-  card:     '#0F1A2E',
-  border:   'rgba(255,255,255,0.07)',
-  text:     '#E8EAF0',
-  textMuted:'#8A9BBF',
-  textDim:  '#3D4F6E',
-  blue:     '#FF3B3B',
-  blueL:    '#FF5555',
-  blueDim:  'rgba(255,59,59,0.12)',
-  gold:     '#FFD700',
-  green:    '#10B981',
+  bg:        '#070B14',
+  surface:   '#0D1420',
+  card:      '#111827',
+  border:    'rgba(255,255,255,0.07)',
+  text:      '#E8EAF0',
+  textMuted: '#7B8DB0',
+  textDim:   '#3D4F6E',
+  red:       '#FF3B3B',
+  redDim:    'rgba(255,59,59,0.12)',
+  gold:      '#FFD700',
+  green:     '#10B981',
 }
 
-const ACOLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
-const aBg      = (id: string) => ACOLORS[(id?.charCodeAt(0) || 0) % ACOLORS.length]
-const getName  = (u: any)    => u?.full_name || u?.email?.split('@')[0] || 'User'
-const getInit  = (u: any)    => getName(u).slice(0, 2).toUpperCase()
-const fmtTime  = (ts: string) => {
+const ACOLORS = ['#FF3B3B','#A78BFA','#38BDF8','#FFD700','#10B981','#F97316']
+const aBg     = (id: string) => ACOLORS[(id?.charCodeAt(0) || 0) % ACOLORS.length]
+const getName = (u: any)     => u?.full_name || u?.email?.split('@')[0] || 'User'
+const getInit = (u: any)     => getName(u).slice(0, 2).toUpperCase()
+const fmtTime = (ts: string) => {
   const d = new Date(ts), now = new Date(), diff = now.getTime() - d.getTime()
   if (diff < 60000)     return 'now'
   if (diff < 3600000)   return `${Math.floor(diff / 60000)}m`
@@ -52,7 +47,7 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
       overflow: 'hidden', display: 'flex', alignItems: 'center',
       justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700,
-      color: '#fff', background: aBg(user?.id || ''),
+      color: '#fff', background: aBg(user?.id || ''), fontFamily: 'Syne,sans-serif',
     }}>
       {user?.photo_url
         ? <img src={user.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -62,221 +57,59 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
   )
 }
 
-// ── Role badge (Solvent-style) ────────────────────────────────────────────────
 function RoleBadge({ role }: { role?: string }) {
-  if (!role) return null
-  const colors: Record<string, { bg: string; text: string }> = {
-    host:     { bg: 'rgba(255,215,0,0.12)',  text: '#FFD700' },
-    admin:    { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444' },
-    audience: { bg: 'rgba(255,59,59,0.12)',   text: '#FF5555' },
+  if (!role || role === 'audience') return null
+  const map: Record<string, { bg: string; color: string }> = {
+    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#FFD700' },
+    admin: { bg: 'rgba(255,59,59,0.12)', color: '#FF3B3B' },
   }
-  const c = colors[role] || colors.audience
+  const s = map[role]
+  if (!s) return null
   return (
     <span style={{
       fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
       fontFamily: 'DM Sans,sans-serif', letterSpacing: '0.07em',
-      textTransform: 'uppercase', background: c.bg, color: c.text, flexShrink: 0,
+      textTransform: 'uppercase', background: s.bg, color: s.color, flexShrink: 0,
     }}>
       {role}
     </span>
   )
 }
 
-// ── Main DM component ─────────────────────────────────────────────────────────
-function DMPage() {
-  const router = useRouter()
-
-  const [me,           setMe]           = useState<any>(null)
-  const [convos,       setConvos]       = useState<any[]>([])
-  const [activeConvo,  setActiveConvo]  = useState<any>(null)
-  const [messages,     setMessages]     = useState<any[]>([])
-  const [text,         setText]         = useState('')
-  const [sending,      setSending]      = useState(false)
-  const [loading,      setLoading]      = useState(true)
-  const [searchQ,      setSearchQ]      = useState('')
-  const [allUsers,     setAllUsers]     = useState<any[]>([])
-  const [showSearch,   setShowSearch]   = useState(false)
-  const [mobileView,   setMobileView]   = useState<'list' | 'chat'>('list')
-  const [winW,         setWinW]         = useState(1200)
-  const [typingDots,   setTypingDots]   = useState(false)
-
-  const chatBottom  = useRef<HTMLDivElement>(null)
-  const msgChannel  = useRef<any>(null)
-  const meRef       = useRef<any>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    const h = () => setWinW(window.innerWidth)
-    h(); window.addEventListener('resize', h); return () => window.removeEventListener('resize', h)
-  }, [])
-  const isMobile = winW < 768
-
-  // ── Auth + boot ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const targetUserId = typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('user')
-      : null
-
-    ;(async () => {
-      const { data: { user: u } } = await supabase.auth.getUser()
-      if (!u) { router.push('/auth/login'); return }
-      setMe(u); meRef.current = u
-      await loadConvos(u.id)
-      if (targetUserId) await openOrCreateConvo(u.id, targetUserId)
-      setLoading(false)
-    })()
-
-    return () => { if (msgChannel.current) supabase.removeChannel(msgChannel.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // ── Data helpers ─────────────────────────────────────────────────────────────
-  const loadConvos = async (uid: string) => {
-    const { data } = await supabase
-      .from('dm_conversations')
-      .select(`*, user_a_data:users!dm_conversations_user_a_fkey(id,full_name,email,photo_url,role), user_b_data:users!dm_conversations_user_b_fkey(id,full_name,email,photo_url,role)`)
-      .or(`user_a.eq.${uid},user_b.eq.${uid}`)
-      .order('last_message_at', { ascending: false })
-    if (data) {
-      setConvos(data.map(c => ({
-        ...c,
-        partner: c.user_a === uid ? c.user_b_data : c.user_a_data,
-      })))
-    }
-  }
-
-  const openOrCreateConvo = async (myId: string, partnerId: string) => {
-    const { data: convId } = await supabase.rpc('get_or_create_dm', { uid_a: myId, uid_b: partnerId })
-    if (convId) {
-      const { data: conv } = await supabase
-        .from('dm_conversations')
-        .select(`*, user_a_data:users!dm_conversations_user_a_fkey(id,full_name,email,photo_url,role), user_b_data:users!dm_conversations_user_b_fkey(id,full_name,email,photo_url,role)`)
-        .eq('id', convId).single()
-      if (conv) {
-        const enriched = { ...conv, partner: conv.user_a === myId ? conv.user_b_data : conv.user_a_data }
-        openConvo(enriched, myId)
-      }
-    }
-  }
-
-  const openConvo = useCallback(async (conv: any, uid?: string) => {
-    const myId = uid || meRef.current?.id
-    setActiveConvo(conv)
-    setMobileView('chat')
-
-    const { data: msgs } = await supabase
-      .from('dm_messages')
-      .select('*')
-      .eq('conversation_id', conv.id)
-      .order('created_at', { ascending: true })
-      .limit(200)
-    setMessages(msgs || [])
-    setTimeout(() => chatBottom.current?.scrollIntoView({ behavior: 'smooth' }), 100)
-
-    // Mark as read
-    if (msgs?.length && myId) {
-      const unread = msgs.filter(m => m.sender_id !== myId && !(m.read_by || []).includes(myId))
-      for (const m of unread) {
-        await supabase.from('dm_messages').update({ read_by: [...(m.read_by || []), myId] }).eq('id', m.id)
-      }
-    }
-
-    // Realtime subscription
-    if (msgChannel.current) supabase.removeChannel(msgChannel.current)
-    const ch = supabase.channel(`dm-${conv.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'dm_messages',
-        filter: `conversation_id=eq.${conv.id}`,
-      }, ({ new: msg }) => {
-        setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
-        setTimeout(() => chatBottom.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-      })
-      .subscribe()
-    msgChannel.current = ch
-  }, [])
-
-  const sendMessage = async () => {
-    if (!text.trim() || !activeConvo || !me || sending) return
-    setSending(true)
-    const content = text.trim()
-    setText('')
-    // Reset textarea height
-    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
-    // Refocus textarea after send so cursor stays
-    setTimeout(() => { textareaRef.current?.focus() }, 0)
-
-    const msg = {
-      id:              crypto.randomUUID(),
-      conversation_id: activeConvo.id,
-      sender_id:       me.id,
-      content,
-      msg_type:        'text',
-      created_at:      new Date().toISOString(),
-      read_by:         [me.id],
-    }
-    setMessages(prev => [...prev, msg])
-    setTimeout(() => chatBottom.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-
-    await supabase.from('dm_messages').insert(msg)
-    await supabase.from('dm_conversations').update({
-      last_message:    content,
-      last_message_at: new Date().toISOString(),
-    }).eq('id', activeConvo.id)
-    await loadConvos(me.id)
-    setSending(false)
-  }
-
-  const searchUsers = async (q: string) => {
-    if (!q.trim()) { setAllUsers([]); return }
-    const { data } = await supabase
-      .from('users')
-      .select('id,full_name,email,photo_url,role')
-      .or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
-      .neq('id', me?.id)
-      .limit(10)
-    setAllUsers(data || [])
-  }
-
-  const startConvoWith = async (user: any) => {
-    setShowSearch(false); setSearchQ(''); setAllUsers([])
-    await openOrCreateConvo(me.id, user.id)
-    await loadConvos(me.id)
-  }
-
-  const filteredConvos = convos.filter(c =>
+// ── Convo List — stable top-level component ───────────────────────────────────
+function ConvoList({
+  convos, activeConvoId, showSearch, searchQ, allUsers,
+  onSelectConvo, onToggleSearch, onSearchChange, onStartConvo,
+}: {
+  convos: any[], activeConvoId: string | null, showSearch: boolean,
+  searchQ: string, allUsers: any[],
+  onSelectConvo: (c: any) => void,
+  onToggleSearch: () => void,
+  onSearchChange: (q: string) => void,
+  onStartConvo: (u: any) => void,
+}) {
+  const filtered = convos.filter(c =>
     !searchQ.trim() || getName(c.partner).toLowerCase().includes(searchQ.toLowerCase())
   )
 
-  // ── Loading state ─────────────────────────────────────────────────────────
-  if (loading) return (
-    <DashboardLayout>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: C.bg }}>
-        <Loader2 style={{ width: 32, height: 32, color: C.blueL, animation: 'spin 1s linear infinite' }} />
-      </div>
-    </DashboardLayout>
-  )
-
-  // ── Convo list (Solvent-style sidebar) ────────────────────────────────────
-  const ConvoList = () => (
+  return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: C.surface, borderRight: `1px solid ${C.border}` }}>
-
       {/* Header */}
       <div style={{ padding: '16px 16px 12px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', margin: 0 }}>Messages</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', margin: 0, letterSpacing: '-0.02em' }}>Messages</h2>
           <button
-            onClick={() => { setShowSearch(p => !p); setSearchQ(''); setAllUsers([]) }}
+            onClick={onToggleSearch}
             style={{
               width: 32, height: 32, borderRadius: 8, border: 'none',
-              background: showSearch ? C.blueDim : C.card,
-              color: showSearch ? C.blueL : C.textMuted,
+              background: showSearch ? C.redDim : C.card,
+              color: showSearch ? C.red : C.textMuted,
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
             }}>
             {showSearch ? <X style={{ width: 15, height: 15 }} /> : <Search style={{ width: 15, height: 15 }} />}
           </button>
         </div>
 
-        {/* New convo search (find founders) */}
         {showSearch ? (
           <div>
             <div style={{ position: 'relative' }}>
@@ -284,19 +117,19 @@ function DMPage() {
               <input
                 autoFocus
                 value={searchQ}
-                onChange={e => { setSearchQ(e.target.value); searchUsers(e.target.value) }}
-                placeholder="Find founders..."
+                onChange={e => onSearchChange(e.target.value)}
+                placeholder="Find people..."
                 style={{
-                  width: '100%', padding: '9px 12px 9px 30px', borderRadius: 10,
+                  width: '100%', padding: '9px 12px 9px 30px', borderRadius: 8,
                   border: `1px solid ${C.border}`, background: C.card,
                   color: C.text, fontSize: 13, outline: 'none', fontFamily: 'DM Sans,sans-serif',
                 }}
               />
             </div>
             {allUsers.length > 0 && (
-              <div style={{ marginTop: 8, borderRadius: 10, background: C.card, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+              <div style={{ marginTop: 8, borderRadius: 8, background: C.card, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
                 {allUsers.map(u => (
-                  <button key={u.id} onClick={() => startConvoWith(u)}
+                  <button key={u.id} onClick={() => onStartConvo(u)}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -315,15 +148,14 @@ function DMPage() {
             )}
           </div>
         ) : (
-          /* Filter existing convos */
           <div style={{ position: 'relative' }}>
             <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: C.textDim }} />
             <input
               value={searchQ}
-              onChange={e => setSearchQ(e.target.value)}
+              onChange={e => onSearchChange(e.target.value)}
               placeholder="Search conversations..."
               style={{
-                width: '100%', padding: '9px 12px 9px 30px', borderRadius: 10,
+                width: '100%', padding: '9px 12px 9px 30px', borderRadius: 8,
                 border: `1px solid ${C.border}`, background: C.card,
                 color: C.text, fontSize: 13, outline: 'none', fontFamily: 'DM Sans,sans-serif',
               }}
@@ -334,39 +166,34 @@ function DMPage() {
 
       {/* Convo rows */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {filteredConvos.length === 0 && !showSearch && (
+        {filtered.length === 0 && !showSearch && (
           <div style={{ textAlign: 'center', padding: '48px 20px' }}>
             <MessageCircle style={{ width: 34, height: 34, color: C.textDim, margin: '0 auto 10px' }} />
             <p style={{ fontSize: 13, color: C.textMuted, fontFamily: 'DM Sans,sans-serif', marginBottom: 6 }}>No conversations yet</p>
-            <p style={{ fontSize: 12, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>Tap the search icon to message a founder</p>
+            <p style={{ fontSize: 12, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>Tap the search icon to message someone</p>
           </div>
         )}
-
-        {filteredConvos.map(conv => {
-          const isActive = activeConvo?.id === conv.id
+        {filtered.map(conv => {
+          const isActive = activeConvoId === conv.id
           return (
-            <button key={conv.id} onClick={() => openConvo(conv)}
+            <button key={conv.id} onClick={() => onSelectConvo(conv)}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 11,
-                padding: '11px 16px', background: isActive ? C.blueDim : 'transparent',
+                padding: '11px 16px', background: isActive ? C.redDim : 'transparent',
                 border: 'none', cursor: 'pointer', textAlign: 'left',
-                borderLeft: `3px solid ${isActive ? C.blue : 'transparent'}`,
+                borderLeft: `3px solid ${isActive ? C.red : 'transparent'}`,
                 transition: 'background 0.15s',
               }}
               onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)' }}
-              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = isActive ? C.redDim : 'transparent' }}
             >
-              {/* Avatar with online-like dot placeholder */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Avatar user={conv.partner} size={42} />
-              </div>
-
+              <Avatar user={conv.partner} size={42} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
                     <span style={{
                       fontSize: 13, fontWeight: 600,
-                      color: isActive ? C.blueL : C.text,
+                      color: isActive ? C.red : C.text,
                       fontFamily: 'DM Sans,sans-serif',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
@@ -392,19 +219,90 @@ function DMPage() {
       </div>
     </div>
   )
+}
 
-  // ── Chat window ───────────────────────────────────────────────────────────
-  const ChatWindow = () => (
+// ── Chat Window — stable top-level component ──────────────────────────────────
+function ChatWindow({
+  activeConvo, messages, me, isMobile,
+  onBack,
+}: {
+  activeConvo: any, messages: any[], me: any, isMobile: boolean,
+  onBack: () => void,
+}) {
+  const [text, setText]       = useState('')
+  const [sending, setSending] = useState(false)
+  const chatBottom  = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    chatBottom.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Focus textarea when conversation opens
+  useEffect(() => {
+    if (activeConvo) {
+      setTimeout(() => textareaRef.current?.focus(), 100)
+    }
+  }, [activeConvo?.id])
+
+  const sendMessage = async () => {
+    if (!text.trim() || !activeConvo || !me || sending) return
+    const content = text.trim()
+    setSending(true)
+    setText('')
+
+    // Reset height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+
+    const msg = {
+      id:              crypto.randomUUID(),
+      conversation_id: activeConvo.id,
+      sender_id:       me.id,
+      content,
+      msg_type:        'text',
+      created_at:      new Date().toISOString(),
+      read_by:         [me.id],
+    }
+
+    // Optimistic update handled by parent via realtime
+    await supabase.from('dm_messages').insert(msg)
+    await supabase.from('dm_conversations').update({
+      last_message:    content,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', activeConvo.id)
+
+    setSending(false)
+    // Restore focus after send
+    textareaRef.current?.focus()
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setText(e.target.value)
+    const el = e.target
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }
+
+  return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: C.bg }}>
-
-      {/* Partner header */}
+      {/* Header */}
       <div style={{
         padding: '12px 16px', borderBottom: `1px solid ${C.border}`,
         display: 'flex', alignItems: 'center', gap: 12,
         background: C.surface, flexShrink: 0,
       }}>
         {isMobile && (
-          <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, padding: 4, display: 'flex' }}>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, padding: 4, display: 'flex' }}>
             <ArrowLeft style={{ width: 19, height: 19 }} />
           </button>
         )}
@@ -443,13 +341,10 @@ function DMPage() {
             <div key={msg.id} style={{ display: 'flex', justifyContent: isOwn ? 'flex-end' : 'flex-start', gap: 7, alignItems: 'flex-end' }}>
               {!isOwn && <Avatar user={activeConvo?.partner} size={26} />}
               <div style={{ maxWidth: '72%', display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', gap: 3 }}>
-                {/* Text bubble */}
                 <div style={{
                   padding: '10px 14px',
                   borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  background: isOwn
-                    ? `linear-gradient(135deg, ${C.blue}, #1D4ED8)`
-                    : 'rgba(255,255,255,0.07)',
+                  background: isOwn ? C.red : 'rgba(255,255,255,0.07)',
                   color: isOwn ? '#fff' : C.text,
                   fontSize: 14, lineHeight: 1.55,
                   wordBreak: 'break-word',
@@ -457,13 +352,12 @@ function DMPage() {
                 }}>
                   {msg.content}
                 </div>
-                {/* Time + read receipt */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                   <span style={{ fontSize: 10, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>
                     {fmtTime(msg.created_at)}
                   </span>
                   {isOwn && (isRead
-                    ? <CheckCheck style={{ width: 12, height: 12, color: C.blueL }} />
+                    ? <CheckCheck style={{ width: 12, height: 12, color: C.red }} />
                     : <Check style={{ width: 12, height: 12, color: C.textDim }} />
                   )}
                 </div>
@@ -471,68 +365,38 @@ function DMPage() {
             </div>
           )
         })}
-
-        {/* Typing indicator */}
-        {typingDots && (
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7 }}>
-            <Avatar user={activeConvo?.partner} size={26} />
-            <div style={{
-              padding: '10px 14px', borderRadius: '18px 18px 18px 4px',
-              background: 'rgba(255,255,255,0.07)',
-              display: 'flex', gap: 4, alignItems: 'center',
-            }}>
-              {[0, 1, 2].map(i => (
-                <span key={i} style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: C.textMuted,
-                  animation: `typingBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                  display: 'inline-block',
-                }} />
-              ))}
-            </div>
-          </div>
-        )}
-
         <div ref={chatBottom} />
       </div>
 
-      {/* Input bar (text-only, Solvent glass style) */}
+      {/* Input */}
       <div style={{ padding: '12px 14px', borderTop: `1px solid ${C.border}`, background: C.surface, flexShrink: 0 }}>
         <div style={{
           display: 'flex', alignItems: 'flex-end', gap: 10,
-          background: C.card, borderRadius: 16,
+          background: C.card, borderRadius: 12,
           border: `1px solid ${C.border}`, padding: '8px 12px',
         }}>
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
             placeholder={`Message ${getName(activeConvo?.partner)}...`}
             rows={1}
             maxLength={2000}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
             style={{
               flex: 1, background: 'transparent', border: 'none',
               color: C.text, fontSize: 14, fontFamily: 'DM Sans,sans-serif',
               outline: 'none', resize: 'none', lineHeight: 1.5,
               maxHeight: 120, overflowY: 'auto',
-            }}
-            onInput={e => {
-              const t = e.target as HTMLTextAreaElement
-              t.style.height = 'auto'
-              t.style.height = Math.min(t.scrollHeight, 120) + 'px'
+              caretColor: C.red,
             }}
           />
           <button
-            type="button"
-            onClick={e => { e.preventDefault(); sendMessage(); }}
+            onClick={sendMessage}
             disabled={!text.trim() || sending}
             style={{
-              width: 32, height: 32, borderRadius: 8, border: 'none',
-              background: text.trim() ? C.blue : 'transparent',
+              width: 34, height: 34, borderRadius: 8, border: 'none',
+              background: text.trim() ? C.red : 'rgba(255,255,255,0.05)',
               color: text.trim() ? '#fff' : C.textDim,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: text.trim() ? 'pointer' : 'default',
@@ -551,48 +415,214 @@ function DMPage() {
       </div>
     </div>
   )
+}
 
-  // ── Empty state ───────────────────────────────────────────────────────────
-  const EmptyState = () => (
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ onNewChat }: { onNewChat: () => void }) {
+  return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: C.bg, gap: 14 }}>
-      <div style={{ width: 68, height: 68, borderRadius: '50%', background: C.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <MessageCircle style={{ width: 30, height: 30, color: C.blueL }} />
+      <div style={{ width: 68, height: 68, borderRadius: '50%', background: C.redDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <MessageCircle style={{ width: 30, height: 30, color: C.red }} />
       </div>
       <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', margin: 0 }}>Your Messages</h3>
       <p style={{ fontSize: 13, color: C.textMuted, textAlign: 'center', maxWidth: 260, fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, margin: 0 }}>
-        Connect privately with operators and founders on GritClub.
+        Connect privately with anyone on GritClub.
       </p>
       <button
-        onClick={() => setShowSearch(true)}
+        onClick={onNewChat}
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 22px', borderRadius: 12, border: 'none',
-          background: C.blue, color: '#fff',
-          fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+          padding: '10px 22px', borderRadius: 8, border: 'none',
+          background: C.red, color: '#fff',
+          fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 13,
+          letterSpacing: '0.05em', cursor: 'pointer',
         }}
       >
         <Search style={{ width: 15, height: 15 }} /> Start a conversation
       </button>
     </div>
   )
+}
 
-  // ── Layout ─────────────────────────────────────────────────────────────────
+// ── Main DMPage ───────────────────────────────────────────────────────────────
+function DMPage() {
+  const router = useRouter()
+
+  const [me,          setMe]          = useState<any>(null)
+  const [convos,      setConvos]      = useState<any[]>([])
+  const [activeConvo, setActiveConvo] = useState<any>(null)
+  const [messages,    setMessages]    = useState<any[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [searchQ,     setSearchQ]     = useState('')
+  const [allUsers,    setAllUsers]    = useState<any[]>([])
+  const [showSearch,  setShowSearch]  = useState(false)
+  const [mobileView,  setMobileView]  = useState<'list' | 'chat'>('list')
+  const [winW,        setWinW]        = useState(1200)
+
+  const msgChannel = useRef<any>(null)
+  const meRef      = useRef<any>(null)
+
+  useEffect(() => {
+    const h = () => setWinW(window.innerWidth)
+    h(); window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  const isMobile = winW < 768
+
+  // Boot
+  useEffect(() => {
+    const targetUserId = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('user')
+      : null
+
+    ;(async () => {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      if (!u) { router.push('/auth/login'); return }
+      setMe(u); meRef.current = u
+      await loadConvos(u.id)
+      if (targetUserId) await openOrCreateConvo(u.id, targetUserId)
+      setLoading(false)
+    })()
+
+    return () => { if (msgChannel.current) supabase.removeChannel(msgChannel.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const loadConvos = async (uid: string) => {
+    const { data } = await supabase
+      .from('dm_conversations')
+      .select(`*, user_a_data:users!dm_conversations_user_a_fkey(id,full_name,email,photo_url,role), user_b_data:users!dm_conversations_user_b_fkey(id,full_name,email,photo_url,role)`)
+      .or(`user_a.eq.${uid},user_b.eq.${uid}`)
+      .order('last_message_at', { ascending: false })
+    if (data) {
+      setConvos(data.map(c => ({
+        ...c,
+        partner: c.user_a === uid ? c.user_b_data : c.user_a_data,
+      })))
+    }
+  }
+
+  const openOrCreateConvo = async (myId: string, partnerId: string) => {
+    const { data: convId } = await supabase.rpc('get_or_create_dm', { uid_a: myId, uid_b: partnerId })
+    if (convId) {
+      const { data: conv } = await supabase
+        .from('dm_conversations')
+        .select(`*, user_a_data:users!dm_conversations_user_a_fkey(id,full_name,email,photo_url,role), user_b_data:users!dm_conversations_user_b_fkey(id,full_name,email,photo_url,role)`)
+        .eq('id', convId).single()
+      if (conv) {
+        const enriched = { ...conv, partner: conv.user_a === myId ? conv.user_b_data : conv.user_a_data }
+        await openConvo(enriched, myId)
+        await loadConvos(myId)
+      }
+    }
+  }
+
+  const openConvo = useCallback(async (conv: any, uid?: string) => {
+    const myId = uid || meRef.current?.id
+    setActiveConvo(conv)
+    setMobileView('chat')
+
+    const { data: msgs } = await supabase
+      .from('dm_messages')
+      .select('*')
+      .eq('conversation_id', conv.id)
+      .order('created_at', { ascending: true })
+      .limit(200)
+    setMessages(msgs || [])
+
+    // Mark as read
+    if (msgs?.length && myId) {
+      const unread = msgs.filter(m => m.sender_id !== myId && !(m.read_by || []).includes(myId))
+      for (const m of unread) {
+        await supabase.from('dm_messages').update({ read_by: [...(m.read_by || []), myId] }).eq('id', m.id)
+      }
+    }
+
+    // Realtime
+    if (msgChannel.current) supabase.removeChannel(msgChannel.current)
+    const ch = supabase.channel(`dm-${conv.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'dm_messages',
+        filter: `conversation_id=eq.${conv.id}`,
+      }, ({ new: msg }) => {
+        setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+      })
+      .subscribe()
+    msgChannel.current = ch
+  }, [])
+
+  const searchUsers = async (q: string) => {
+    if (!q.trim()) { setAllUsers([]); return }
+    const { data } = await supabase
+      .from('users')
+      .select('id,full_name,email,photo_url,role')
+      .or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
+      .neq('id', me?.id)
+      .limit(10)
+    setAllUsers(data || [])
+  }
+
+  const handleSearchChange = (q: string) => {
+    setSearchQ(q)
+    if (showSearch) searchUsers(q)
+  }
+
+  const handleToggleSearch = () => {
+    setShowSearch(p => !p)
+    setSearchQ('')
+    setAllUsers([])
+  }
+
+  const startConvoWith = async (user: any) => {
+    setShowSearch(false); setSearchQ(''); setAllUsers([])
+    if (!me) return
+    await openOrCreateConvo(me.id, user.id)
+    await loadConvos(me.id)
+  }
+
+  if (loading) return (
+    <DashboardLayout>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: C.bg }}>
+        <Loader2 style={{ width: 32, height: 32, color: C.red, animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+      </div>
+    </DashboardLayout>
+  )
+
   return (
     <DashboardLayout>
       <style>{`
         @keyframes spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }
-        @keyframes typingBounce { 0%,60%,100% { transform: translateY(0) } 30% { transform: translateY(-5px) } }
         * { box-sizing: border-box; }
       `}</style>
       <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
         {(!isMobile || mobileView === 'list') && (
           <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, height: '100%', overflow: 'hidden' }}>
-            <ConvoList />
+            <ConvoList
+              convos={convos}
+              activeConvoId={activeConvo?.id || null}
+              showSearch={showSearch}
+              searchQ={searchQ}
+              allUsers={allUsers}
+              onSelectConvo={openConvo}
+              onToggleSearch={handleToggleSearch}
+              onSearchChange={handleSearchChange}
+              onStartConvo={startConvoWith}
+            />
           </div>
         )}
         {(!isMobile || mobileView === 'chat') && (
           <div style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
-            {activeConvo ? <ChatWindow /> : <EmptyState />}
+            {activeConvo
+              ? <ChatWindow
+                  activeConvo={activeConvo}
+                  messages={messages}
+                  me={me}
+                  isMobile={isMobile}
+                  onBack={() => setMobileView('list')}
+                />
+              : <EmptyState onNewChat={() => { setShowSearch(true); if (isMobile) setMobileView('list') }} />
+            }
           </div>
         )}
       </div>
@@ -600,12 +630,11 @@ function DMPage() {
   )
 }
 
-// ── Suspense wrapper (Vercel build fix) ───────────────────────────────────────
 export default function MessagesPage() {
   return (
     <Suspense fallback={
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#070B14' }}>
-        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,59,59,0.3)', borderTopColor: '#FF5555', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,59,59,0.3)', borderTopColor: '#FF3B3B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
     }>
