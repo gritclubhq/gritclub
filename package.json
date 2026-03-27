@@ -17,6 +17,7 @@
     "stripe": "^15.12.0",
     "@stripe/stripe-js": "^4.1.0",
     "lucide-react": "^0.383.0",
+    "framer-motion": "^11.0.0",
     "date-fns": "^3.6.0",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
