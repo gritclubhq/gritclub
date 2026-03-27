@@ -9,43 +9,94 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'grit-bg': '#0F172A',
-        'grit-card': '#1E293B',
-        'grit-border': '#334155',
-        'grit-sky': '#38BDF8',
-        'grit-gold': '#FFD700',
-        'grit-muted': '#64748B',
-        'grit-text': '#E2E8F0',
+        border:     "hsl(var(--border))",
+        input:      "hsl(var(--input))",
+        ring:       "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT:    "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT:    "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT:    "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT:    "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT:    "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT:    "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT:    "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        onyx:        "hsl(var(--onyx))",
+        espresso:    "hsl(var(--espresso))",
+        sepia:       "hsl(var(--sepia))",
+        umber:       "hsl(var(--umber))",
+        earthenware: "hsl(var(--earthenware))",
+        "warm-stone":"hsl(var(--warm-stone))",
+        sandstone:   "hsl(var(--sandstone))",
+        sage:        "hsl(var(--sage))",
+        cream:       "hsl(var(--cream))",
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-clash)', 'system-ui', 'sans-serif'],
+        display: ["'Playfair Display'", "Georgia", "serif"],
+        heading: ["Outfit", "system-ui", "sans-serif"],
+        body:    ["'Space Grotesk'", "system-ui", "sans-serif"],
+        sans:    ["'Space Grotesk'", "system-ui", "sans-serif"],
       },
-      animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'live-dot': 'liveDot 1.5s ease-in-out infinite',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'fade-in': 'fadeIn 0.4s ease-out',
-        'ticker': 'ticker 0.5s ease-out',
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
-        liveDot: {
-          '0%, 100%': { opacity: 1 },
-          '50%': { opacity: 0.3 },
+        "accordion-down": {
+          from: { height: "0" },
+          to:   { height: "var(--radix-accordion-content-height)" },
         },
-        slideUp: {
-          from: { transform: 'translateY(8px)', opacity: 0 },
-          to: { transform: 'translateY(0)', opacity: 1 },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to:   { height: "0" },
         },
-        fadeIn: {
-          from: { opacity: 0 },
-          to: { opacity: 1 },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%":      { opacity: "1" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%":      { transform: "translateY(-10px)" },
+        },
+        shimmer: {
+          "0%":   { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
         ticker: {
-          from: { transform: 'translateY(-4px)', opacity: 0 },
-          to: { transform: 'translateY(0)', opacity: 1 },
-        }
-      }
+          "0%":   { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up":   "accordion-up 0.2s ease-out",
+        "pulse-glow":     "pulse-glow 3s ease-in-out infinite",
+        float:            "float 6s ease-in-out infinite",
+        shimmer:          "shimmer 3s linear infinite",
+        ticker:           "ticker 28s linear infinite",
+      },
     },
   },
   plugins: [],
