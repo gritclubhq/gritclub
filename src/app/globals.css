@@ -57,6 +57,7 @@
     font-family: 'Space Grotesk', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
   h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
   ::selection {
