@@ -7,12 +7,12 @@ import { useRouter } from 'next/navigation'
 import { Radio, AlertCircle, X, Image } from 'lucide-react'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
-  border:'rgba(255,255,255,0.07)', text:'#F0F4FF',
-  textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueL:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
-  green:'#10B981',
+  bg:'#141010', surface:'#1C1410', card:'#291C0E',
+  border:'rgba(167,141,120,0.15)', text:'#E1D4C2',
+  textMuted:'#BEB5A9', textDim:'#715451',
+  blue:'#A78D78', blueL:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
+  gold:'#C4956A', red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
+  green:'#8FAF8A',
 }
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -159,7 +159,7 @@ export default function CreateEventPage() {
           )}
 
           <button type="submit" disabled={loading||!form.title||!form.price}
-            style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:`linear-gradient(135deg,${C.gold},#F97316)`, color:'#0A0F1E', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!form.title||!form.price?0.5:1 }}>
+            style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:`linear-gradient(135deg,${C.gold},#F97316)`, color:'#141010', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!form.title||!form.price?0.5:1 }}>
             <Radio style={{ width:17, height:17 }}/>
             {loading?'Creating...':'Create Event'}
           </button>
