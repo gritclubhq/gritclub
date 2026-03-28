@@ -11,23 +11,23 @@ import {
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
-export const viewport = { themeColor: '#070B14' }
+export const viewport = { themeColor: '#141010' }
 
 const C = {
-  bg:        '#070B14',
-  surface:   '#0D1420',
-  card:      '#111827',
-  border:    'rgba(255,255,255,0.07)',
-  text:      '#E8EAF0',
-  textMuted: '#7B8DB0',
-  textDim:   '#3D4F6E',
+  bg:        '#141010',
+  surface:   '#1C1410',
+  card:      '#291C0E',
+  border:    'rgba(167,141,120,0.15)',
+  text:      '#E1D4C2',
+  textMuted: '#BEB5A9',
+  textDim:   '#715451',
   red:       '#FF3B3B',
-  redDim:    'rgba(255,59,59,0.12)',
-  gold:      '#FFD700',
-  green:     '#10B981',
+  redDim:    'rgba(167,141,120,0.15)',
+  gold:      '#C4956A',
+  green:     '#8FAF8A',
 }
 
-const ACOLORS = ['#FF3B3B','#A78BFA','#38BDF8','#FFD700','#10B981','#F97316']
+const ACOLORS = ['#FF3B3B','#9B7B6E','#38BDF8','#C4956A','#8FAF8A','#F97316']
 const aBg     = (id: string) => ACOLORS[(id?.charCodeAt(0) || 0) % ACOLORS.length]
 const getName = (u: any)     => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInit = (u: any)     => getName(u).slice(0, 2).toUpperCase()
@@ -60,8 +60,8 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
 function RoleBadge({ role }: { role?: string }) {
   if (!role || role === 'audience') return null
   const map: Record<string, { bg: string; color: string }> = {
-    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#FFD700' },
-    admin: { bg: 'rgba(255,59,59,0.12)', color: '#FF3B3B' },
+    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#C4956A' },
+    admin: { bg: 'rgba(167,141,120,0.15)', color: '#FF3B3B' },
   }
   const s = map[role]
   if (!s) return null
@@ -344,7 +344,7 @@ function ChatWindow({
                 <div style={{
                   padding: '10px 14px',
                   borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  background: isOwn ? C.red : 'rgba(255,255,255,0.07)',
+                  background: isOwn ? C.red : 'rgba(167,141,120,0.15)',
                   color: isOwn ? '#fff' : C.text,
                   fontSize: 14, lineHeight: 1.55,
                   wordBreak: 'break-word',
@@ -633,7 +633,7 @@ function DMPage() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#070B14' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#141010' }}>
         <div style={{ width: 28, height: 28, border: '3px solid rgba(255,59,59,0.3)', borderTopColor: '#FF3B3B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
