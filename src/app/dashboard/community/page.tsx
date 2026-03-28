@@ -11,26 +11,26 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#070B14',
-  card:      '#0F1A2E',
-  surface:   '#0D1420',
-  border:    'rgba(255,255,255,0.06)',
-  borderF:   'rgba(255,59,59,0.4)',
-  text:      '#E8EAF0',
-  textMuted: '#8A9BBF',
-  textDim:   '#3D4F6E',
-  blue:      '#FF3B3B',
-  blueL:     '#FF5555',
-  blueDim:   'rgba(255,59,59,0.12)',
-  gold:      '#FFD700',
-  goldDim:   'rgba(255,215,0,0.1)',
+  bg:        '#141010',
+  card:      '#291C0E',
+  surface:   '#1C1410',
+  border:    'rgba(167,141,120,0.15)',
+  borderF:   'rgba(167,141,120,0.4)',
+  text:      '#E1D4C2',
+  textMuted: '#BEB5A9',
+  textDim:   '#715451',
+  blue:      '#A78D78',
+  blueL:     '#BEB5A9',
+  blueDim:   'rgba(167,141,120,0.15)',
+  gold:      '#C4956A',
+  goldDim:   'rgba(196,149,106,0.15)',
   red:       '#EF4444',
   redDim:    'rgba(239,68,68,0.1)',
-  green:     '#10B981',
-  greenDim:  'rgba(16,185,129,0.1)',
+  green:     '#8FAF8A',
+  greenDim:  'rgba(143,175,138,0.15)',
 }
 
-const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#A78D78','#6E473B','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
 
 function getDisplayName(u: any): string {
@@ -75,8 +75,8 @@ function AnnouncementCard({ ann }: { ann: any }) {
   return (
     <div style={{
       borderRadius: 20, overflow: 'hidden',
-      background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(251,146,60,0.08))',
-      border: '1px solid rgba(255,215,0,0.3)',
+      background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,146,60,0.08))',
+      border: '1px solid rgba(245,158,11,0.3)',
     }}>
       {/* Banner image */}
       {ann.image_url && (
@@ -86,28 +86,28 @@ function AnnouncementCard({ ann }: { ann: any }) {
       <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,215,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(255,215,0,0.3)' }}>
-            <Megaphone style={{ width: 16, height: 16, color: '#FFD700' }} />
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(245,158,11,0.3)' }}>
+            <Megaphone style={{ width: 16, height: 16, color: '#C4956A' }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#FFD700', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
-              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,215,0,0.15)', color: '#FFD700', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C4956A', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
+              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#C4956A', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
             </div>
-            <p style={{ fontSize: 11, color: '#8A9BBF', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
+            <p style={{ fontSize: 11, color: '#BEB5A9', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
           </div>
         </div>
         {/* Content */}
         <div>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#E8EAF0', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#E1D4C2', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
           <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
         </div>
         {/* CTA button */}
         {ann.link_url && (
           <a href={ann.link_url} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(255,215,0,0.18)', color: '#FFD700', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(255,215,0,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(255,215,0,0.28)')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(255,215,0,0.18)')}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.18)', color: '#C4956A', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(245,158,11,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.28)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.18)')}>
             {ann.link_label || 'Learn more'} →
           </a>
         )}
@@ -227,10 +227,10 @@ function Composer({ currentUser, profile, onPosted }: any) {
     if (!text.trim() || posting || !currentUser) return
     setPosting(true)
     try {
-      // Insert post — RLS allows all authenticated users to read (global)
       await supabase.from('posts').insert({
         user_id:        currentUser.id,
         content:        text.trim().slice(0, 2000),
+        image_urls:     [],
         likes_count:    0,
         comments_count: 0,
       })
@@ -258,13 +258,10 @@ function Composer({ currentUser, profile, onPosted }: any) {
             style={{ width: '100%', background: C.surface, border: `1px solid ${expanded ? C.borderF : C.border}`, borderRadius: 12, padding: '10px 14px', color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 14, lineHeight: 1.6, outline: 'none', resize: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
           />
 
-
-
           {expanded && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-              <div />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
               <button onClick={post} disabled={posting || !text.trim()}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#FF3B3B', color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
                 {posting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
                 {posting ? 'Posting...' : 'Post'}
               </button>
@@ -431,7 +428,7 @@ function PostCard({ post, currentUserId, onDelete }: any) {
                   const el = e.target as HTMLImageElement
                   el.style.display = 'none'
                   if (el.parentElement) {
-                    el.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#3D4F6E;font-size:12px;font-family:DM Sans,sans-serif">Image unavailable</div>'
+                    el.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#715451;font-size:12px;font-family:DM Sans,sans-serif">Image unavailable</div>'
                   }
                 }} />
             </div>
