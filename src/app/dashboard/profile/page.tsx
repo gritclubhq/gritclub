@@ -11,13 +11,13 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
-  border:'rgba(255,255,255,0.07)', borderFocus:'rgba(255,59,59,0.5)',
-  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
-  red:'#FF3B3B', redDim:'rgba(255,59,59,0.12)',
-  gold:'#FFD700', goldDim:'rgba(255,215,0,0.10)',
-  blue:'#FF3B3B', blueLight:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
-  green:'#22C55E', greenDim:'rgba(34,197,94,0.12)',
+  bg:'#141010', surface:'#1C1410', card:'#291C0E',
+  border:'rgba(167,141,120,0.15)', borderFocus:'rgba(167,141,120,0.5)',
+  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#715451',
+  blue:'#A78D78', blueLight:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
+  gold:'#C4956A', goldDim:'rgba(196,149,106,0.15)',
+  red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
+  green:'#8FAF8A', greenDim:'rgba(143,175,138,0.15)',
 }
 
 const SQL_KEYWORDS = ['select','insert','update','delete','drop','union','script','exec']
@@ -179,7 +179,7 @@ export default function ProfilePage() {
         setTwitter(prof.twitter || '')
         setLinkedin(prof.linkedin || '')
         setWebsiteUrl(prof.website_url || '')
-        setShowEmail(prof.show_email === true)
+        setShowEmail(prof.show_email || false)
         setPhotoUrl(prof.photo_url || u.user_metadata?.avatar_url || null)
       }
       setLoading(false)
@@ -297,31 +297,30 @@ export default function ProfilePage() {
               <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em' }}>Your Profile</h1>
             </div>
             <button onClick={handleSave} disabled={saving||uploadingPhoto}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingPhoto)?0.6:1 }}>
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingPhoto)?0.6:1 }}>
               {saving?<><Loader2 style={{ width:15, height:15, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:15, height:15 }} /> Saved!</>:'Save Changes'}
             </button>
           </div>
 
-          {/* Avatar only (no banner) */}
-          <div style={{ borderRadius:20, overflow:'hidden', background:C.card, border:`1px solid ${C.border}`, padding:'24px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:20 }}>
-              <div style={{ position:'relative', width:80, height:80, flexShrink:0 }}>
-                <div style={{ width:80, height:80, borderRadius:'50%', overflow:'hidden', border:`3px solid rgba(255,59,59,0.3)` }}>
+          {/* Avatar */}
+          <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}` }}>
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:16 }}>Profile Photo</p>
+            <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+              <div style={{ position:'relative', width:72, height:72, flexShrink:0 }}>
+                <div style={{ width:72, height:72, borderRadius:'50%', overflow:'hidden', border:`3px solid ${C.card}` }}>
                   <ImageDrop current={photoUrl} onFile={handlePhotoFile} loading={uploadingPhoto} rounded label="Photo" />
                 </div>
-                <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, borderRadius:'50%', background:C.red, border:`2px solid ${C.card}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, borderRadius:'50%', background:C.blue, border:`2px solid ${C.card}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
                   <Camera style={{ width:12, height:12, color:'#fff' }} />
                 </div>
               </div>
-              <div style={{ flex:1 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                  <p style={{ fontWeight:700, fontSize:17, color:C.text, fontFamily:'Syne,sans-serif', margin:0 }}>{fullName||'Your Name'}</p>
-                  {profile?.role && (
-                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6, background:profile.role==='admin'?C.redDim:profile.role==='host'?C.goldDim:'rgba(255,59,59,0.1)', color:profile.role==='admin'?C.red:profile.role==='host'?C.gold:C.red, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.08em' }}>{profile.role}</span>
-                  )}
-                </div>
-                {username && <p style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif', margin:0 }}>@{username}</p>}
-                <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>{user?.email}</p>
+              <div>
+                <p style={{ fontWeight:700, fontSize:17, color:C.text, fontFamily:'Syne,sans-serif', margin:0 }}>{fullName||'Your Name'}</p>
+                {username && <p style={{ fontSize:13, color:C.blueLight, fontFamily:'DM Sans,sans-serif', margin:'2px 0 0' }}>@{username}</p>}
+                <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:'2px 0 0' }}>{user?.email}</p>
+                {profile?.role && (
+                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:6, background:profile.role==='admin'?C.redDim:profile.role==='host'?C.goldDim:C.blueDim, color:profile.role==='admin'?C.red:profile.role==='host'?C.gold:C.blueLight, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.08em', display:'inline-block', marginTop:4 }}>{profile.role}</span>
+                )}
               </div>
             </div>
           </div>
@@ -394,20 +393,16 @@ export default function ProfilePage() {
           {/* Privacy */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:10 }}>
             <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Privacy</p>
-            {[
-              { label:'Show Email on Profile', value:showEmail, onChange:setShowEmail, icon:Mail },
-            ].map(t => (
-              <div key={t.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${t.value?'rgba(255,59,59,0.3)':C.border}`, cursor:'pointer' }}
-                onClick={() => t.onChange(!t.value)}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <t.icon style={{ width:15, height:15, color:t.value?C.red:C.textDim }} />
-                  <span style={{ fontSize:13, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{t.label}</span>
-                </div>
-                <div style={{ width:40, height:22, borderRadius:11, background:t.value?C.red:C.border, position:'relative', flexShrink:0 }}>
-                  <div style={{ position:'absolute', top:2, width:18, height:18, borderRadius:'50%', background:'#fff', left:t.value?20:2, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)' }} />
-                </div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${showEmail?'rgba(255,59,59,0.3)':C.border}`, cursor:'pointer' }}
+              onClick={() => setShowEmail(!showEmail)}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <Mail style={{ width:15, height:15, color:showEmail?C.red:C.textDim }} />
+                <span style={{ fontSize:13, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Show Email on Profile</span>
               </div>
-            ))}
+              <div style={{ width:40, height:22, borderRadius:11, background:showEmail?C.red:C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
+                <div style={{ position:'absolute', top:2, width:18, height:18, borderRadius:'50%', background:'#fff', left:showEmail?20:2, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)' }} />
+              </div>
+            </div>
           </div>
 
           {/* Account & Danger Zone */}
@@ -459,7 +454,7 @@ export default function ProfilePage() {
 
           {/* Save button */}
           <button onClick={handleSave} disabled={saving||uploadingPhoto}
-            style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?C.green:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.7:1 }}>
+            style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.7:1 }}>
             {saving?<><Loader2 style={{ width:16, height:16, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:16, height:16 }} /> Saved!</>:'Save Profile'}
           </button>
 
