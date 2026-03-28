@@ -3,18 +3,19 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Mail, Loader2, Check, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowRight, Mail, Lock } from 'lucide-react'
 
 export default function LoginPage() {
+  const [mode,       setMode]       = useState<'signin' | 'signup'>('signin')
   const [email,      setEmail]      = useState('')
-  const [magicSent,  setMagicSent]  = useState(false)
+  const [password,   setPassword]   = useState('')
+  const [showPass,   setShowPass]   = useState(false)
   const [loading,    setLoading]    = useState(false)
   const [googleLoad, setGoogleLoad] = useState(false)
   const [error,      setError]      = useState('')
-  const [agreed,     setAgreed]     = useState(false)
+  const [success,    setSuccess]    = useState('')
 
   const handleGoogle = async () => {
-    if (!agreed) { setError('Please agree to the Terms & Privacy Policy first'); return }
     setGoogleLoad(true); setError('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -23,80 +24,124 @@ export default function LoginPage() {
     if (error) { setError(error.message); setGoogleLoad(false) }
   }
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!agreed) { setError('Please agree to the Terms & Privacy Policy first'); return }
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) { setError('Enter a valid email'); return }
-    setLoading(true); setError('')
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (error) { setError(error.message); setLoading(false) }
-    else { setMagicSent(true); setLoading(false) }
+    if (!email.trim() || !password) { setError('Please fill in all fields'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
+    setLoading(true); setError(''); setSuccess('')
+
+    if (mode === 'signup') {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) { setError(error.message); setLoading(false) }
+      else { setSuccess('Account created! Check your email to verify, then sign in.'); setLoading(false); setMode('signin') }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+      if (error) { setError(error.message); setLoading(false) }
+      // on success, Supabase redirects via auth callback
+    }
   }
 
-  if (magicSent) return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-5">
-      <div className="w-full max-w-sm text-center">
-        <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center mx-auto mb-6">
-          <Mail className="w-7 h-7 text-primary" />
-        </div>
-        <h2 className="font-display text-2xl font-bold text-foreground mb-3">Check your email</h2>
-        <p className="font-body text-sm text-muted-foreground leading-relaxed mb-5">
-          We sent a magic link to <strong className="text-foreground">{email}</strong>. Click it to sign in.
-        </p>
-        <button onClick={() => setMagicSent(false)} className="font-heading text-sm text-primary bg-transparent border-none cursor-pointer hover:underline">
-          Use a different email
-        </button>
-      </div>
-    </div>
-  )
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-5 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-      {/* Subtle grid */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{ backgroundImage: 'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)', backgroundSize: '60px 60px' }}
-      />
+    <div style={{
+      minHeight: '100vh',
+      background: '#141010',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20, position: 'relative', overflow: 'hidden',
+      fontFamily: "'Space Grotesk', system-ui, sans-serif",
+    }}>
+      {/* Ambient background */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 400, background: 'radial-gradient(ellipse, rgba(167,141,120,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', bottom: '10%', left: '20%', width: 300, height: 300, background: 'radial-gradient(ellipse, rgba(110,71,59,0.05) 0%, transparent 70%)', borderRadius: '50%' }} />
+        {/* Subtle dot grid */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(167,141,120,0.08) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      </div>
 
-      <div className="w-full max-w-sm relative z-10">
+      <div style={{ width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
+
         {/* Logo */}
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block mb-4">
-            <span className="font-display text-3xl font-bold text-gradient-brand tracking-wide">GRITCLUB</span>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <h1 style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 36, fontWeight: 900, letterSpacing: '-0.02em',
+              background: 'linear-gradient(135deg, #6E473B, #A78D78, #E1D4C2)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text', margin: 0,
+            }}>GRITCLUB</h1>
           </Link>
-          <p className="font-heading text-sm text-muted-foreground tracking-widest uppercase">
+          <p style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 12, color: '#715451', letterSpacing: '0.3em', textTransform: 'uppercase', marginTop: 8 }}>
             Where ambition meets action
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-lg p-8 bg-card border border-border">
-          <h1 className="font-display text-xl font-bold text-foreground text-center mb-1.5">
-            Sign in to GritClub
-          </h1>
-          <p className="font-body text-sm text-muted-foreground text-center mb-7">
-            Join thousands already on their way up
+        <div style={{
+          background: '#291C0E',
+          border: '1px solid rgba(167,141,120,0.15)',
+          borderRadius: 8, padding: 32,
+        }}>
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', background: '#1C1410', borderRadius: 6, padding: 4, marginBottom: 24 }}>
+            {(['signin', 'signup'] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }}
+                style={{
+                  flex: 1, padding: '8px', borderRadius: 4, border: 'none', cursor: 'pointer',
+                  fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+                  letterSpacing: '0.05em',
+                  background: mode === m ? '#A78D78' : 'transparent',
+                  color: mode === m ? '#141010' : '#715451',
+                  transition: 'all 0.2s',
+                }}>
+                {m === 'signin' ? 'Sign In' : 'Create Account'}
+              </button>
+            ))}
+          </div>
+
+          <h2 style={{
+            fontFamily: "'Playfair Display', Georgia, serif",
+            fontSize: 22, fontWeight: 700, color: '#E1D4C2',
+            textAlign: 'center', marginBottom: 6,
+          }}>
+            {mode === 'signin' ? 'Welcome back' : 'Join GritClub'}
+          </h2>
+          <p style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 13, color: '#BEB5A9', textAlign: 'center', marginBottom: 24 }}>
+            {mode === 'signin' ? 'Sign in to your account' : 'Start your journey today'}
           </p>
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded bg-destructive/8 border border-destructive/20">
-              <p className="font-body text-sm text-destructive">{error}</p>
+            <div style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: '#EF4444', margin: 0 }}>{error}</p>
+            </div>
+          )}
+          {success && (
+            <div style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(143,175,138,0.1)', border: '1px solid rgba(143,175,138,0.25)', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: '#8FAF8A', margin: 0 }}>{success}</p>
             </div>
           )}
 
           {/* Google */}
-          <button
-            onClick={handleGoogle}
-            disabled={googleLoad}
-            className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded border border-border bg-secondary/30 text-foreground font-heading font-semibold text-sm hover:border-primary/40 hover:bg-secondary/50 transition-all duration-200 mb-5 disabled:opacity-60 cursor-pointer"
+          <button onClick={handleGoogle} disabled={googleLoad}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              padding: '12px', borderRadius: 6,
+              border: '1px solid rgba(167,141,120,0.2)',
+              background: 'rgba(167,141,120,0.06)',
+              color: '#E1D4C2', cursor: googleLoad ? 'wait' : 'pointer',
+              fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 600, fontSize: 14,
+              marginBottom: 20, opacity: googleLoad ? 0.7 : 1, transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(167,141,120,0.4)'; (e.currentTarget as HTMLElement).style.background = 'rgba(167,141,120,0.1)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(167,141,120,0.2)'; (e.currentTarget as HTMLElement).style.background = 'rgba(167,141,120,0.06)' }}
           >
-            {googleLoad ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
+            {googleLoad ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> : (
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -108,55 +153,85 @@ export default function LoginPage() {
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px bg-border" />
-            <span className="font-heading text-xs text-muted-foreground">or use email</span>
-            <div className="flex-1 h-px bg-border" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(167,141,120,0.15)' }} />
+            <span style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 11, color: '#715451', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or with email</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(167,141,120,0.15)' }} />
           </div>
 
-          {/* Magic Link form */}
-          <form onSubmit={handleMagicLink} className="flex flex-col gap-3">
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          {/* Email + Password form */}
+          <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ position: 'relative' }}>
+              <Mail style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#715451', pointerEvents: 'none' }} />
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full pl-10 pr-4 py-3 rounded bg-secondary/40 border border-border text-foreground font-body text-sm outline-none focus:border-primary/60 transition-colors placeholder:text-muted-foreground"
+                type="email" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="your@email.com" autoComplete="email"
+                style={{
+                  width: '100%', padding: '12px 12px 12px 40px', borderRadius: 6,
+                  background: '#1C1410', border: '1px solid rgba(167,141,120,0.18)',
+                  color: '#E1D4C2', fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 14,
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+                onFocus={e => (e.target.style.borderColor = 'rgba(167,141,120,0.5)')}
+                onBlur={e => (e.target.style.borderColor = 'rgba(167,141,120,0.18)')}
               />
             </div>
-            <button
-              type="submit"
-              disabled={loading || !email.trim()}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded bg-gradient-brand text-primary-foreground font-heading font-bold text-sm tracking-wider uppercase hover:shadow-brand transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            <div style={{ position: 'relative' }}>
+              <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#715451', pointerEvents: 'none' }} />
+              <input
+                type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Your password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                style={{
+                  width: '100%', padding: '12px 44px 12px 40px', borderRadius: 6,
+                  background: '#1C1410', border: '1px solid rgba(167,141,120,0.18)',
+                  color: '#E1D4C2', fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 14,
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+                onFocus={e => (e.target.style.borderColor = 'rgba(167,141,120,0.5)')}
+                onBlur={e => (e.target.style.borderColor = 'rgba(167,141,120,0.18)')}
+              />
+              <button type="button" onClick={() => setShowPass(!showPass)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#715451', padding: 2 }}>
+                {showPass ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
+              </button>
+            </div>
+
+            <button type="submit" disabled={loading || !email.trim() || !password}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '13px', borderRadius: 6, border: 'none', cursor: loading ? 'wait' : 'pointer',
+                background: 'linear-gradient(135deg, #6E473B, #A78D78)',
+                color: '#141010', fontFamily: "'Outfit', system-ui, sans-serif",
+                fontWeight: 800, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase',
+                opacity: loading || !email.trim() || !password ? 0.5 : 1,
+                transition: 'all 0.2s', marginTop: 4,
+              }}
+              onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
+              onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = '1' }}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-              {loading ? 'Sending...' : 'Send Magic Link'}
+              {loading ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <ArrowRight style={{ width: 16, height: 16 }} />}
+              {loading ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
-          {/* Terms */}
-          <div
-            className={`flex items-start gap-2.5 mt-5 p-3.5 rounded cursor-pointer bg-secondary/20 border transition-colors ${agreed ? 'border-primary/40' : 'border-border'}`}
-            onClick={() => setAgreed(!agreed)}
-          >
-            <div className={`w-4 h-4 rounded flex-shrink-0 mt-0.5 flex items-center justify-center border-2 transition-all ${agreed ? 'bg-primary border-primary' : 'border-muted-foreground bg-transparent'}`}>
-              {agreed && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-            </div>
-            <p className="font-body text-xs text-muted-foreground leading-relaxed">
-              I agree to GritClub&apos;s{' '}
-              <Link href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link>
-              {' '}and{' '}
-              <Link href="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>
+          {mode === 'signin' && (
+            <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#715451', fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+              Don&apos;t have an account?{' '}
+              <button onClick={() => { setMode('signup'); setError('') }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A78D78', fontWeight: 600, fontSize: 12 }}>
+                Create one free
+              </button>
             </p>
-          </div>
+          )}
         </div>
 
-        <p className="text-center font-body text-xs text-muted-foreground mt-6">
-          © 2026 GritClub · Hosts keep 80%
+        <p style={{ textAlign: 'center', fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 11, color: '#715451', marginTop: 24 }}>
+          By signing in you agree to our{' '}
+          <Link href="/terms" style={{ color: '#A78D78' }}>Terms</Link> and{' '}
+          <Link href="/privacy" style={{ color: '#A78D78' }}>Privacy Policy</Link>
         </p>
       </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
