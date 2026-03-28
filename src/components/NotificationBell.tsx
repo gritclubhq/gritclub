@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation'
 import { Bell, X, Check, Users, Heart, MessageCircle, UserPlus, Megaphone, Loader2, Radio } from 'lucide-react'
 
 const C = {
-  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
-  border:'rgba(255,255,255,0.06)',
-  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
-  blue:'#FF3B3B', blueLight:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
-  gold:'#FFD700', red:'#EF4444', green:'#10B981',
-  purple:'#7C3AED',
+  bg:'#141010', surface:'#1C1410', card:'#291C0E',
+  border:'rgba(167,141,120,0.15)',
+  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#715451',
+  blue:'#A78D78', blueLight:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
+  gold:'#C4956A', red:'#EF4444', green:'#8FAF8A',
+  purple:'#6E473B',
 }
 
-const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#A78D78','#6E473B','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 
@@ -26,12 +26,12 @@ const timeAgo = (ts: string) => {
 }
 
 const NOTIF_ICON: Record<string, any> = {
-  connection_request:  { icon: UserPlus,      color: '#FF5555' },
-  connection_accepted: { icon: Users,         color: '#10B981' },
-  follow:              { icon: UserPlus,      color: '#7C3AED' },
+  connection_request:  { icon: UserPlus,      color: '#BEB5A9' },
+  connection_accepted: { icon: Users,         color: '#8FAF8A' },
+  follow:              { icon: UserPlus,      color: '#6E473B' },
   post_like:           { icon: Heart,         color: '#EF4444' },
-  post_comment:        { icon: MessageCircle, color: '#FFD700' },
-  announcement:        { icon: Megaphone,     color: '#FFD700' },
+  post_comment:        { icon: MessageCircle, color: '#C4956A' },
+  announcement:        { icon: Megaphone,     color: '#C4956A' },
 }
 
 export default function NotificationBell({ userId }: { userId: string }) {
@@ -105,7 +105,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
       {/* Bell button */}
       <button
         onClick={() => { setOpen(p => !p); if (!open) loadNotifs() }}
-        style={{ position:'relative', width:38, height:38, borderRadius:10, border:`1px solid ${open?'rgba(255,59,59,0.4)':C.border}`, cursor:'pointer', background:open?C.blueDim:'transparent', color:C.textMuted, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        style={{ position:'relative', width:38, height:38, borderRadius:10, border:`1px solid ${open?'rgba(167,141,120,0.4)':C.border}`, cursor:'pointer', background:open?C.blueDim:'transparent', color:C.textMuted, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
         <Bell style={{ width:17, height:17 }} />
         {unread > 0 && (
           <span style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, borderRadius:9, background:C.red, color:'#fff', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', border:`2px solid ${C.bg}`, fontFamily:'DM Sans,sans-serif' }}>
