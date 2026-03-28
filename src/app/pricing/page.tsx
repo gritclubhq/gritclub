@@ -7,13 +7,13 @@ import { Check, X, Crown, Zap, Building2, Users, Video, Lock, Radio, Star } from
 import Link from 'next/link'
 
 const C = {
-  bg:'#070B14', surface:'#0D1420', card:'#0F1623',
-  cardHover:'#141e30', border:'rgba(255,255,255,0.06)',
-  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
-  blue:'#FF3B3B', blueL:'#FF5555',
-  purple:'#7C3AED', purpleL:'#8B5CF6',
-  gold:'#FFD700', goldL:'#FCD34D',
-  red:'#EF4444', green:'#10B981',
+  bg:'#141010', surface:'#1C1410', card:'#291C0E',
+  cardHover:'#352318', border:'rgba(167,141,120,0.15)',
+  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#715451',
+  blue:'#A78D78', blueL:'#BEB5A9',
+  purple:'#6E473B', purpleL:'#7D5248',
+  gold:'#C4956A', goldL:'#D4A97A',
+  red:'#EF4444', green:'#8FAF8A',
 }
 
 const PLANS = [
@@ -24,8 +24,8 @@ const PLANS = [
     monthlyPrice: 0,
     yearlyPrice: 0,
     color: C.blueL,
-    glow: 'rgba(59,130,246,0.15)',
-    borderColor: 'rgba(59,130,246,0.2)',
+    glow: 'rgba(167,141,120,0.15)',
+    borderColor: 'rgba(167,141,120,0.2)',
     highlight: false,
     badge: null,
     description: 'Start exploring GritClub',
@@ -55,7 +55,7 @@ const PLANS = [
     yearlyPrice: 70,
     yearlySaving: '42%',
     color: C.blueL,
-    glow: 'rgba(59,130,246,0.15)',
+    glow: 'rgba(167,141,120,0.15)',
     borderColor: 'rgba(59,130,246,0.35)',
     highlight: false,
     badge: null,
@@ -85,8 +85,8 @@ const PLANS = [
     yearlyPrice: 204,
     yearlySaving: '20%',
     color: C.gold,
-    glow: 'rgba(255,215,0,0.18)',
-    borderColor: 'rgba(255,215,0,0.5)',
+    glow: 'rgba(245,158,11,0.18)',
+    borderColor: 'rgba(245,158,11,0.5)',
     highlight: true,
     badge: '★ Most Popular',
     description: 'Total freedom on GritClub',
@@ -112,8 +112,8 @@ const PLANS = [
     icon: Building2,
     monthlyPrice: null,
     yearlyPrice: null,
-    color: '#A78BFA',
-    glow: 'rgba(167,139,250,0.12)',
+    color: '#9B7B6E',
+    glow: 'rgba(110,71,59,0.2)',
     borderColor: 'rgba(167,139,250,0.3)',
     highlight: false,
     badge: null,
@@ -150,7 +150,7 @@ const TABLE_ROWS = [
 
 function Cell({ val }: { val: boolean | string }) {
   if(val === true)  return <span style={{color:C.green,fontSize:18}}>✓</span>
-  if(val === false) return <span style={{color:'rgba(255,255,255,0.12)',fontSize:16}}>—</span>
+  if(val === false) return <span style={{color:'rgba(167,141,120,0.22)',fontSize:16}}>—</span>
   return <span style={{fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>{val}</span>
 }
 
@@ -224,7 +224,7 @@ export default function PricingPage() {
 
         {/* Header */}
         <div style={{textAlign:'center',marginBottom:48}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(255,215,0,0.1)',border:'1px solid rgba(255,215,0,0.3)',marginBottom:20}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(196,149,106,0.15)',border:'1px solid rgba(245,158,11,0.3)',marginBottom:20}}>
             <Star style={{width:12,height:12,color:C.gold}}/>
             <span style={{fontSize:11,fontWeight:700,color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase'}}>Simple, Transparent Pricing</span>
           </div>
@@ -301,7 +301,7 @@ export default function PricingPage() {
                 <div style={{flex:1,display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
                   {plan.features.map(f => (
                     <div key={f} style={{display:'flex',alignItems:'flex-start',gap:8}}>
-                      <div style={{width:16,height:16,borderRadius:'50%',background:plan.highlight?'rgba(255,215,0,0.15)':'rgba(16,185,129,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
+                      <div style={{width:16,height:16,borderRadius:'50%',background:plan.highlight?'rgba(245,158,11,0.15)':'rgba(143,175,138,0.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
                         <Check style={{width:9,height:9,color:plan.highlight?C.gold:C.green}}/>
                       </div>
                       <span style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>{f}</span>
