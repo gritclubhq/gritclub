@@ -11,13 +11,13 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#141010', surface:'#1C1410', card:'#291C0E',
-  border:'rgba(167,141,120,0.15)', borderFocus:'rgba(167,141,120,0.5)',
-  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#715451',
-  blue:'#A78D78', blueLight:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
-  gold:'#C4956A', goldDim:'rgba(196,149,106,0.15)',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.2)',
+  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueLight:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#8FAF8A', greenDim:'rgba(143,175,138,0.15)',
+  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
 }
 
 const SQL_KEYWORDS = ['select','insert','update','delete','drop','union','script','exec']
@@ -48,10 +48,10 @@ function DeleteAccountModal({ onConfirm, onCancel, loading }: any) {
           <AlertTriangle style={{ width:28, height:28, color:C.red }} />
         </div>
 
-        <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', textAlign:'center', marginBottom:10 }}>
+        <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', textAlign:'center', marginBottom:10 }}>
           Delete Account
         </h2>
-        <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', textAlign:'center', lineHeight:1.6, marginBottom:20 }}>
+        <p style={{ fontSize:14, color:C.textMuted, fontFamily:'Inter,sans-serif', textAlign:'center', lineHeight:1.6, marginBottom:20 }}>
           This will <strong style={{ color:C.red }}>permanently delete</strong> your account and all data including:
         </p>
 
@@ -60,29 +60,29 @@ function DeleteAccountModal({ onConfirm, onCancel, loading }: any) {
           {['Your profile and settings','All posts, likes and comments','All connections and follows','Group memberships and messages','Tickets and event history','Any earnings or payout history'].map(item => (
             <div key={item} style={{ display:'flex', alignItems:'center', gap:8, padding:'3px 0' }}>
               <X style={{ width:12, height:12, color:C.red, flexShrink:0 }} />
-              <span style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{item}</span>
+              <span style={{ fontSize:13, color:C.red, fontFamily:'Inter,sans-serif' }}>{item}</span>
             </div>
           ))}
         </div>
 
-        <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:8 }}>
+        <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, fontFamily:'Inter,sans-serif', marginBottom:8 }}>
           Type <strong style={{ color:C.red, letterSpacing:'0.05em' }}>DELETE</strong> to confirm:
         </p>
         <input
           value={confirmText}
           onChange={e => setConfirmText(e.target.value)}
           placeholder="Type DELETE"
-          style={{ width:'100%', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${canDelete ? C.red : C.border}`, color:C.text, fontFamily:'DM Mono,monospace', fontSize:15, letterSpacing:'0.1em', outline:'none', boxSizing:'border-box', marginBottom:16 }}
+          style={{ width:'100%', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${canDelete ? C.red : C.border}`, color:C.text, fontFamily:'Inter,monospace', fontSize:15, letterSpacing:'0.1em', outline:'none', boxSizing:'border-box', marginBottom:16 }}
           onFocus={e => (e.target.style.borderColor = C.red)}
           onBlur={e => (e.target.style.borderColor = canDelete ? C.red : C.border)}
         />
 
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1, padding:'12px', borderRadius:12, background:C.surface, color:C.textMuted, border:`1px solid ${C.border}`, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:14 }}>
+          <button onClick={onCancel} style={{ flex:1, padding:'12px', borderRadius:12, background:C.surface, color:C.textMuted, border:`1px solid ${C.border}`, cursor:'pointer', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:14 }}>
             Cancel
           </button>
           <button onClick={onConfirm} disabled={!canDelete || loading}
-            style={{ flex:1, padding:'12px', borderRadius:12, background:canDelete ? C.red : C.border, color:canDelete ? '#fff' : C.textDim, border:'none', cursor:canDelete && !loading ? 'pointer' : 'not-allowed', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading?0.7:1 }}>
+            style={{ flex:1, padding:'12px', borderRadius:12, background:canDelete ? C.red : C.border, color:canDelete ? '#fff' : C.textDim, border:'none', cursor:canDelete && !loading ? 'pointer' : 'not-allowed', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading?0.7:1 }}>
             {loading ? <><Loader2 style={{ width:15, height:15, animation:'spin 1s linear infinite' }} /> Deleting...</> : <><Trash2 style={{ width:15, height:15 }} /> Delete Forever</>}
           </button>
         </div>
@@ -102,12 +102,12 @@ function SignOutModal({ onConfirm, onCancel }: any) {
             <LogOut style={{ width:20, height:20, color:C.red }} />
           </div>
           <div>
-            <p style={{ fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:6 }}>Sign out of GritClub?</p>
-            <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>You'll need to sign back in to continue.</p>
+            <p style={{ fontWeight:700, color:C.text, fontFamily:'Sora,sans-serif', marginBottom:6 }}>Sign out of GritClub?</p>
+            <p style={{ fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif' }}>You'll need to sign back in to continue.</p>
           </div>
           <div style={{ display:'flex', gap:12, width:'100%' }}>
-            <button onClick={onCancel} style={{ flex:1, padding:'10px', borderRadius:12, background:C.surface, color:C.textMuted, border:`1px solid ${C.border}`, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>Cancel</button>
-            <button onClick={onConfirm} style={{ flex:1, padding:'10px', borderRadius:12, background:C.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>Sign Out</button>
+            <button onClick={onCancel} style={{ flex:1, padding:'10px', borderRadius:12, background:C.surface, color:C.textMuted, border:`1px solid ${C.border}`, cursor:'pointer', fontFamily:'Inter,sans-serif', fontWeight:600 }}>Cancel</button>
+            <button onClick={onConfirm} style={{ flex:1, padding:'10px', borderRadius:12, background:C.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:'Inter,sans-serif', fontWeight:600 }}>Sign Out</button>
           </div>
         </div>
       </div>
@@ -132,7 +132,7 @@ function ImageDrop({ current, onFile, loading, rounded, label }: any) {
       <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, background:current?'rgba(0,0,0,0.55)':'transparent', opacity:drag||!current?1:0, transition:'opacity 0.2s', borderRadius:rounded?'50%':14 }}
         onMouseEnter={e=>{if(current)(e.currentTarget as HTMLElement).style.opacity='1'}}
         onMouseLeave={e=>{if(current)(e.currentTarget as HTMLElement).style.opacity='0'}}>
-        {loading ? <Loader2 style={{ width:18, height:18, color:'#fff', animation:'spin 1s linear infinite' }} /> : <><Upload style={{ width:16, height:16, color:'#fff' }} /><span style={{ fontSize:11, color:'#fff', fontFamily:'DM Sans,sans-serif' }}>{label}</span></>}
+        {loading ? <Loader2 style={{ width:18, height:18, color:'#fff', animation:'spin 1s linear infinite' }} /> : <><Upload style={{ width:16, height:16, color:'#fff' }} /><span style={{ fontSize:11, color:'#fff', fontFamily:'Inter,sans-serif' }}>{label}</span></>}
       </div>
       <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" style={{ display:'none' }} onChange={e=>{const f=e.target.files?.[0];if(f)onFile(f);e.target.value=''}} />
     </div>
@@ -279,7 +279,7 @@ export default function ProfilePage() {
     </DashboardLayout>
   )
 
-  const inp = (err?: boolean) => ({ width:'100%', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${err?C.red:C.border}`, color:C.text, fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' as const })
+  const inp = (err?: boolean) => ({ width:'100%', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${err?C.red:C.border}`, color:C.text, fontFamily:'Inter,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' as const })
 
   return (
     <DashboardLayout>
@@ -293,18 +293,18 @@ export default function ProfilePage() {
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div>
-              <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueLight, fontFamily:'DM Sans,sans-serif', marginBottom:2 }}>Account</p>
-              <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em' }}>Your Profile</h1>
+              <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueLight, fontFamily:'Inter,sans-serif', marginBottom:2 }}>Account</p>
+              <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', letterSpacing:'-0.02em' }}>Your Profile</h1>
             </div>
             <button onClick={handleSave} disabled={saving||uploadingPhoto}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingPhoto)?0.6:1 }}>
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingPhoto)?0.6:1 }}>
               {saving?<><Loader2 style={{ width:15, height:15, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:15, height:15 }} /> Saved!</>:'Save Changes'}
             </button>
           </div>
 
           {/* Avatar */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}` }}>
-            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:16 }}>Profile Photo</p>
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'Inter,sans-serif', marginBottom:16 }}>Profile Photo</p>
             <div style={{ display:'flex', alignItems:'center', gap:16 }}>
               <div style={{ position:'relative', width:72, height:72, flexShrink:0 }}>
                 <div style={{ width:72, height:72, borderRadius:'50%', overflow:'hidden', border:`3px solid ${C.card}` }}>
@@ -315,11 +315,11 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
-                <p style={{ fontWeight:700, fontSize:17, color:C.text, fontFamily:'Syne,sans-serif', margin:0 }}>{fullName||'Your Name'}</p>
-                {username && <p style={{ fontSize:13, color:C.blueLight, fontFamily:'DM Sans,sans-serif', margin:'2px 0 0' }}>@{username}</p>}
-                <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', margin:'2px 0 0' }}>{user?.email}</p>
+                <p style={{ fontWeight:700, fontSize:17, color:C.text, fontFamily:'Sora,sans-serif', margin:0 }}>{fullName||'Your Name'}</p>
+                {username && <p style={{ fontSize:13, color:C.blueLight, fontFamily:'Inter,sans-serif', margin:'2px 0 0' }}>@{username}</p>}
+                <p style={{ fontSize:12, color:C.textMuted, fontFamily:'Inter,sans-serif', margin:'2px 0 0' }}>{user?.email}</p>
                 {profile?.role && (
-                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:6, background:profile.role==='admin'?C.redDim:profile.role==='host'?C.goldDim:C.blueDim, color:profile.role==='admin'?C.red:profile.role==='host'?C.gold:C.blueLight, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.08em', display:'inline-block', marginTop:4 }}>{profile.role}</span>
+                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:6, background:profile.role==='admin'?C.redDim:profile.role==='host'?C.goldDim:C.blueDim, color:profile.role==='admin'?C.red:profile.role==='host'?C.gold:C.blueLight, fontFamily:'Inter,sans-serif', textTransform:'uppercase', letterSpacing:'0.08em', display:'inline-block', marginTop:4 }}>{profile.role}</span>
                 )}
               </div>
             </div>
@@ -327,17 +327,17 @@ export default function ProfilePage() {
 
           {/* Basic Info */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:16 }}>
-            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Basic Info</p>
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'Inter,sans-serif' }}>Basic Info</p>
 
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif' }}>Full Name</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'Inter,sans-serif' }}>Full Name</label>
               <input value={fullName} onChange={e=>setFullName(e.target.value.slice(0,80))} placeholder="Your name" maxLength={80} style={inp(!!errors.fullName)}
                 onFocus={e=>(e.target.style.borderColor=C.borderFocus)} onBlur={e=>(e.target.style.borderColor=errors.fullName?C.red:C.border)} />
-              {errors.fullName && <p style={{ fontSize:12, color:C.red, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>{errors.fullName}</p>}
+              {errors.fullName && <p style={{ fontSize:12, color:C.red, marginTop:4, fontFamily:'Inter,sans-serif' }}>{errors.fullName}</p>}
             </div>
 
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif' }}>Username</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'Inter,sans-serif' }}>Username</label>
               <div style={{ position:'relative' }}>
                 <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:14, color:C.textDim }}>@</span>
                 <input value={username} onChange={e=>handleUsernameChange(e.target.value)}
@@ -352,21 +352,21 @@ export default function ProfilePage() {
                   {usernameStatus==='taken'     && <X style={{ width:15, height:15, color:C.red }} />}
                 </div>
               </div>
-              {errors.username && <p style={{ fontSize:12, color:C.red, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>{errors.username}</p>}
+              {errors.username && <p style={{ fontSize:12, color:C.red, marginTop:4, fontFamily:'Inter,sans-serif' }}>{errors.username}</p>}
             </div>
 
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif' }}>Bio</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'Inter,sans-serif' }}>Bio</label>
               <textarea value={bio} onChange={e=>setBio(e.target.value.slice(0,280))} placeholder="Tell the community who you are..." rows={3} maxLength={280}
                 style={{ ...inp(!!errors.bio), resize:'none', lineHeight:1.6 }}
                 onFocus={e=>(e.target.style.borderColor=C.borderFocus)} onBlur={e=>(e.target.style.borderColor=C.border)} />
-              <p style={{ fontSize:11, color:C.textDim, textAlign:'right', marginTop:4, fontFamily:'DM Sans,sans-serif' }}>{bio.length}/280</p>
+              <p style={{ fontSize:11, color:C.textDim, textAlign:'right', marginTop:4, fontFamily:'Inter,sans-serif' }}>{bio.length}/280</p>
             </div>
           </div>
 
           {/* Social Links */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:14 }}>
-            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Social Links</p>
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'Inter,sans-serif' }}>Social Links</p>
             {[
               { label:'Instagram', value:instagram, onChange:setInstagram, icon:'📸', placeholder:'@handle or https://instagram.com/...' },
               { label:'X (Twitter)', value:twitter, onChange:setTwitter, icon:'✕', placeholder:'@handle or https://x.com/...' },
@@ -374,7 +374,7 @@ export default function ProfilePage() {
               { label:'Website / Linktree', value:websiteUrl, onChange:setWebsiteUrl, icon:'🔗', placeholder:'https://yourwebsite.com or https://linktr.ee/...' },
             ].map(field => (
               <div key={field.label}>
-                <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'DM Sans,sans-serif' }}>{field.label}</label>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:C.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:'Inter,sans-serif' }}>{field.label}</label>
                 <div style={{ position:'relative' }}>
                   <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:13 }}>{field.icon}</span>
                   <input value={field.value} onChange={e=>field.onChange(sanitize(e.target.value))} placeholder={field.placeholder} maxLength={300}
@@ -392,12 +392,12 @@ export default function ProfilePage() {
 
           {/* Privacy */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:10 }}>
-            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Privacy</p>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${showEmail?'rgba(255,59,59,0.3)':C.border}`, cursor:'pointer' }}
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'Inter,sans-serif' }}>Privacy</p>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${showEmail?'rgba(255,77,45,0.25)':C.border}`, cursor:'pointer' }}
               onClick={() => setShowEmail(!showEmail)}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <Mail style={{ width:15, height:15, color:showEmail?C.red:C.textDim }} />
-                <span style={{ fontSize:13, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Show Email on Profile</span>
+                <span style={{ fontSize:13, color:C.text, fontFamily:'Inter,sans-serif' }}>Show Email on Profile</span>
               </div>
               <div style={{ width:40, height:22, borderRadius:11, background:showEmail?C.red:C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
                 <div style={{ position:'absolute', top:2, width:18, height:18, borderRadius:'50%', background:'#fff', left:showEmail?20:2, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)' }} />
@@ -407,31 +407,31 @@ export default function ProfilePage() {
 
           {/* Account & Danger Zone */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:10 }}>
-            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Account</p>
+            <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'Inter,sans-serif' }}>Account</p>
 
             {/* Email */}
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${C.border}` }}>
               <Mail style={{ width:15, height:15, color:C.textDim }} />
               <div style={{ flex:1 }}>
-                <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>Email</p>
-                <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>{user?.email}</p>
+                <p style={{ fontSize:11, color:C.textDim, fontFamily:'Inter,sans-serif' }}>Email</p>
+                <p style={{ fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif' }}>{user?.email}</p>
               </div>
-              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.greenDim, color:C.green, fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>Verified</span>
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.greenDim, color:C.green, fontFamily:'Inter,sans-serif', fontWeight:600 }}>Verified</span>
             </div>
 
             {/* Plan */}
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${C.border}` }}>
               <Shield style={{ width:15, height:15, color:profile?.is_premium?C.gold:C.textDim }} />
               <div style={{ flex:1 }}>
-                <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>Plan</p>
-                <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>{profile?.is_premium?'⭐ Premium':'Free plan'}</p>
+                <p style={{ fontSize:11, color:C.textDim, fontFamily:'Inter,sans-serif' }}>Plan</p>
+                <p style={{ fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif' }}>{profile?.is_premium?'⭐ Premium':'Free plan'}</p>
               </div>
-              {!profile?.is_premium && <a href="/pricing" style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:600, textDecoration:'none' }}>Upgrade</a>}
+              {!profile?.is_premium && <a href="/pricing" style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'Inter,sans-serif', fontWeight:600, textDecoration:'none' }}>Upgrade</a>}
             </div>
 
             {/* Sign Out — in profile now */}
             <button onClick={() => setShowSignOut(true)}
-              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, background:'transparent', border:`1px solid ${C.border}`, cursor:'pointer', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:14 }}
+              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:12, background:'transparent', border:`1px solid ${C.border}`, cursor:'pointer', color:C.textMuted, fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:14 }}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background=C.surface}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='transparent'}}>
               <LogOut style={{ width:15, height:15 }} /> Sign Out
@@ -441,20 +441,20 @@ export default function ProfilePage() {
           {/* Danger Zone */}
           <div style={{ borderRadius:20, padding:20, background:'rgba(239,68,68,0.04)', border:`1px solid rgba(239,68,68,0.2)`, display:'flex', flexDirection:'column', gap:14 }}>
             <div>
-              <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.red, fontFamily:'DM Sans,sans-serif', marginBottom:4 }}>⚠️ Danger Zone</p>
-              <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.6 }}>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.red, fontFamily:'Inter,sans-serif', marginBottom:4 }}>⚠️ Danger Zone</p>
+              <p style={{ fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif', lineHeight:1.6 }}>
                 Permanently delete your account and all associated data. This action cannot be undone.
               </p>
             </div>
             <button onClick={() => setShowDeleteModal(true)}
-              style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12, background:C.redDim, border:`1px solid rgba(239,68,68,0.3)`, cursor:'pointer', color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14 }}>
+              style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12, background:C.redDim, border:`1px solid rgba(239,68,68,0.3)`, cursor:'pointer', color:C.red, fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:14 }}>
               <Trash2 style={{ width:16, height:16 }} /> Delete My Account
             </button>
           </div>
 
           {/* Save button */}
           <button onClick={handleSave} disabled={saving||uploadingPhoto}
-            style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.7:1 }}>
+            style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.7:1 }}>
             {saving?<><Loader2 style={{ width:16, height:16, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:16, height:16 }} /> Saved!</>:'Save Profile'}
           </button>
 
