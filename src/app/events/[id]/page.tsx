@@ -2,394 +2,195 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  Calendar, Users, Radio, Lock, Globe,
-  Check, Loader2, ChevronLeft, Tag,
-  Clock, MapPin, Zap, Crown, Share2
-} from 'lucide-react'
+import { Calendar, Users, Clock, Search, Filter, Radio } from 'lucide-react'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
-  border:'rgba(255,255,255,0.06)',
-  text:'#F0F4FF', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueLight:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
-  red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  border:'rgba(255,255,255,0.06)', text:'#F5F5F5',
+  textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueL:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
+  red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
+  green:'#6B9E6B',
 }
 
-const AVATAR_COLORS = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669']
-const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
-const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'Host'
-const fmt = (cents: number) => cents === 0 ? 'Free' : `$${(cents/100).toFixed(0)}`
+const CATEGORIES = ['All','AI & Tech','SaaS','FinTech','Growth','Product','Fundraising','HealthTech','Web3','Media']
 
-function ConfirmModal({ event, onClose }: { event: any; onClose: () => void }) {
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)' }} onClick={onClose} />
-      <div style={{ position:'relative', width:'100%', maxWidth:400, margin:'0 16px', borderRadius:24, padding:28, background:C.card, border:`1px solid ${C.greenDim}`, boxShadow:'0 20px 60px rgba(16,185,129,0.15)' }}>
-        <div style={{ textAlign:'center' }}>
-          <div style={{ width:64, height:64, borderRadius:'50%', background:C.greenDim, border:`2px solid ${C.green}`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
-            <Check style={{ width:30, height:30, color:C.green }} />
-          </div>
-          <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:8 }}>Seat Confirmed! 🎉</h2>
-          <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.6, marginBottom:20 }}>
-            You're registered for <strong style={{ color:C.text }}>{event?.title}</strong>. See you there!
-          </p>
-          <div style={{ display:'flex', gap:10 }}>
-            <Link href="/dashboard/tickets" style={{ flex:1, textDecoration:'none' }}>
-              <button style={{ width:'100%', padding:'11px', borderRadius:12, border:`1px solid ${C.border}`, background:C.surface, color:C.textMuted, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:14 }}>
-                My Tickets
-              </button>
-            </Link>
-            <button onClick={onClose} style={{ flex:1, padding:'11px', borderRadius:12, border:'none', background:C.green, color:'#fff', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14 }}>
-              Done
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+const fmt = (n: number) => n >= 100 ? `$${n}` : n === 0 ? 'Free' : `$${n}`
+const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
 
-export default function EventDetailPage() {
-  const { id }  = useParams()
-  const router  = useRouter()
-  const eventId = id as string
-
-  const [event,       setEvent]       = useState<any>(null)
-  const [user,        setUser]        = useState<any>(null)
-  const [hasTicket,   setHasTicket]   = useState(false)
-  const [loading,     setLoading]     = useState(true)
-  const [claiming,    setClaiming]    = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [error,       setError]       = useState('')
+export default function EventsPage() {
+  const router = useRouter()
+  const [events, setEvents]       = useState<any[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
+  const [category, setCategory]   = useState('All')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { user: u } } = await supabase.auth.getUser()
-      setUser(u)
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user)
+    })
+    loadEvents()
+  }, [])
 
-      const { data: ev } = await supabase
-        .from('events')
-        .select('*, users(id, full_name, email, photo_url, role)')
-        .eq('id', eventId)
-        .single()
-      setEvent(ev)
-
-      if (u && ev) {
-        const isHostUser = ev.host_id === u.id
-        if (isHostUser) {
-          setHasTicket(true)
-        } else {
-          const { data: ticket } = await supabase
-            .from('tickets')
-            .select('id')
-            .eq('user_id', u.id)
-            .eq('event_id', eventId)
-            .maybeSingle()
-          setHasTicket(!!ticket)
-        }
-      }
-      setLoading(false)
-    }
-    init()
-  }, [eventId])
-
-  // ── Send confirmation email (fire-and-forget, never blocks UI) ──
-  const sendConfirmationEmail = async (type: 'free_ticket' | 'paid_ticket', ticketId: string, amount?: number) => {
-    try {
-      const { data: prof } = await supabase.from('users').select('full_name').eq('id', user.id).single()
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gritclub.live'
-      const host   = event?.users || {}
-
-      await fetch('/api/email', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type,
-          to:   user.email,
-          data: {
-            eventTitle: event?.title || '',
-            eventDate:  event?.start_time ? new Date(event.start_time).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '',
-            eventTime:  event?.start_time ? new Date(event.start_time).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : '',
-            hostName:   host.full_name || host.email?.split('@')[0] || 'GritClub Host',
-            userName:   prof?.full_name || user.email?.split('@')[0] || 'there',
-            ticketId,
-            amount,
-            appUrl,
-          },
-        }),
-      })
-    } catch (e) {
-      // Email is non-critical — log but never break the ticket flow
-      console.warn('Email send failed (non-critical):', e)
-    }
+  const loadEvents = async () => {
+    const { data } = await supabase
+      .from('events')
+      .select('*, users(id, full_name, email, photo_url)')
+      .in('status', ['upcoming', 'live'])
+      .order('start_time', { ascending: true })
+      .limit(50)
+    setEvents(data || [])
+    setLoading(false)
   }
 
-  const claimFreeTicket = async () => {
-    if (!user) { router.push('/auth/login'); return }
-    setClaiming(true); setError('')
-    try {
-      const { data, error: rpcErr } = await supabase.rpc('claim_free_ticket', {
-        p_user_id:  user.id,
-        p_event_id: eventId,
-      })
-      if (rpcErr) throw rpcErr
-      const result = data?.[0]
-      if (result?.status === 'success' || result?.status === 'already_registered') {
-        setHasTicket(true)
-        setShowConfirm(true)
-        // Refresh event to update seat count
-        const { data: ev } = await supabase.from('events').select('*, users(id, full_name, email, photo_url, role)').eq('id', eventId).single()
-        if (ev) setEvent(ev)
-        // Send confirmation email (non-blocking)
-        sendConfirmationEmail('free_ticket', result.ticket_id || '')
-      } else {
-        setError(result?.message || 'Could not claim ticket')
-      }
-    } catch (err: any) {
-      // Fallback: direct insert if RPC not available
-      try {
-        const { data: inserted, error: insertErr } = await supabase
-          .from('tickets')
-          .insert({ user_id: user.id, event_id: eventId, amount: 0, status: 'free', ticket_type: 'general' })
-          .select('id')
-          .single()
-        if (insertErr && insertErr.code !== '23505') throw insertErr
-        setHasTicket(true)
-        setShowConfirm(true)
-        // Send confirmation email (non-blocking)
-        sendConfirmationEmail('free_ticket', inserted?.id || '')
-      } catch (e: any) {
-        setError('Failed to claim ticket: ' + e.message)
-      }
-    }
-    setClaiming(false)
-  }
+  const filtered = events.filter(e => {
+    const q = search.toLowerCase()
+    const matchSearch = !q || e.title?.toLowerCase().includes(q) || e.description?.toLowerCase().includes(q)
+    const matchCat = category === 'All' || e.category === category
+    return matchSearch && matchCat
+  })
 
-  const buyPaidTicket = async () => {
-    if (!user) { router.push('/auth/login'); return }
-    setClaiming(true); setError('')
-    try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId,
-          userId:    user.id,
-          userEmail: user.email,
-          amount:    event.price,
-          eventName: event.title,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.message || 'Checkout failed')
-      }
-      const { url } = await res.json()
-      // Note: paid ticket email is sent from Stripe webhook after payment succeeds
-      // See src/app/api/stripe/webhook/route.ts
-      if (url) window.location.href = url
-    } catch (err: any) {
-      setError('Payment error: ' + err.message)
-    }
-    setClaiming(false)
-  }
-
-  const joinLive = () => { router.push(`/live/${eventId}`) }
-
-  if (loading) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg }}>
-      <Loader2 style={{ width:32, height:32, color:C.blueLight, animation:'spin 1s linear infinite' }} />
-    </div>
-  )
-
-  if (!event) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg }}>
-      <div style={{ textAlign:'center' }}>
-        <p style={{ fontSize:18, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Event not found</p>
-        <Link href="/dashboard" style={{ color:C.blueLight }}>← Back to Discover</Link>
-      </div>
-    </div>
-  )
-
-  const isFree     = event.is_free || event.price === 0 || !event.price
-  const isLive     = event.status === 'live'
-  const host       = event.users || {}
-  const fillPct    = event.capacity > 0 ? Math.round((COALESCE(event.current_attendees, event.total_sold, 0) / event.capacity) * 100) : 0
-  const spotsLeft  = event.capacity > 0 ? Math.max(event.capacity - (event.current_attendees || event.total_sold || 0), 0) : null
-  const soldOut    = spotsLeft !== null && spotsLeft === 0
-
-  function COALESCE(...vals: any[]) { return vals.find(v => v !== null && v !== undefined) || 0 }
+  const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'Host'
 
   return (
-    <div style={{ background:C.bg, minHeight:'100vh' }}>
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-      {showConfirm && <ConfirmModal event={event} onClose={() => setShowConfirm(false)} />}
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter,sans-serif' }}>
+      <style>{`* { box-sizing: border-box; } @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
 
       {/* Nav */}
-      <div style={{ padding:'16px 24px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={() => router.back()} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:14 }}>
-          <ChevronLeft style={{ width:16, height:16 }} /> Back
-        </button>
-        <span style={{ color:C.textDim }}>·</span>
-        <span style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{event.title}</span>
-      </div>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,15,30,0.95)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${C.border}`, padding: '0 clamp(16px,4vw,48px)', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <div style={{ width: 30, height: 30, background: '#FF4D2D', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff', fontFamily: 'Sora,sans-serif' }}>G</div>
+          <span style={{ fontFamily: 'Sora,sans-serif', fontWeight: 800, fontSize: 17, color: C.text }}>Grit<span style={{ color: '#FF4D2D' }}>Club</span></span>
+        </Link>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {isLoggedIn ? (
+            <Link href="/dashboard">
+              <button style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Dashboard</button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/auth/login">
+                <button style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Sign In</button>
+              </Link>
+              <Link href="/auth/login">
+                <button style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Join Free</button>
+              </Link>
+            </>
+          )}
+        </div>
+      </nav>
 
-      <div style={{ maxWidth:760, margin:'0 auto', padding:'24px 16px' }}>
-        <style>{`
-          @media (max-width: 640px) {
-            .event-grid { grid-template-columns: 1fr !important; }
-            .event-ticket-panel { position: static !important; width: 100% !important; }
-          }
-        `}</style>
-        <div className="event-grid" style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:24, alignItems:'start' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px clamp(16px,4vw,32px)' }}>
 
-          {/* Left — Event details */}
-          <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+        {/* Header */}
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: C.blueL, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Live & Upcoming</p>
+          <h1 style={{ fontFamily: 'Sora,sans-serif', fontWeight: 800, fontSize: 'clamp(24px,4vw,40px)', letterSpacing: '-0.02em', marginBottom: 8 }}>Events</h1>
+          <p style={{ fontSize: 15, color: C.textMuted }}>Ticketed live sessions from founders and operators. Join free — or <Link href="/auth/login" style={{ color: C.blueL }}>sign in</Link> to register.</p>
+        </div>
 
-            {/* Banner */}
-            {event.banner_url && (
-              <div style={{ borderRadius:20, overflow:'hidden', aspectRatio:'16/7' }}>
-                <img src={event.banner_url} alt={event.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-              </div>
-            )}
-
-            {/* Title + badges */}
-            <div>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:10 }}>
-                {isLive && (
-                  <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:20, background:C.redDim, color:C.red }}>
-                    <span style={{ width:7, height:7, borderRadius:'50%', background:C.red, animation:'pulse 1s infinite' }} /> LIVE NOW
-                  </span>
-                )}
-                {isFree && (
-                  <span style={{ fontSize:12, fontWeight:700, padding:'4px 10px', borderRadius:20, background:C.greenDim, color:C.green }}>FREE</span>
-                )}
-                {event.category && (
-                  <span style={{ fontSize:12, padding:'4px 10px', borderRadius:20, background:C.blueDim, color:C.blueLight, fontFamily:'DM Sans,sans-serif' }}>{event.category}</span>
-                )}
-              </div>
-              <h1 style={{ fontSize:'clamp(20px, 5vw, 28px)', fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em', marginBottom:12 }}>{event.title}</h1>
-              {event.description && (
-                <p style={{ fontSize:15, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.75 }}>{event.description}</p>
-              )}
-            </div>
-
-            {/* Event meta */}
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {[
-                event.start_time && { icon: Calendar, label: new Date(event.start_time).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) },
-                event.start_time && { icon: Clock,    label: new Date(event.start_time).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) },
-                event.location   && { icon: MapPin,   label: event.location },
-                { icon: Globe, label: 'Online Event · Join from anywhere' },
-              ].filter(Boolean).map((item: any, i: number) => (
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <item.icon style={{ width:16, height:16, color:C.blueLight, flexShrink:0 }} />
-                  <span style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Host */}
-            <div style={{ padding:16, borderRadius:16, background:C.card, border:`1px solid ${C.border}` }}>
-              <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:C.textDim, fontFamily:'DM Sans,sans-serif', marginBottom:12 }}>Hosted by</p>
-              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', background:avatarColor(host.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:avatarColor(host.id||''), fontFamily:'Syne,sans-serif', flexShrink:0 }}>
-                  {host.photo_url ? <img src={host.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : getName(host).slice(0,2).toUpperCase()}
-                </div>
-                <div>
-                  <p style={{ fontSize:15, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif' }}>{getName(host)}</p>
-                  <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Host · GritClub</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right — Ticket box */}
-          <div className="event-ticket-panel" style={{ position:'sticky', top:24 }}>
-            <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${isLive?'rgba(239,68,68,0.3)':C.border}`, display:'flex', flexDirection:'column', gap:16 }}>
-
-              {/* Price */}
-              <div>
-                <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:C.textDim, fontFamily:'DM Sans,sans-serif', marginBottom:6 }}>
-                  {hasTicket ? 'Your Ticket' : 'Ticket Price'}
-                </p>
-                <p style={{ fontSize:32, fontWeight:800, color:isFree?C.green:C.gold, fontFamily:'Syne,sans-serif', letterSpacing:'-0.03em' }}>
-                  {isFree ? 'Free' : fmt(event.price || 0)}
-                </p>
-                {!isFree && <p style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>per ticket · secure payment</p>}
-              </div>
-
-              {/* Capacity bar */}
-              {event.capacity > 0 && (
-                <div>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                    <span style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>
-                      {soldOut ? 'Sold out' : spotsLeft !== null ? `${spotsLeft} spots left` : 'Open registration'}
-                    </span>
-                    <span style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>{fillPct}% full</span>
-                  </div>
-                  <div style={{ height:6, borderRadius:3, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
-                    <div style={{ height:'100%', borderRadius:3, width:`${Math.min(fillPct,100)}%`, background:soldOut?C.red:fillPct>80?C.gold:`linear-gradient(to right, ${C.blue}, ${C.blueLight})`, transition:'width 0.3s' }} />
-                  </div>
-                </div>
-              )}
-
-              {/* Error */}
-              {error && (
-                <div style={{ padding:'10px 12px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.2)' }}>
-                  <p style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{error}</p>
-                </div>
-              )}
-
-              {/* CTA button */}
-              {hasTicket ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 16px', borderRadius:12, background:C.greenDim, border:`1px solid rgba(16,185,129,0.3)` }}>
-                    <Check style={{ width:18, height:18, color:C.green }} />
-                    <span style={{ fontSize:14, fontWeight:700, color:C.green, fontFamily:'DM Sans,sans-serif' }}>Seat Confirmed ✓</span>
-                  </div>
-                  {isLive && (
-                    <button onClick={joinLive}
-                      style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:'pointer', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                      <Radio style={{ width:18, height:18 }} /> Join Live Now →
-                    </button>
-                  )}
-                </div>
-              ) : soldOut ? (
-                <button disabled style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:C.border, color:C.textDim, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:16, cursor:'not-allowed' }}>
-                  Sold Out
-                </button>
-              ) : isFree ? (
-                <button onClick={claimFreeTicket} disabled={claiming}
-                  style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:claiming?'wait':'pointer', background:`linear-gradient(135deg, ${C.green}, #059669)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:claiming?0.7:1, boxShadow:'0 4px 20px rgba(16,185,129,0.3)' }}>
-                  {claiming ? <><Loader2 style={{ width:18, height:18, animation:'spin 1s linear infinite' }} /> Confirming...</> : <><Check style={{ width:18, height:18 }} /> Confirm Seat — Free</>}
-                </button>
-              ) : (
-                <button onClick={buyPaidTicket} disabled={claiming}
-                  style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:claiming?'wait':'pointer', background:`linear-gradient(135deg, ${C.gold}, #F97316)`, color:'#0A0F1E', fontFamily:'DM Sans,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:claiming?0.7:1, boxShadow:'0 4px 20px rgba(245,158,11,0.3)' }}>
-                  {claiming ? <><Loader2 style={{ width:18, height:18, animation:'spin 1s linear infinite' }} /> Redirecting...</> : <>Get Ticket — {fmt(event.price || 0)}</>}
-                </button>
-              )}
-
-              {!hasTicket && !user && (
-                <p style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', textAlign:'center' }}>
-                  <Link href="/auth/login" style={{ color:C.blueLight }}>Sign in</Link> to register
-                </p>
-              )}
-
-              {/* Share */}
-              <button onClick={() => navigator.clipboard?.writeText(window.location.href)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px', borderRadius:12, border:`1px solid ${C.border}`, background:'transparent', color:C.textMuted, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:13 }}>
-                <Share2 style={{ width:14, height:14 }} /> Share Event
-              </button>
-            </div>
+        {/* Search + filter */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+            <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: C.textDim }} />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search events..."
+              style={{ width: '100%', padding: '10px 14px 10px 36px', borderRadius: 10, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 14, outline: 'none', fontFamily: 'Inter,sans-serif' }} />
           </div>
         </div>
+
+        {/* Category pills */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+          {CATEGORIES.map(cat => (
+            <button key={cat} onClick={() => setCategory(cat)}
+              style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${category === cat ? C.blue : C.border}`, background: category === cat ? C.blueDim : 'transparent', color: category === cat ? C.blueL : C.textMuted, fontSize: 13, fontWeight: category === cat ? 700 : 400, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Events grid */}
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+            <div style={{ width: 32, height: 32, border: `2px solid ${C.blue}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 20, background: C.card, border: `1px solid ${C.border}` }}>
+            <Calendar style={{ width: 40, height: 40, color: C.textDim, margin: '0 auto 12px' }} />
+            <p style={{ color: C.textMuted, fontSize: 15, fontWeight: 600 }}>No events found</p>
+            <p style={{ color: C.textDim, fontSize: 13, marginTop: 6 }}>Check back soon or try a different search.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 20 }}>
+            {filtered.map(ev => {
+              const isLive = ev.status === 'live'
+              const isFree = ev.is_free || !ev.price || ev.price === 0
+              return (
+                <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ borderRadius: 20, background: C.card, border: `1px solid ${C.border}`, overflow: 'hidden', transition: 'transform 0.2s, border-color 0.2s', cursor: 'pointer' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor = C.border }}>
+
+                    {/* Banner */}
+                    <div style={{ height: 140, background: 'linear-gradient(135deg,#141416,#141416)', position: 'relative', overflow: 'hidden' }}>
+                      {ev.poster_url && <img src={ev.poster_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      {isLive && (
+                        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: C.redDim, border: `1px solid rgba(239,68,68,0.4)` }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.red, animation: 'spin 0s' }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: C.red }}>LIVE NOW</span>
+                          <Radio style={{ width: 10, height: 10, color: C.red }} />
+                        </div>
+                      )}
+                      <div style={{ position: 'absolute', top: 10, right: 10, padding: '4px 10px', borderRadius: 10, background: isFree ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)', border: `1px solid ${isFree ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}` }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: isFree ? C.green : C.gold }}>{isFree ? 'Free' : fmt(ev.price)}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '16px 18px' }}>
+                      <h3 style={{ fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 16, color: C.text, marginBottom: 8, lineHeight: 1.3 }}>{ev.title}</h3>
+
+                      {/* Host */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#FF4D2D22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: C.blueL, overflow: 'hidden' }}>
+                          {ev.users?.photo_url ? <img src={ev.users.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getName(ev.users).slice(0,2).toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: 12, color: C.textMuted }}>{getName(ev.users)}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                        {ev.start_time && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.textDim }}>
+                            <Clock style={{ width: 11, height: 11 }} />{fmtDate(ev.start_time)}
+                          </div>
+                        )}
+                        {ev.capacity && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.textDim }}>
+                            <Users style={{ width: 11, height: 11 }} />{ev.current_attendees || 0}/{ev.capacity}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+
+        {/* CTA for non-logged-in */}
+        {!isLoggedIn && filtered.length > 0 && (
+          <div style={{ marginTop: 48, padding: '32px 24px', borderRadius: 20, background: 'linear-gradient(135deg,rgba(37,99,235,0.08),rgba(124,58,237,0.06))', border: `1px solid rgba(37,99,235,0.2)`, textAlign: 'center' }}>
+            <h3 style={{ fontFamily: 'Sora,sans-serif', fontWeight: 800, fontSize: 22, marginBottom: 10 }}>Want to attend an event?</h3>
+            <p style={{ fontSize: 15, color: C.textMuted, marginBottom: 24 }}>Sign up free in 30 seconds with Google. No credit card needed.</p>
+            <Link href="/auth/login">
+              <button style={{ padding: '12px 32px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>Join GritClub Free →</button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )
