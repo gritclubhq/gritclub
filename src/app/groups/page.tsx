@@ -12,24 +12,24 @@ import {
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
-  bg:         '#141010',
-  surface:    '#1C1410',
-  card:       '#291C0E',
-  cardHover:  '#352318',
-  border:     'rgba(167,141,120,0.15)',
-  borderHover:'rgba(167,141,120,0.35)',
-  text:       '#E1D4C2',
-  textMuted:  '#BEB5A9',
-  textDim:    '#715451',
-  blue:       '#A78D78',
-  blueLight:  '#BEB5A9',
-  blueDim:    'rgba(167,141,120,0.15)',
-  gold:       '#C4956A',
-  goldDim:    'rgba(196,149,106,0.15)',
+  bg:         '#0B0B0C',
+  surface:    '#141416',
+  card:       '#141416',
+  cardHover:  '#1C1C1E',
+  border:     'rgba(255,255,255,0.06)',
+  borderHover:'rgba(255,255,255,0.14)',
+  text:       '#F5F5F5',
+  textMuted:  '#B0A8A3',
+  textDim:    '#8A817C',
+  blue:       '#FF4D2D',
+  blueLight:  '#B0A8A3',
+  blueDim:    'rgba(255,255,255,0.06)',
+  gold:       '#A67C52',
+  goldDim:    'rgba(166,124,82,0.12)',
   red:        '#EF4444',
   redDim:     'rgba(239,68,68,0.1)',
-  green:      '#8FAF8A',
-  greenDim:   'rgba(143,175,138,0.15)',
+  green:      '#6B9E6B',
+  greenDim:   'rgba(107,158,107,0.12)',
 }
 
 const CATEGORIES = [
@@ -146,7 +146,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
 
           <button
             className="w-full py-3 rounded-xl text-sm font-bold mb-2 transition-all hover:opacity-90"
-            style={{ background: C.gold, color: '#141010' }}
+            style={{ background: C.gold, color: '#0B0B0C' }}
           >
             Upgrade Now →
           </button>
@@ -516,7 +516,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
               style={{
                 width: `${fillPct}%`,
                 background: isFull
-                  ? `linear-gradient(to right, ${C.gold}, #D4A97A)`
+                  ? `linear-gradient(to right, ${C.gold}, #B8915F)`
                   : `linear-gradient(to right, ${C.blue}, ${C.blueLight})`,
               }}
             />
@@ -685,7 +685,7 @@ export default function GroupsPage() {
           {/* Pending banner */}
           {showPendingBanner && (
             <div className="flex items-center justify-between gap-3 p-4 rounded-2xl"
-              style={{ background: 'rgba(196,149,106,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              style={{ background: 'rgba(166,124,82,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
               <div className="flex items-center gap-3">
                 <span style={{ fontSize: 20 }}>⏳</span>
                 <div>
@@ -713,7 +713,7 @@ export default function GroupsPage() {
             <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 flex-shrink-0"
-              style={{ background: C.gold, color: '#141010' }}
+              style={{ background: C.gold, color: '#0B0B0C' }}
             >
               <Plus className="w-4 h-4" /> Create Group
             </button>
@@ -750,7 +750,7 @@ export default function GroupsPage() {
                 <span
                   className="px-1.5 py-0.5 rounded-full text-xs"
                   style={{
-                    background: activeTab === tab.id ? 'rgba(167,141,120,0.3)' : C.border,
+                    background: activeTab === tab.id ? 'rgba(255,255,255,0.12)' : C.border,
                     color:      activeTab === tab.id ? '#fff' : C.textDim,
                   }}
                 >
@@ -823,7 +823,7 @@ export default function GroupsPage() {
                 <button
                   onClick={() => setShowCreate(true)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                  style={{ background: C.gold, color: '#141010' }}
+                  style={{ background: C.gold, color: '#0B0B0C' }}
                 >
                   <Plus className="w-4 h-4" /> Create First Group
                 </button>
