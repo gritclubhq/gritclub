@@ -11,26 +11,26 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#141010',
-  card:      '#291C0E',
-  surface:   '#1C1410',
-  border:    'rgba(167,141,120,0.15)',
-  borderF:   'rgba(167,141,120,0.4)',
-  text:      '#E1D4C2',
-  textMuted: '#BEB5A9',
-  textDim:   '#715451',
-  blue:      '#A78D78',
-  blueL:     '#BEB5A9',
-  blueDim:   'rgba(167,141,120,0.15)',
-  gold:      '#C4956A',
-  goldDim:   'rgba(196,149,106,0.15)',
+  bg:        '#0B0B0C',
+  card:      '#141416',
+  surface:   '#141416',
+  border:    'rgba(255,255,255,0.06)',
+  borderF:   'rgba(255,255,255,0.18)',
+  text:      '#F5F5F5',
+  textMuted: '#B0A8A3',
+  textDim:   '#8A817C',
+  blue:      '#FF4D2D',
+  blueL:     '#B0A8A3',
+  blueDim:   'rgba(255,255,255,0.06)',
+  gold:      '#A67C52',
+  goldDim:   'rgba(166,124,82,0.12)',
   red:       '#EF4444',
   redDim:    'rgba(239,68,68,0.1)',
-  green:     '#8FAF8A',
-  greenDim:  'rgba(143,175,138,0.15)',
+  green:     '#6B9E6B',
+  greenDim:  'rgba(107,158,107,0.12)',
 }
 
-const AVATAR_COLORS = ['#A78D78','#6E473B','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
 
 function getDisplayName(u: any): string {
@@ -87,25 +87,25 @@ function AnnouncementCard({ ann }: { ann: any }) {
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(245,158,11,0.3)' }}>
-            <Megaphone style={{ width: 16, height: 16, color: '#C4956A' }} />
+            <Megaphone style={{ width: 16, height: 16, color: '#A67C52' }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C4956A', fontFamily: 'DM Sans,sans-serif' }}>GritClub Announcement</span>
-              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#C4956A', fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>Official</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#A67C52', fontFamily: 'Inter,sans-serif' }}>GritClub Announcement</span>
+              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.15)', color: '#A67C52', fontFamily: 'Inter,sans-serif', fontWeight: 700 }}>Official</span>
             </div>
-            <p style={{ fontSize: 11, color: '#BEB5A9', fontFamily: 'DM Sans,sans-serif', marginTop: 1 }}>{date}</p>
+            <p style={{ fontSize: 11, color: '#B0A8A3', fontFamily: 'Inter,sans-serif', marginTop: 1 }}>{date}</p>
           </div>
         </div>
         {/* Content */}
         <div>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#E1D4C2', fontFamily: 'Syne,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
-          <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#F5F5F5', fontFamily: 'Sora,sans-serif', marginBottom: 6, letterSpacing: '-0.01em' }}>{ann.title}</p>
+          <p style={{ fontSize: 14, color: '#B0BDD4', fontFamily: 'Inter,sans-serif', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{ann.body}</p>
         </div>
         {/* CTA button */}
         {ann.link_url && (
           <a href={ann.link_url} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.18)', color: '#C4956A', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(245,158,11,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.18)', color: '#A67C52', fontFamily: 'Inter,sans-serif', fontWeight: 700, fontSize: 13, textDecoration: 'none', border: '1px solid rgba(245,158,11,0.35)', alignSelf: 'flex-start', transition: 'background 0.15s' }}
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.28)')}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.18)')}>
             {ann.link_label || 'Learn more'} →
@@ -170,14 +170,14 @@ function PeopleSearch({ currentUserId }: { currentUserId: string }) {
 
   return (
     <div style={{ borderRadius: 20, padding: 16, background: C.card, border: `1px solid ${C.border}` }}>
-      <p style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', marginBottom: 12 }}>Find People</p>
+      <p style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'Sora,sans-serif', marginBottom: 12 }}>Find People</p>
       <div style={{ position: 'relative', marginBottom: 12 }}>
         <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: C.textDim }} />
         <input
           value={query}
           onChange={e => handleInput(e.target.value)}
           placeholder="Search by name, @handle or email..."
-          style={{ width: '100%', padding: '9px 36px 9px 34px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+          style={{ width: '100%', padding: '9px 36px 9px 34px', borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, color: C.text, fontFamily: 'Inter,sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
           onFocus={e => (e.target.style.borderColor = C.borderF)}
           onBlur={e => (e.target.style.borderColor = C.border)}
         />
@@ -195,15 +195,15 @@ function PeopleSearch({ currentUserId }: { currentUserId: string }) {
         <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
           <Avatar u={u} size={34} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'DM Sans,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'Inter,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {getDisplayName(u)}
             </p>
-            {u.username && <p style={{ fontSize: 11, color: C.blueL, fontFamily: 'DM Sans,sans-serif' }}>@{u.username}</p>}
-            {u.role && <p style={{ fontSize: 10, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>{u.role}</p>}
+            {u.username && <p style={{ fontSize: 11, color: C.blueL, fontFamily: 'Inter,sans-serif' }}>@{u.username}</p>}
+            {u.role && <p style={{ fontSize: 10, color: C.textDim, fontFamily: 'Inter,sans-serif' }}>{u.role}</p>}
           </div>
           <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
             <button onClick={() => connect(u.id)} disabled={sent.has(u.id) || pending.has(u.id)}
-              style={{ padding: '5px 9px', borderRadius: 8, border: `1px solid ${sent.has(u.id) ? C.green : C.blue}`, cursor: 'pointer', background: sent.has(u.id) ? C.greenDim : C.blueDim, color: sent.has(u.id) ? C.green : C.blueL, fontFamily: 'DM Sans,sans-serif', fontSize: 11, fontWeight: 600, opacity: pending.has(u.id) ? 0.5 : 1 }}>
+              style={{ padding: '5px 9px', borderRadius: 8, border: `1px solid ${sent.has(u.id) ? C.green : C.blue}`, cursor: 'pointer', background: sent.has(u.id) ? C.greenDim : C.blueDim, color: sent.has(u.id) ? C.green : C.blueL, fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, opacity: pending.has(u.id) ? 0.5 : 1 }}>
               {sent.has(u.id) ? '✓' : <UserPlus style={{ width: 11, height: 11 }} />}
             </button>
           </div>
@@ -211,7 +211,7 @@ function PeopleSearch({ currentUserId }: { currentUserId: string }) {
       ))}
 
       {query && !loading && results.length === 0 && (
-        <p style={{ fontSize: 12, color: C.textDim, fontFamily: 'DM Sans,sans-serif', textAlign: 'center', padding: '8px 0' }}>No users found</p>
+        <p style={{ fontSize: 12, color: C.textDim, fontFamily: 'Inter,sans-serif', textAlign: 'center', padding: '8px 0' }}>No users found</p>
       )}
     </div>
   )
@@ -255,13 +255,13 @@ function Composer({ currentUser, profile, onPosted }: any) {
             placeholder="Share something with the community — everyone can see this..."
             maxLength={2000}
             rows={expanded ? 3 : 1}
-            style={{ width: '100%', background: C.surface, border: `1px solid ${expanded ? C.borderF : C.border}`, borderRadius: 12, padding: '10px 14px', color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 14, lineHeight: 1.6, outline: 'none', resize: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+            style={{ width: '100%', background: C.surface, border: `1px solid ${expanded ? C.borderF : C.border}`, borderRadius: 12, padding: '10px 14px', color: C.text, fontFamily: 'Inter,sans-serif', fontSize: 14, lineHeight: 1.6, outline: 'none', resize: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
           />
 
           {expanded && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
               <button onClick={post} disabled={posting || !text.trim()}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontFamily: 'Inter,sans-serif', fontWeight: 700, fontSize: 14, opacity: (posting || !text.trim()) ? 0.5 : 1 }}>
                 {posting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
                 {posting ? 'Posting...' : 'Post'}
               </button>
@@ -370,23 +370,23 @@ function PostCard({ post, currentUserId, onDelete }: any) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <a href={`/profile/${post.user_id}`} style={{ textDecoration: 'none' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', cursor: 'pointer' }}
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Sora,sans-serif', cursor: 'pointer' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = C.blueL}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = C.text}>
                   {getDisplayName(author)}
                 </p>
               </a>
               {author.role === 'host' && (
-                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 5, background: C.goldDim, color: C.gold, fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>HOST</span>
+                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 5, background: C.goldDim, color: C.gold, fontFamily: 'Inter,sans-serif', fontWeight: 700 }}>HOST</span>
               )}
               {author.role === 'admin' && (
-                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 5, background: C.redDim, color: C.red, fontFamily: 'DM Sans,sans-serif', fontWeight: 700 }}>ADMIN</span>
+                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 5, background: C.redDim, color: C.red, fontFamily: 'Inter,sans-serif', fontWeight: 700 }}>ADMIN</span>
               )}
             </div>
-            {author.username && <p style={{ fontSize: 12, color: C.blueL, fontFamily: 'DM Sans,sans-serif' }}>@{author.username}</p>}
+            {author.username && <p style={{ fontSize: 12, color: C.blueL, fontFamily: 'Inter,sans-serif' }}>@{author.username}</p>}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
               <Globe style={{ width: 11, height: 11, color: C.textDim }} />
-              <span style={{ fontSize: 11, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>{timeAgo(post.created_at)} · visible to everyone</span>
+              <span style={{ fontSize: 11, color: C.textDim, fontFamily: 'Inter,sans-serif' }}>{timeAgo(post.created_at)} · visible to everyone</span>
             </div>
           </div>
         </div>
@@ -399,7 +399,7 @@ function PostCard({ post, currentUserId, onDelete }: any) {
             {showMenu && (
               <div style={{ position: 'absolute', right: 0, top: 36, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', zIndex: 20, minWidth: 130 }}>
                 <button onClick={() => { onDelete(post.id); setShowMenu(false) }}
-                  style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', color: C.red, fontFamily: 'DM Sans,sans-serif', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
+                  style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', color: C.red, fontFamily: 'Inter,sans-serif', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
                   <Trash2 style={{ width: 13, height: 13 }} /> Delete post
                 </button>
               </div>
@@ -410,7 +410,7 @@ function PostCard({ post, currentUserId, onDelete }: any) {
 
       {/* Content */}
       {post.content && (
-        <p style={{ padding: '12px 16px 8px', fontSize: 14, color: C.text, fontFamily: 'DM Sans,sans-serif', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+        <p style={{ padding: '12px 16px 8px', fontSize: 14, color: C.text, fontFamily: 'Inter,sans-serif', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
           {post.content}
         </p>
       )}
@@ -428,7 +428,7 @@ function PostCard({ post, currentUserId, onDelete }: any) {
                   const el = e.target as HTMLImageElement
                   el.style.display = 'none'
                   if (el.parentElement) {
-                    el.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#715451;font-size:12px;font-family:DM Sans,sans-serif">Image unavailable</div>'
+                    el.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#8A817C;font-size:12px;font-family:Inter,sans-serif">Image unavailable</div>'
                   }
                 }} />
             </div>
@@ -439,10 +439,10 @@ function PostCard({ post, currentUserId, onDelete }: any) {
       {/* Stats */}
       {(likeCount > 0 || commentCount > 0) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 16px', borderTop: `1px solid ${C.border}` }}>
-          {likeCount > 0 && <span style={{ fontSize: 12, color: C.textMuted, fontFamily: 'DM Sans,sans-serif' }}>❤️ {likeCount}</span>}
+          {likeCount > 0 && <span style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter,sans-serif' }}>❤️ {likeCount}</span>}
           {commentCount > 0 && (
             <button onClick={toggleComments}
-              style={{ fontSize: 12, color: C.textMuted, fontFamily: 'DM Sans,sans-serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>
+              style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter,sans-serif', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>
               {commentCount} comment{commentCount !== 1 ? 's' : ''}
             </button>
           )}
@@ -457,7 +457,7 @@ function PostCard({ post, currentUserId, onDelete }: any) {
           { icon: <Share2 style={{ width: 16, height: 16 }} />, label: 'Share', onClick: () => navigator.clipboard?.writeText(window.location.origin + '/post/' + post.id), active: false, color: C.textMuted },
         ].map((btn, i) => (
           <button key={i} onClick={btn.onClick}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', border: 'none', background: 'transparent', color: btn.color, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, transition: 'background 0.15s' }}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', border: 'none', background: 'transparent', color: btn.color, cursor: 'pointer', fontFamily: 'Inter,sans-serif', fontSize: 13, transition: 'background 0.15s' }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
             {btn.icon} {btn.label}
@@ -472,10 +472,10 @@ function PostCard({ post, currentUserId, onDelete }: any) {
             <div key={c.id} style={{ display: 'flex', gap: 8 }}>
               <Avatar u={{ ...(c.users || {}), id: c.user_id }} size={28} />
               <div style={{ flex: 1, background: C.surface, borderRadius: '4px 14px 14px 14px', padding: '8px 12px' }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: C.blueL, marginBottom: 2, fontFamily: 'DM Sans,sans-serif' }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: C.blueL, marginBottom: 2, fontFamily: 'Inter,sans-serif' }}>
                   {getDisplayName(c.users || {})}
                 </p>
-                <p style={{ fontSize: 13, color: C.text, fontFamily: 'DM Sans,sans-serif', lineHeight: 1.5 }}>{c.content}</p>
+                <p style={{ fontSize: 13, color: C.text, fontFamily: 'Inter,sans-serif', lineHeight: 1.5 }}>{c.content}</p>
               </div>
             </div>
           ))}
@@ -490,7 +490,7 @@ function PostCard({ post, currentUserId, onDelete }: any) {
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment()}
                 placeholder="Write a comment..."
                 maxLength={500}
-                style={{ flex: 1, padding: '8px 12px', borderRadius: 12, background: C.surface, border: `1px solid ${C.border}`, color: C.text, fontFamily: 'DM Sans,sans-serif', fontSize: 13, outline: 'none', minWidth: 0 }}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 12, background: C.surface, border: `1px solid ${C.border}`, color: C.text, fontFamily: 'Inter,sans-serif', fontSize: 13, outline: 'none', minWidth: 0 }}
                 onFocus={e => (e.target.style.borderColor = C.borderF)}
                 onBlur={e => (e.target.style.borderColor = C.border)}
               />
@@ -622,9 +622,9 @@ export default function CommunityPage() {
             {/* Main feed */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.blueL, fontFamily: 'DM Sans,sans-serif', marginBottom: 4 }}>Global</p>
-                <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: 'Syne,sans-serif', letterSpacing: '-0.02em', marginBottom: 2 }}>Community Feed</h1>
-                <p style={{ fontSize: 13, color: C.textMuted, fontFamily: 'DM Sans,sans-serif' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.blueL, fontFamily: 'Inter,sans-serif', marginBottom: 4 }}>Global</p>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, fontFamily: 'Sora,sans-serif', letterSpacing: '-0.02em', marginBottom: 2 }}>Community Feed</h1>
+                <p style={{ fontSize: 13, color: C.textMuted, fontFamily: 'Inter,sans-serif' }}>
                   Posts here are visible to <strong style={{ color: C.text }}>everyone</strong> on GritClub
                 </p>
               </div>
@@ -651,8 +651,8 @@ export default function CommunityPage() {
               ) : postsWithLikes.length === 0 ? (
                 <div style={{ borderRadius: 20, padding: 48, textAlign: 'center', background: C.card, border: `1px solid ${C.border}` }}>
                   <Users style={{ width: 40, height: 40, color: C.textDim, margin: '0 auto 12px' }} />
-                  <p style={{ fontWeight: 600, color: C.textMuted, marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>No posts yet</p>
-                  <p style={{ fontSize: 13, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>
+                  <p style={{ fontWeight: 600, color: C.textMuted, marginBottom: 6, fontFamily: 'Inter,sans-serif' }}>No posts yet</p>
+                  <p style={{ fontSize: 13, color: C.textDim, fontFamily: 'Inter,sans-serif' }}>
                     Be the first to post — your message will reach everyone here!
                   </p>
                 </div>
@@ -663,7 +663,7 @@ export default function CommunityPage() {
                   ))}
                   {hasMore && (
                     <button onClick={() => currentUser && loadPosts(currentUser.id, false)} disabled={loadingMore}
-                      style={{ padding: '12px', borderRadius: 14, border: `1px solid ${C.border}`, background: C.card, color: C.textMuted, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loadingMore ? 0.6 : 1 }}>
+                      style={{ padding: '12px', borderRadius: 14, border: `1px solid ${C.border}`, background: C.card, color: C.textMuted, cursor: 'pointer', fontFamily: 'Inter,sans-serif', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: loadingMore ? 0.6 : 1 }}>
                       {loadingMore ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <ChevronDown style={{ width: 16, height: 16 }} />}
                       {loadingMore ? 'Loading...' : 'Load more'}
                     </button>
@@ -676,7 +676,7 @@ export default function CommunityPage() {
             <div className="sidebar" style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
               {currentUser && <PeopleSearch currentUserId={currentUser.id} />}
               <div style={{ borderRadius: 20, padding: 16, background: C.card, border: `1px solid ${C.border}` }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', marginBottom: 12 }}>About Community</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'Sora,sans-serif', marginBottom: 12 }}>About Community</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
                     { label: 'Open to everyone', value: '🌍' },
@@ -685,7 +685,7 @@ export default function CommunityPage() {
                     { label: 'Real-time updates', value: '⚡' },
                   ].map(s => (
                     <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: C.textMuted, fontFamily: 'DM Sans,sans-serif' }}>{s.label}</span>
+                      <span style={{ fontSize: 13, color: C.textMuted, fontFamily: 'Inter,sans-serif' }}>{s.label}</span>
                       <span style={{ fontSize: 14 }}>{s.value}</span>
                     </div>
                   ))}
