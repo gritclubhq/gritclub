@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation'
 import { Bell, X, Check, Users, Heart, MessageCircle, UserPlus, Megaphone, Loader2, Radio } from 'lucide-react'
 
 const C = {
-  bg:'#141010', surface:'#1C1410', card:'#291C0E',
-  border:'rgba(167,141,120,0.15)',
-  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#715451',
-  blue:'#A78D78', blueLight:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
-  gold:'#C4956A', red:'#EF4444', green:'#8FAF8A',
-  purple:'#6E473B',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  border:'rgba(255,255,255,0.06)',
+  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueLight:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', red:'#EF4444', green:'#6B9E6B',
+  purple:'#C24E2A',
 }
 
-const AVATAR_COLORS = ['#A78D78','#6E473B','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 
@@ -26,12 +26,12 @@ const timeAgo = (ts: string) => {
 }
 
 const NOTIF_ICON: Record<string, any> = {
-  connection_request:  { icon: UserPlus,      color: '#BEB5A9' },
-  connection_accepted: { icon: Users,         color: '#8FAF8A' },
-  follow:              { icon: UserPlus,      color: '#6E473B' },
+  connection_request:  { icon: UserPlus,      color: '#B0A8A3' },
+  connection_accepted: { icon: Users,         color: '#6B9E6B' },
+  follow:              { icon: UserPlus,      color: '#C24E2A' },
   post_like:           { icon: Heart,         color: '#EF4444' },
-  post_comment:        { icon: MessageCircle, color: '#C4956A' },
-  announcement:        { icon: Megaphone,     color: '#C4956A' },
+  post_comment:        { icon: MessageCircle, color: '#A67C52' },
+  announcement:        { icon: Megaphone,     color: '#A67C52' },
 }
 
 export default function NotificationBell({ userId }: { userId: string }) {
@@ -105,10 +105,10 @@ export default function NotificationBell({ userId }: { userId: string }) {
       {/* Bell button */}
       <button
         onClick={() => { setOpen(p => !p); if (!open) loadNotifs() }}
-        style={{ position:'relative', width:38, height:38, borderRadius:10, border:`1px solid ${open?'rgba(167,141,120,0.4)':C.border}`, cursor:'pointer', background:open?C.blueDim:'transparent', color:C.textMuted, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        style={{ position:'relative', width:38, height:38, borderRadius:10, border:`1px solid ${open?'rgba(255,255,255,0.18)':C.border}`, cursor:'pointer', background:open?C.blueDim:'transparent', color:C.textMuted, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
         <Bell style={{ width:17, height:17 }} />
         {unread > 0 && (
-          <span style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, borderRadius:9, background:C.red, color:'#fff', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', border:`2px solid ${C.bg}`, fontFamily:'DM Sans,sans-serif' }}>
+          <span style={{ position:'absolute', top:-4, right:-4, minWidth:18, height:18, borderRadius:9, background:C.red, color:'#fff', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', border:`2px solid ${C.bg}`, fontFamily:'Inter,sans-serif' }}>
             {unread > 9 ? '9+' : unread}
           </span>
         )}
@@ -120,11 +120,11 @@ export default function NotificationBell({ userId }: { userId: string }) {
 
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderBottom:`1px solid ${C.border}` }}>
-            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Syne,sans-serif', margin:0 }}>
+            <p style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Sora,sans-serif', margin:0 }}>
               Notifications {unread > 0 && <span style={{ fontSize:11, padding:'1px 6px', borderRadius:8, background:C.red, color:'#fff', marginLeft:6 }}>{unread}</span>}
             </p>
             {unread > 0 && (
-              <button onClick={markAllRead} style={{ fontSize:11, color:C.blueLight, background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:600 }}>
+              <button onClick={markAllRead} style={{ fontSize:11, color:C.blueLight, background:'none', border:'none', cursor:'pointer', fontFamily:'Inter,sans-serif', fontWeight:600 }}>
                 Mark all read
               </button>
             )}
@@ -139,7 +139,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
             ) : notifs.length === 0 ? (
               <div style={{ textAlign:'center', padding:40 }}>
                 <Bell style={{ width:32, height:32, color:C.textDim, margin:'0 auto 10px' }} />
-                <p style={{ fontSize:13, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>No notifications yet</p>
+                <p style={{ fontSize:13, color:C.textDim, fontFamily:'Inter,sans-serif' }}>No notifications yet</p>
               </div>
             ) : notifs.map(n => {
               const meta = NOTIF_ICON[n.type] || NOTIF_ICON.announcement
@@ -157,7 +157,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
                   {/* Actor avatar or icon */}
                   {actor.id ? (
                     <div style={{ position:'relative', flexShrink:0 }}>
-                      <div style={{ width:36, height:36, borderRadius:'50%', overflow:'hidden', background:avatarColor(actor.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:avatarColor(actor.id), fontFamily:'Syne,sans-serif' }}>
+                      <div style={{ width:36, height:36, borderRadius:'50%', overflow:'hidden', background:avatarColor(actor.id)+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:avatarColor(actor.id), fontFamily:'Sora,sans-serif' }}>
                         {actor.photo_url ? <img src={actor.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : getName(actor).slice(0,2).toUpperCase()}
                       </div>
                       <div style={{ position:'absolute', bottom:-2, right:-2, width:18, height:18, borderRadius:'50%', background:C.card, border:`1.5px solid ${C.card}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -171,13 +171,13 @@ export default function NotificationBell({ userId }: { userId: string }) {
                   )}
 
                   <div style={{ flex:1, minWidth:0 }}>
-                    <p style={{ fontSize:13, fontWeight:n.is_read?400:600, color:C.text, fontFamily:'DM Sans,sans-serif', marginBottom:2, lineHeight:1.4 }}>
+                    <p style={{ fontSize:13, fontWeight:n.is_read?400:600, color:C.text, fontFamily:'Inter,sans-serif', marginBottom:2, lineHeight:1.4 }}>
                       {n.title}
                     </p>
                     {n.body && (
-                      <p style={{ fontSize:12, color:C.textMuted, fontFamily:'DM Sans,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.body}</p>
+                      <p style={{ fontSize:12, color:C.textMuted, fontFamily:'Inter,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.body}</p>
                     )}
-                    <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginTop:2 }}>{timeAgo(n.created_at)}</p>
+                    <p style={{ fontSize:11, color:C.textDim, fontFamily:'Inter,sans-serif', marginTop:2 }}>{timeAgo(n.created_at)}</p>
                   </div>
 
                   {!n.is_read && (
