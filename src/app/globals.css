@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,79 +6,120 @@
 
 @layer base {
   :root {
-    /* GritClub Earthy Palette */
-    --background:         0 11% 7%;      /* #141010 Onyx */
-    --foreground:         35 38% 82%;    /* #E1D4C2 Cream */
-    --card:               31 49% 11%;    /* #291C0E Espresso */
-    --card-foreground:    35 38% 82%;
-    --popover:            31 49% 11%;
-    --popover-foreground: 35 38% 82%;
-    --primary:            27 22% 56%;    /* #A78D78 Sandstone */
-    --primary-foreground: 0 11% 7%;
-    --secondary:          6 17% 23%;     /* #433230 Sepia */
-    --secondary-foreground: 35 38% 82%;
-    --muted:              31 49% 11%;
-    --muted-foreground:   6 16% 38%;     /* #715451 Warm Stone */
-    --accent:             14 30% 33%;    /* #6E473B Earthenware */
-    --accent-foreground:  35 38% 82%;
-    --destructive:        0 84% 60%;
-    --destructive-foreground: 35 38% 82%;
-    --border:             5 16% 20%;
-    --input:              6 17% 23%;
-    --ring:               27 22% 56%;
-    --radius:             0.375rem;
+    --background:             0 0% 5%;
+    --foreground:             0 0% 96%;
+    --card:                   240 2% 8%;
+    --card-foreground:        0 0% 96%;
+    --popover:                240 2% 8%;
+    --popover-foreground:     0 0% 96%;
+    --primary:                13 100% 59%;
+    --primary-foreground:     0 0% 100%;
+    --secondary:              11 41% 47%;
+    --secondary-foreground:   0 0% 96%;
+    --muted:                  240 2% 8%;
+    --muted-foreground:       20 4% 54%;
+    --accent:                 28 27% 46%;
+    --accent-foreground:      0 0% 96%;
+    --destructive:            0 84% 60%;
+    --destructive-foreground: 0 0% 96%;
+    --border:                 0 0% 100% / 0.06;
+    --input:                  240 2% 8%;
+    --ring:                   13 100% 59%;
+    --radius:                 0.5rem;
 
-    /* Named tokens */
-    --onyx:       0 11% 7%;
-    --espresso:   31 49% 11%;
-    --earthenware:14 30% 33%;
-    --sandstone:  27 22% 56%;
-    --sage:       34 13% 70%;
-    --cream:      35 38% 82%;
-
-    /* Gradient utilities */
-    --gradient-brand: linear-gradient(135deg, hsl(14 30% 33%), hsl(27 22% 56%), hsl(35 38% 82%));
-    --gradient-card:  linear-gradient(145deg, hsl(31 49% 13%), hsl(31 49% 9%));
+    --gradient-ember:   linear-gradient(135deg, #C24E2A, #FF4D2D);
+    --gradient-surface: linear-gradient(180deg, #0B0B0C 0%, #141416 100%);
+    --gradient-card:    linear-gradient(145deg, #1C1C1E, #141416);
+    --gradient-gold:    linear-gradient(135deg, #8A6040, #A67C52, #C49A70);
   }
 }
 
 @layer base {
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+
+  html {
+    scroll-behavior: smooth;
+    background: #0B0B0C;
+  }
+
   body {
-    background: #141010;
-    color: #E1D4C2;
-    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: #0B0B0C;
+    color: #F5F5F5;
+    font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
-  h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
-  ::selection { background: rgba(167,141,120,0.25); color: #E1D4C2; }
+
+  h1, h2, h3, h4 {
+    font-family: 'Sora', system-ui, sans-serif;
+    color: #F5F5F5;
+  }
+
+  ::selection {
+    background: rgba(255, 77, 45, 0.22);
+    color: #F5F5F5;
+  }
+
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.07) transparent; }
   *::-webkit-scrollbar { width: 4px; height: 4px; }
   *::-webkit-scrollbar-track { background: transparent; }
-  *::-webkit-scrollbar-thumb { background: rgba(167,141,120,0.2); border-radius: 2px; }
+  *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 2px; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(255,77,45,0.18); }
+
+  input, textarea, select {
+    background: #141416;
+    color: #F5F5F5;
+    border: 1px solid rgba(255,255,255,0.07);
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  input::placeholder, textarea::placeholder { color: #8A817C; }
+  input:focus, textarea:focus {
+    border-color: rgba(255,77,45,0.38);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255,77,45,0.08);
+  }
 }
 
 @layer utilities {
-  .font-display  { font-family: 'Playfair Display', Georgia, serif; }
-  .font-heading  { font-family: 'Outfit', system-ui, sans-serif; }
-  .font-body     { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  .font-display { font-family: 'Sora', system-ui, sans-serif; }
+  .font-heading { font-family: 'Sora', system-ui, sans-serif; }
+  .font-body    { font-family: 'Inter', system-ui, sans-serif; }
 
-  .text-gradient-brand {
-    background: var(--gradient-brand);
+  .text-gradient-ember {
+    background: var(--gradient-ember);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .bg-gradient-brand { background: var(--gradient-brand); }
-  .bg-gradient-card  { background: var(--gradient-card); }
-
-  .glow-brand {
-    text-shadow: 0 0 40px rgba(167,141,120,0.3), 0 0 80px rgba(167,141,120,0.1);
+  .text-gradient-gold {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  .shadow-brand { box-shadow: 0 0 60px -15px rgba(167,141,120,0.25); }
+  .text-gradient-brand { @apply text-gradient-ember; }
+
+  .bg-gradient-ember   { background: var(--gradient-ember); }
+  .bg-gradient-surface { background: var(--gradient-surface); }
+  .bg-gradient-card    { background: var(--gradient-card); }
+  .bg-gradient-brand   { background: var(--gradient-ember); }
+
+  /* Ember glow — controlled, not neon */
+  .glow-ember      { box-shadow: 0 0 14px rgba(255,77,45,0.32), 0 0 32px rgba(255,77,45,0.08); }
+  .glow-ember-text { text-shadow: 0 0 24px rgba(255,77,45,0.28); }
+  .glow-gold       { box-shadow: 0 0 12px rgba(166,124,82,0.22); }
+  .glow-brand      { @apply glow-ember-text; }
+  .shadow-brand    { @apply glow-ember; }
+
   .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-  @keyframes pulse-glow { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes pulse-glow {
+    0%,100% { opacity: 0.35; }
+    50%     { opacity: 0.85; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
 }
