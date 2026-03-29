@@ -11,23 +11,23 @@ import {
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
-export const viewport = { themeColor: '#141010' }
+export const viewport = { themeColor: '#0B0B0C' }
 
 const C = {
-  bg:        '#141010',
-  surface:   '#1C1410',
-  card:      '#291C0E',
-  border:    'rgba(167,141,120,0.15)',
-  text:      '#E1D4C2',
-  textMuted: '#BEB5A9',
-  textDim:   '#715451',
-  red:       '#FF3B3B',
-  redDim:    'rgba(167,141,120,0.15)',
-  gold:      '#C4956A',
-  green:     '#8FAF8A',
+  bg:        '#0B0B0C',
+  surface:   '#141416',
+  card:      '#141416',
+  border:    'rgba(255,255,255,0.06)',
+  text:      '#F5F5F5',
+  textMuted: '#B0A8A3',
+  textDim:   '#8A817C',
+  red:       '#FF4D2D',
+  redDim:    'rgba(255,255,255,0.06)',
+  gold:      '#A67C52',
+  green:     '#6B9E6B',
 }
 
-const ACOLORS = ['#FF3B3B','#9B7B6E','#38BDF8','#C4956A','#8FAF8A','#F97316']
+const ACOLORS = ['#FF4D2D','#8A817C','#38BDF8','#A67C52','#6B9E6B','#F97316']
 const aBg     = (id: string) => ACOLORS[(id?.charCodeAt(0) || 0) % ACOLORS.length]
 const getName = (u: any)     => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInit = (u: any)     => getName(u).slice(0, 2).toUpperCase()
@@ -47,7 +47,7 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
       overflow: 'hidden', display: 'flex', alignItems: 'center',
       justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700,
-      color: '#fff', background: aBg(user?.id || ''), fontFamily: 'Syne,sans-serif',
+      color: '#fff', background: aBg(user?.id || ''), fontFamily: 'Sora,sans-serif',
     }}>
       {user?.photo_url
         ? <img src={user.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -60,15 +60,15 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
 function RoleBadge({ role }: { role?: string }) {
   if (!role || role === 'audience') return null
   const map: Record<string, { bg: string; color: string }> = {
-    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#C4956A' },
-    admin: { bg: 'rgba(167,141,120,0.15)', color: '#FF3B3B' },
+    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#A67C52' },
+    admin: { bg: 'rgba(255,255,255,0.06)', color: '#FF4D2D' },
   }
   const s = map[role]
   if (!s) return null
   return (
     <span style={{
       fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
-      fontFamily: 'DM Sans,sans-serif', letterSpacing: '0.07em',
+      fontFamily: 'Inter,sans-serif', letterSpacing: '0.07em',
       textTransform: 'uppercase', background: s.bg, color: s.color, flexShrink: 0,
     }}>
       {role}
@@ -97,7 +97,7 @@ function ConvoList({
       {/* Header */}
       <div style={{ padding: '16px 16px 12px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', margin: 0, letterSpacing: '-0.02em' }}>Messages</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Sora,sans-serif', margin: 0, letterSpacing: '-0.02em' }}>Messages</h2>
           <button
             onClick={onToggleSearch}
             style={{
@@ -122,7 +122,7 @@ function ConvoList({
                 style={{
                   width: '100%', padding: '9px 12px 9px 30px', borderRadius: 8,
                   border: `1px solid ${C.border}`, background: C.card,
-                  color: C.text, fontSize: 13, outline: 'none', fontFamily: 'DM Sans,sans-serif',
+                  color: C.text, fontSize: 13, outline: 'none', fontFamily: 'Inter,sans-serif',
                 }}
               />
             </div>
@@ -137,10 +137,10 @@ function ConvoList({
                     <Avatar user={u} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'DM Sans,sans-serif', margin: 0 }}>{getName(u)}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'Inter,sans-serif', margin: 0 }}>{getName(u)}</p>
                         <RoleBadge role={u.role} />
                       </div>
-                      <p style={{ fontSize: 11, color: C.textMuted, fontFamily: 'DM Sans,sans-serif', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</p>
+                      <p style={{ fontSize: 11, color: C.textMuted, fontFamily: 'Inter,sans-serif', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</p>
                     </div>
                   </button>
                 ))}
@@ -157,7 +157,7 @@ function ConvoList({
               style={{
                 width: '100%', padding: '9px 12px 9px 30px', borderRadius: 8,
                 border: `1px solid ${C.border}`, background: C.card,
-                color: C.text, fontSize: 13, outline: 'none', fontFamily: 'DM Sans,sans-serif',
+                color: C.text, fontSize: 13, outline: 'none', fontFamily: 'Inter,sans-serif',
               }}
             />
           </div>
@@ -169,8 +169,8 @@ function ConvoList({
         {filtered.length === 0 && !showSearch && (
           <div style={{ textAlign: 'center', padding: '48px 20px' }}>
             <MessageCircle style={{ width: 34, height: 34, color: C.textDim, margin: '0 auto 10px' }} />
-            <p style={{ fontSize: 13, color: C.textMuted, fontFamily: 'DM Sans,sans-serif', marginBottom: 6 }}>No conversations yet</p>
-            <p style={{ fontSize: 12, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>Tap the search icon to message someone</p>
+            <p style={{ fontSize: 13, color: C.textMuted, fontFamily: 'Inter,sans-serif', marginBottom: 6 }}>No conversations yet</p>
+            <p style={{ fontSize: 12, color: C.textDim, fontFamily: 'Inter,sans-serif' }}>Tap the search icon to message someone</p>
           </div>
         )}
         {filtered.map(conv => {
@@ -194,7 +194,7 @@ function ConvoList({
                     <span style={{
                       fontSize: 13, fontWeight: 600,
                       color: isActive ? C.red : C.text,
-                      fontFamily: 'DM Sans,sans-serif',
+                      fontFamily: 'Inter,sans-serif',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {getName(conv.partner)}
@@ -208,7 +208,7 @@ function ConvoList({
                 <p style={{
                   fontSize: 12, color: C.textMuted,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  fontFamily: 'DM Sans,sans-serif', margin: 0,
+                  fontFamily: 'Inter,sans-serif', margin: 0,
                 }}>
                   {conv.last_message || 'Start a conversation'}
                 </p>
@@ -309,12 +309,12 @@ function ChatWindow({
         <Avatar user={activeConvo?.partner} size={38} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', margin: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Sora,sans-serif', margin: 0 }}>
               {getName(activeConvo?.partner)}
             </p>
             <RoleBadge role={activeConvo?.partner?.role} />
           </div>
-          <p style={{ fontSize: 11, color: C.textMuted, fontFamily: 'DM Sans,sans-serif', margin: 0 }}>
+          <p style={{ fontSize: 11, color: C.textMuted, fontFamily: 'Inter,sans-serif', margin: 0 }}>
             {activeConvo?.partner?.email}
           </p>
         </div>
@@ -325,10 +325,10 @@ function ChatWindow({
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', paddingTop: 48 }}>
             <Avatar user={activeConvo?.partner} size={56} />
-            <p style={{ fontSize: 15, fontWeight: 600, color: C.text, marginTop: 12, fontFamily: 'Syne,sans-serif' }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: C.text, marginTop: 12, fontFamily: 'Sora,sans-serif' }}>
               {getName(activeConvo?.partner)}
             </p>
-            <p style={{ fontSize: 12, color: C.textMuted, marginTop: 6, fontFamily: 'DM Sans,sans-serif' }}>
+            <p style={{ fontSize: 12, color: C.textMuted, marginTop: 6, fontFamily: 'Inter,sans-serif' }}>
               Say hello 👋
             </p>
           </div>
@@ -344,16 +344,16 @@ function ChatWindow({
                 <div style={{
                   padding: '10px 14px',
                   borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  background: isOwn ? C.red : 'rgba(167,141,120,0.15)',
+                  background: isOwn ? C.red : 'rgba(255,255,255,0.06)',
                   color: isOwn ? '#fff' : C.text,
                   fontSize: 14, lineHeight: 1.55,
                   wordBreak: 'break-word',
-                  fontFamily: 'DM Sans,sans-serif',
+                  fontFamily: 'Inter,sans-serif',
                 }}>
                   {msg.content}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <span style={{ fontSize: 10, color: C.textDim, fontFamily: 'DM Sans,sans-serif' }}>
+                  <span style={{ fontSize: 10, color: C.textDim, fontFamily: 'Inter,sans-serif' }}>
                     {fmtTime(msg.created_at)}
                   </span>
                   {isOwn && (isRead
@@ -385,7 +385,7 @@ function ChatWindow({
             maxLength={2000}
             style={{
               flex: 1, background: 'transparent', border: 'none',
-              color: C.text, fontSize: 14, fontFamily: 'DM Sans,sans-serif',
+              color: C.text, fontSize: 14, fontFamily: 'Inter,sans-serif',
               outline: 'none', resize: 'none', lineHeight: 1.5,
               maxHeight: 120, overflowY: 'auto',
               caretColor: C.red,
@@ -409,7 +409,7 @@ function ChatWindow({
             }
           </button>
         </div>
-        <p style={{ fontSize: 10, color: C.textDim, textAlign: 'center', marginTop: 5, fontFamily: 'DM Sans,sans-serif' }}>
+        <p style={{ fontSize: 10, color: C.textDim, textAlign: 'center', marginTop: 5, fontFamily: 'Inter,sans-serif' }}>
           Enter to send · Shift+Enter for new line
         </p>
       </div>
@@ -424,8 +424,8 @@ function EmptyState({ onNewChat }: { onNewChat: () => void }) {
       <div style={{ width: 68, height: 68, borderRadius: '50%', background: C.redDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <MessageCircle style={{ width: 30, height: 30, color: C.red }} />
       </div>
-      <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Syne,sans-serif', margin: 0 }}>Your Messages</h3>
-      <p style={{ fontSize: 13, color: C.textMuted, textAlign: 'center', maxWidth: 260, fontFamily: 'DM Sans,sans-serif', lineHeight: 1.65, margin: 0 }}>
+      <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: 'Sora,sans-serif', margin: 0 }}>Your Messages</h3>
+      <p style={{ fontSize: 13, color: C.textMuted, textAlign: 'center', maxWidth: 260, fontFamily: 'Inter,sans-serif', lineHeight: 1.65, margin: 0 }}>
         Connect privately with anyone on GritClub.
       </p>
       <button
@@ -434,7 +434,7 @@ function EmptyState({ onNewChat }: { onNewChat: () => void }) {
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '10px 22px', borderRadius: 8, border: 'none',
           background: C.red, color: '#fff',
-          fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 13,
+          fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 13,
           letterSpacing: '0.05em', cursor: 'pointer',
         }}
       >
@@ -633,8 +633,8 @@ function DMPage() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#141010' }}>
-        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,59,59,0.3)', borderTopColor: '#FF3B3B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0B0B0C' }}>
+        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,77,45,0.25)', borderTopColor: '#FF4D2D', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
     }>
