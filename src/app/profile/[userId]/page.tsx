@@ -8,21 +8,21 @@ import {
   Heart, MessageCircle, UserPlus, Check,
   UserCheck, Loader2, ChevronLeft, Globe,
   ExternalLink, Instagram, Twitter, Linkedin,
-  Share2, Users, Calendar
+  Share2, Users, Calendar, MessageSquare
 } from 'lucide-react'
 
 const C = {
-  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
   border:'rgba(255,255,255,0.06)',
-  text:'#E8EAF0', textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#FF3B3B', blueLight:'#3B82F6', blueDim:'rgba(255,59,59,0.12)',
-  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
+  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueLight:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
-  purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
+  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
+  purple:'#C24E2A', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const timeAgo = (ts: string) => {
@@ -35,7 +35,7 @@ const timeAgo = (ts: string) => {
 function Avatar({ u, size=48 }: { u: any; size?: number }) {
   const color = avatarColor(u?.id||'')
   return (
-    <div style={{ width:size, height:size, minWidth:size, borderRadius:'50%', overflow:'hidden', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:color+'22', color, fontSize:size*0.35, fontWeight:700, fontFamily:'Syne,sans-serif', border:`2px solid ${color}33` }}>
+    <div style={{ width:size, height:size, minWidth:size, borderRadius:'50%', overflow:'hidden', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:color+'22', color, fontSize:size*0.35, fontWeight:700, fontFamily:'Sora,sans-serif', border:`2px solid ${color}33` }}>
       {u?.photo_url ? <img src={u.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : getName(u).slice(0,2).toUpperCase()}
     </div>
   )
@@ -72,18 +72,18 @@ function PostCard({ post, currentUserId }: any) {
         </div>
       )}
       {post.content && (
-        <p style={{ padding:'12px 14px', fontSize:14, color:C.text, fontFamily:'DM Sans,sans-serif', lineHeight:1.7, whiteSpace:'pre-wrap', wordBreak:'break-word', margin:0 }}>
+        <p style={{ padding:'12px 14px', fontSize:14, color:C.text, fontFamily:'Inter,sans-serif', lineHeight:1.7, whiteSpace:'pre-wrap', wordBreak:'break-word', margin:0 }}>
           {post.content}
         </p>
       )}
       <div style={{ display:'flex', alignItems:'center', gap:4, padding:'8px 10px', borderTop:`1px solid ${C.border}` }}>
-        <button onClick={handleLike} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 10px', borderRadius:8, border:'none', cursor:'pointer', background:'transparent', color:liked?C.red:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:13 }}>
+        <button onClick={handleLike} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 10px', borderRadius:8, border:'none', cursor:'pointer', background:'transparent', color:liked?C.red:C.textMuted, fontFamily:'Inter,sans-serif', fontSize:13 }}>
           <Heart style={{ width:14, height:14, fill:liked?C.red:'none', stroke:liked?C.red:'currentColor' }} /> {count||''}
         </button>
-        <span style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 10px', fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>
+        <span style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 10px', fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif' }}>
           <MessageCircle style={{ width:14, height:14 }} /> {post.comments_count||''}
         </span>
-        <span style={{ marginLeft:'auto', fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>{timeAgo(post.created_at)}</span>
+        <span style={{ marginLeft:'auto', fontSize:11, color:C.textDim, fontFamily:'Inter,sans-serif' }}>{timeAgo(post.created_at)}</span>
       </div>
     </div>
   )
@@ -206,8 +206,8 @@ export default function PublicProfilePage() {
   if (!profile) return (
     <DashboardLayout>
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'80vh', background:C.bg, gap:12 }}>
-        <p style={{ color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:16 }}>User not found</p>
-        <button onClick={() => router.back()} style={{ padding:'8px 18px', borderRadius:10, border:`1px solid ${C.border}`, background:'transparent', color:C.textMuted, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>Go back</button>
+        <p style={{ color:C.textMuted, fontFamily:'Inter,sans-serif', fontSize:16 }}>User not found</p>
+        <button onClick={() => router.back()} style={{ padding:'8px 18px', borderRadius:10, border:`1px solid ${C.border}`, background:'transparent', color:C.textMuted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Go back</button>
       </div>
     </DashboardLayout>
   )
@@ -225,7 +225,7 @@ export default function PublicProfilePage() {
       <div style={{ background:C.bg, minHeight:'100%' }}>
 
         <div style={{ padding:'12px 20px', borderBottom:`1px solid ${C.border}` }}>
-          <button onClick={() => router.back()} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:14, padding:4 }}>
+          <button onClick={() => router.back()} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', color:C.textMuted, fontFamily:'Inter,sans-serif', fontSize:14, padding:4 }}>
             <ChevronLeft style={{ width:16, height:16 }} /> Back
           </button>
         </div>
@@ -248,22 +248,23 @@ export default function PublicProfilePage() {
             {/* Action buttons */}
             <div style={{ display:'flex', justifyContent:'flex-end', gap:8, paddingTop:16, marginBottom:16 }}>
               <button onClick={() => { navigator.clipboard?.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-                style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid ${C.border}`, cursor:'pointer', background:'transparent', color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:13 }}>
+                style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid ${C.border}`, cursor:'pointer', background:'transparent', color:C.textMuted, fontFamily:'Inter,sans-serif', fontSize:13 }}>
                 <Share2 style={{ width:14, height:14 }} /> {copied ? 'Copied!' : 'Share'}
               </button>
               {currentUser && (
                 <>
-                  <button onClick={() => router.push(`/dashboard/messages?user=${profile.id}`)}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,59,59,0.35)`, cursor:'pointer', background:'rgba(255,59,59,0.1)', color:'#FF3B3B', fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13 }}>
-                    <MessageCircle style={{ width:13, height:13 }} /> Message
+                  <button onClick={() => router.push(`/dashboard/messages?user=${targetId}`)}
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,77,45,0.28)`, cursor:'pointer', background:'rgba(255,77,45,0.08)', color:'#FF6B4A', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:13 }}>
+                    <MessageSquare style={{ width:13, height:13 }} />
+                    Message
                   </button>
                   <button onClick={handleFollow} disabled={followLoading}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10, border:`1px solid ${isFollowing?C.purple:C.border}`, cursor:'pointer', background:isFollowing?C.purpleDim:'transparent', color:isFollowing?C.purple:C.textMuted, fontFamily:'DM Sans,sans-serif', fontWeight:600, fontSize:13, opacity:followLoading?0.6:1 }}>
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10, border:`1px solid ${isFollowing?C.purple:C.border}`, cursor:'pointer', background:isFollowing?C.purpleDim:'transparent', color:isFollowing?C.purple:C.textMuted, fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:13, opacity:followLoading?0.6:1 }}>
                     {followLoading && <Loader2 style={{ width:13, height:13, animation:'spin 1s linear infinite' }} />}
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>
                   <button onClick={handleConnect} disabled={connLoading || connStatus==='accepted'}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:cbs.border, cursor:connStatus==='accepted'?'default':'pointer', background:cbs.bg, color:cbs.color, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:13, opacity:connLoading?0.6:1 }}>
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:cbs.border, cursor:connStatus==='accepted'?'default':'pointer', background:cbs.bg, color:cbs.color, fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:13, opacity:connLoading?0.6:1 }}>
                     {connLoading ? <Loader2 style={{ width:13, height:13, animation:'spin 1s linear infinite' }} /> : connStatus==='none' ? <UserPlus style={{ width:13, height:13 }} /> : connStatus==='accepted' ? <UserCheck style={{ width:13, height:13 }} /> : null}
                     {cbs.label}
                   </button>
@@ -274,13 +275,13 @@ export default function PublicProfilePage() {
             {/* Name */}
             <div style={{ marginTop:12 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
-                <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', letterSpacing:'-0.02em', margin:0 }}>{getName(profile)}</h1>
-                {profile.role==='host'  && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>HOST</span>}
-                {profile.role==='admin' && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.redDim, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>ADMIN</span>}
-                {profile.is_premium && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>⭐ PRO</span>}
+                <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', letterSpacing:'-0.02em', margin:0 }}>{getName(profile)}</h1>
+                {profile.role==='host'  && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'Inter,sans-serif', fontWeight:700 }}>HOST</span>}
+                {profile.role==='admin' && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.redDim, color:C.red, fontFamily:'Inter,sans-serif', fontWeight:700 }}>ADMIN</span>}
+                {profile.is_premium && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'Inter,sans-serif', fontWeight:700 }}>⭐ PRO</span>}
               </div>
-              {profile.username && <p style={{ fontSize:14, color:C.blueLight, fontFamily:'DM Sans,sans-serif', marginBottom:10 }}>@{profile.username}</p>}
-              {profile.bio && <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', lineHeight:1.75, marginBottom:16, maxWidth:520 }}>{profile.bio}</p>}
+              {profile.username && <p style={{ fontSize:14, color:C.blueLight, fontFamily:'Inter,sans-serif', marginBottom:10 }}>@{profile.username}</p>}
+              {profile.bio && <p style={{ fontSize:14, color:C.textMuted, fontFamily:'Inter,sans-serif', lineHeight:1.75, marginBottom:16, maxWidth:520 }}>{profile.bio}</p>}
 
               {/* Stats */}
               <div style={{ display:'flex', gap:24, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
@@ -290,14 +291,14 @@ export default function PublicProfilePage() {
                   { label:'Followers', value:followerCount },
                 ].map(s => (
                   <div key={s.label}>
-                    <span style={{ fontSize:18, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif' }}>{s.value}</span>
-                    <span style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif', marginLeft:5 }}>{s.label}</span>
+                    <span style={{ fontSize:18, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif' }}>{s.value}</span>
+                    <span style={{ fontSize:12, color:C.textDim, fontFamily:'Inter,sans-serif', marginLeft:5 }}>{s.label}</span>
                   </div>
                 ))}
                 {profile.created_at && (
                   <div style={{ display:'flex', alignItems:'center', gap:5, color:C.textDim }}>
                     <Calendar style={{ width:12, height:12 }} />
-                    <span style={{ fontSize:12, fontFamily:'DM Sans,sans-serif' }}>
+                    <span style={{ fontSize:12, fontFamily:'Inter,sans-serif' }}>
                       Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month:'long', year:'numeric' })}
                     </span>
                   </div>
@@ -337,11 +338,11 @@ export default function PublicProfilePage() {
           {/* Posts */}
           <div style={{ padding:'20px 24px', display:'flex', flexDirection:'column', gap:14 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <p style={{ fontSize:13, fontWeight:700, color:C.textMuted, fontFamily:'Syne,sans-serif', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>Posts</p>
-              <span style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>{posts.length}</span>
+              <p style={{ fontSize:13, fontWeight:700, color:C.textMuted, fontFamily:'Sora,sans-serif', textTransform:'uppercase', letterSpacing:'0.1em', margin:0 }}>Posts</p>
+              <span style={{ fontSize:12, color:C.textDim, fontFamily:'Inter,sans-serif' }}>{posts.length}</span>
             </div>
             {posts.length === 0 ? (
-              <div style={{ textAlign:'center', padding:'36px 20px', color:C.textDim, fontFamily:'DM Sans,sans-serif', background:C.card, borderRadius:16, border:`1px solid ${C.border}` }}>
+              <div style={{ textAlign:'center', padding:'36px 20px', color:C.textDim, fontFamily:'Inter,sans-serif', background:C.card, borderRadius:16, border:`1px solid ${C.border}` }}>
                 No posts yet
               </div>
             ) : (
