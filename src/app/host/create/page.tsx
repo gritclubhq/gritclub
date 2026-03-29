@@ -7,22 +7,22 @@ import { useRouter } from 'next/navigation'
 import { Radio, AlertCircle, X, Image } from 'lucide-react'
 
 const C = {
-  bg:'#141010', surface:'#1C1410', card:'#291C0E',
-  border:'rgba(167,141,120,0.15)', text:'#E1D4C2',
-  textMuted:'#BEB5A9', textDim:'#715451',
-  blue:'#A78D78', blueL:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
-  gold:'#C4956A', red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
-  green:'#8FAF8A',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  border:'rgba(255,255,255,0.06)', text:'#F5F5F5',
+  textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueL:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
+  green:'#6B9E6B',
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <label style={{ fontSize:13, fontWeight:600, color:C.textMuted, marginBottom:6, display:'block', fontFamily:'DM Sans,sans-serif' }}>{children}</label>
+  return <label style={{ fontSize:13, fontWeight:600, color:C.textMuted, marginBottom:6, display:'block', fontFamily:'Inter,sans-serif' }}>{children}</label>
 }
 
 const inputStyle: React.CSSProperties = {
   width:'100%', padding:'11px 14px', borderRadius:10,
   border:`1px solid ${C.border}`, background:C.surface,
-  color:C.text, fontSize:13, fontFamily:'DM Sans,sans-serif',
+  color:C.text, fontSize:13, fontFamily:'Inter,sans-serif',
   outline:'none', boxSizing:'border-box',
 }
 
@@ -90,9 +90,9 @@ export default function CreateEventPage() {
     <DashboardLayout>
       <div style={{ maxWidth:560, margin:'0 auto', padding:'24px 16px' }}>
         <div style={{ marginBottom:24 }}>
-          <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueL, fontFamily:'DM Sans,sans-serif', marginBottom:4 }}>Host</p>
-          <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:4 }}>Create Event</h1>
-          <p style={{ fontSize:13, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>You keep 80% of every ticket sold</p>
+          <p style={{ fontSize:11, fontWeight:600, letterSpacing:'0.15em', textTransform:'uppercase', color:C.blueL, fontFamily:'Inter,sans-serif', marginBottom:4 }}>Host</p>
+          <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', marginBottom:4 }}>Create Event</h1>
+          <p style={{ fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif' }}>You keep 80% of every ticket sold</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
@@ -111,8 +111,8 @@ export default function CreateEventPage() {
               <div onClick={()=>bannerRef.current?.click()}
                 style={{ height:180, borderRadius:12, border:`2px dashed ${C.border}`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer', background:C.surface }}>
                 <Image style={{ width:32, height:32, color:C.textDim }}/>
-                <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, fontFamily:'DM Sans,sans-serif' }}>Click to upload event banner</p>
-                <p style={{ fontSize:11, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>JPG, PNG · Max 5MB · Recommended 1280×720</p>
+                <p style={{ fontSize:13, fontWeight:600, color:C.textMuted, fontFamily:'Inter,sans-serif' }}>Click to upload event banner</p>
+                <p style={{ fontSize:11, color:C.textDim, fontFamily:'Inter,sans-serif' }}>JPG, PNG · Max 5MB · Recommended 1280×720</p>
               </div>
             )}
             <input ref={bannerRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleBanner}/>
@@ -136,7 +136,7 @@ export default function CreateEventPage() {
               <div>
                 <Label>Ticket Price ($) *</Label>
                 <input style={inputStyle} type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} placeholder="0" min="0" step="0.01" required/>
-                {priceNum > 0 && <p style={{ fontSize:11, color:C.green, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>You keep ${(priceNum*0.8).toFixed(2)} per ticket</p>}
+                {priceNum > 0 && <p style={{ fontSize:11, color:C.green, marginTop:4, fontFamily:'Inter,sans-serif' }}>You keep ${(priceNum*0.8).toFixed(2)} per ticket</p>}
               </div>
               <div>
                 <Label>Capacity</Label>
@@ -154,12 +154,12 @@ export default function CreateEventPage() {
           {error && (
             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}>
               <AlertCircle style={{ width:15, height:15, color:C.red, flexShrink:0 }}/>
-              <p style={{ fontSize:13, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{error}</p>
+              <p style={{ fontSize:13, color:C.red, fontFamily:'Inter,sans-serif' }}>{error}</p>
             </div>
           )}
 
           <button type="submit" disabled={loading||!form.title||!form.price}
-            style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:`linear-gradient(135deg,${C.gold},#F97316)`, color:'#141010', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!form.title||!form.price?0.5:1 }}>
+            style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:`linear-gradient(135deg,${C.gold},#F97316)`, color:'#0B0B0C', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'Inter,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:loading||!form.title||!form.price?0.5:1 }}>
             <Radio style={{ width:17, height:17 }}/>
             {loading?'Creating...':'Create Event'}
           </button>
