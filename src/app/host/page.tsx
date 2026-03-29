@@ -76,7 +76,7 @@ export default function HostDashboard() {
       value: loading ? '...' : formatCurrency(earnings),
       sub: 'You keep 80%',
       icon: DollarSign,
-      color: '#C4956A',
+      color: '#A67C52',
       bg: 'rgba(255,215,0,0.08)',
       border: 'rgba(255,215,0,0.2)',
       trend: '+12%',
@@ -96,7 +96,7 @@ export default function HostDashboard() {
       value: loading ? '...' : events.length.toString(),
       sub: `${scheduledEvents.length} upcoming`,
       icon: Calendar,
-      color: '#9B7B6E',
+      color: '#8A817C',
       bg: 'rgba(167,139,250,0.08)',
       border: 'rgba(167,139,250,0.2)',
       trend: null,
@@ -130,14 +130,14 @@ export default function HostDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-500 text-xs uppercase tracking-widest font-medium mb-1">Host Dashboard</p>
-              <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+              <h1 className="text-2xl font-bold text-[#F5F5F5]" style={{ fontFamily: "'Sora', system-ui, sans-serif" }}>
                 {loading ? 'Loading...' : `Hey, ${user?.user_metadata?.full_name?.split(' ')[0] || 'Host'} 👋`}
               </h1>
             </div>
             <Link
               href="/host/create"
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-              style={{ background: '#C4956A', color: '#0F172A' }}
+              style={{ background: '#A67C52', color: '#0F172A' }}
             >
               <PlusCircle className="w-4 h-4" />
               New Event
@@ -161,7 +161,7 @@ export default function HostDashboard() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-red-400 uppercase tracking-wider">You're Live</p>
-                  <p className="text-white font-semibold text-sm">{liveEvent.title}</p>
+                  <p className="text-[#F5F5F5] font-semibold text-sm">{liveEvent.title}</p>
                   <p className="text-slate-400 text-xs mt-0.5">{liveEvent.viewer_peak || 0} peak viewers</p>
                 </div>
               </div>
@@ -201,7 +201,7 @@ export default function HostDashboard() {
                     </span>
                   )}
                 </div>
-                <p className="text-2xl font-bold mb-0.5" style={{ color: s.color, fontFamily: 'Space Grotesk' }}>
+                <p className="text-2xl font-bold mb-0.5" style={{ color: s.color, fontFamily: "'Sora', system-ui, sans-serif" }}>
                   {s.value}
                 </p>
                 <p className="text-xs text-slate-500 truncate">{s.sub}</p>
@@ -212,7 +212,7 @@ export default function HostDashboard() {
           {/* ── Events section ── */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-white">Your Events</h2>
+              <h2 className="text-base font-semibold text-[#F5F5F5]">Your Events</h2>
               <Link href="/host/create" className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors">
                 <PlusCircle className="w-3.5 h-3.5" />
                 Create new
@@ -233,12 +233,12 @@ export default function HostDashboard() {
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(56,189,248,0.08)' }}>
                   <Radio className="w-8 h-8 text-slate-600" />
                 </div>
-                <h3 className="text-base font-semibold text-white mb-1">No events yet</h3>
+                <h3 className="text-base font-semibold text-[#F5F5F5] mb-1">No events yet</h3>
                 <p className="text-slate-500 text-sm mb-6">Create your first event and start earning 80% of every ticket</p>
                 <Link
                   href="/host/create"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
-                  style={{ background: '#C4956A', color: '#0F172A' }}
+                  style={{ background: '#A67C52', color: '#0F172A' }}
                 >
                   <Zap className="w-4 h-4" />
                   Create First Event
@@ -276,7 +276,7 @@ export default function HostDashboard() {
                             {event.start_time ? formatDate(event.start_time) : 'No date set'}
                           </span>
                         </div>
-                        <p className="text-white font-medium text-sm truncate">{event.title}</p>
+                        <p className="text-[#F5F5F5] font-medium text-sm truncate">{event.title}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-slate-500 text-xs flex items-center gap-1">
                             <Users className="w-3 h-3" />
@@ -291,7 +291,7 @@ export default function HostDashboard() {
 
                       {/* Earnings */}
                       <div className="hidden sm:block text-right flex-shrink-0">
-                        <p className="text-sm font-bold" style={{ color: '#C4956A' }}>
+                        <p className="text-sm font-bold" style={{ color: '#A67C52' }}>
                           {formatCurrency(eventEarnings)}
                         </p>
                         <p className="text-xs text-slate-600">earned</p>
@@ -321,7 +321,7 @@ export default function HostDashboard() {
                         )}
                         <Link
                           href={`/host/events/${event.id}/edit`}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#F5F5F5] transition-colors"
                           style={{ background: 'rgba(51,65,85,0.5)' }}
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -337,7 +337,7 @@ export default function HostDashboard() {
           {/* ── Quick links ── */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { href: '/host/earnings', label: 'Earnings', icon: BarChart2, color: '#C4956A' },
+              { href: '/host/earnings', label: 'Earnings', icon: BarChart2, color: '#A67C52' },
               { href: '/host/payouts', label: 'Payouts', icon: DollarSign, color: '#4ADE80' },
               { href: '/host/network', label: 'Network', icon: Users, color: '#38BDF8' },
             ].map(item => (
@@ -349,7 +349,7 @@ export default function HostDashboard() {
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="w-4 h-4" style={{ color: item.color }} />
-                  <span className="text-sm font-medium text-white">{item.label}</span>
+                  <span className="text-sm font-medium text-[#F5F5F5]">{item.label}</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
               </Link>
