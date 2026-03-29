@@ -12,13 +12,13 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#141010', surface:'#1C1410', card:'#291C0E',
-  border:'rgba(167,141,120,0.15)', text:'#E1D4C2',
-  textMuted:'#BEB5A9', textDim:'#715451',
-  blue:'#A78D78', blueL:'#BEB5A9', blueDim:'rgba(167,141,120,0.15)',
-  gold:'#C4956A', goldDim:'rgba(196,149,106,0.15)',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  border:'rgba(255,255,255,0.06)', text:'#F5F5F5',
+  textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueL:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
-  green:'#8FAF8A',
+  green:'#6B9E6B',
 }
 
 const ICE: RTCIceServer[] = [
@@ -34,7 +34,7 @@ const BAD    = ['spam','scam','fuck','shit','bitch','asshole','dick','pussy','cu
 const hasBad = (t: string) => BAD.some(w => t.toLowerCase().includes(w))
 const uname  = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const uinits = (u: any) => uname(u).slice(0, 2).toUpperCase()
-const AC     = ['#A78D78','#6E473B','#DB2777','#D97706','#059669','#0891B2']
+const AC     = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
 const uac    = (id: string) => AC[(id?.charCodeAt(0) || 0) % AC.length]
 const tsAgo  = (ts: number) => { const m = Math.floor((Date.now()-ts)/60000); return m<1?'now':m<60?`${m}m`:`${Math.floor(m/60)}h` }
 const recFmt = (s: number) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
@@ -189,7 +189,7 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
     { id:'circle',      label:'Circle',      I:Circle },
   ] as any[]
 
-  const COLS = ['#FFFFFF','#000000','#EF4444','#BEB5A9','#C4956A','#8FAF8A','#9B7B6E','#FB923C','#EC4899','#06B6D4']
+  const COLS = ['#FFFFFF','#000000','#EF4444','#B0A8A3','#A67C52','#6B9E6B','#8A817C','#FB923C','#EC4899','#06B6D4']
 
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', background:C.surface, borderTop:`1px solid ${C.border}`, flexWrap:'wrap', flexShrink:0 }}>
@@ -199,7 +199,7 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
           <button key={id} onClick={()=>setTool(id)} title={label}
             style={{ width:28, height:28, borderRadius:6, border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
               background: tool===id ? (id==='highlighter'?'rgba(251,191,36,0.3)':id==='marker'?'rgba(16,185,129,0.2)':C.blue) : 'transparent',
-              color: tool===id ? (id==='highlighter'?'#D4A97A':id==='marker'?C.green:'#fff') : C.textMuted,
+              color: tool===id ? (id==='highlighter'?'#B8915F':id==='marker'?C.green:'#fff') : C.textMuted,
               outline: tool===id ? `2px solid ${id==='highlighter'?'rgba(251,191,36,0.5)':id==='marker'?'rgba(16,185,129,0.4)':C.blue}` : 'none',
               outlineOffset: '1px'
             }}>
@@ -224,13 +224,13 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
       {/* File upload */}
       <button onClick={()=>fileRef.current?.click()}
         title="Load image or PDF to annotate"
-        style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:6, border:`1px solid ${C.border}`, cursor:'pointer', background:'transparent', color:C.textMuted, fontSize:11, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+        style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:6, border:`1px solid ${C.border}`, cursor:'pointer', background:'transparent', color:C.textMuted, fontSize:11, fontFamily:'Inter,sans-serif', flexShrink:0 }}>
         <Upload style={{ width:11, height:11 }}/>File
       </button>
       <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleFile}/>
       {/* Clear */}
       <button onClick={onClear}
-        style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:6, border:'none', cursor:'pointer', background:C.redDim, color:C.red, fontSize:11, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+        style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:6, border:'none', cursor:'pointer', background:C.redDim, color:C.red, fontSize:11, fontFamily:'Inter,sans-serif', flexShrink:0 }}>
         <Trash2 style={{ width:11, height:11 }}/>Clear
       </button>
     </div>
@@ -680,16 +680,16 @@ export default function LiveRoomPage() {
     <div style={{ height:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg, flexDirection:'column', gap:12 }}>
       <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
       <Loader2 style={{ width:36, height:36, color:C.blueL, animation:'spin 1s linear infinite' }}/>
-      <p style={{ color:C.textMuted, fontFamily:'DM Sans,sans-serif', fontSize:14 }}>Joining room...</p>
+      <p style={{ color:C.textMuted, fontFamily:'Inter,sans-serif', fontSize:14 }}>Joining room...</p>
     </div>
   )
   if(accessDenied) return (
     <div style={{ height:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:C.bg, padding:24 }}>
       <div style={{ borderRadius:24, padding:36, textAlign:'center', maxWidth:340, width:'100%', background:C.card, border:`1px solid ${C.border}` }}>
         <Shield style={{ width:44, height:44, color:C.red, marginBottom:16 }}/>
-        <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Syne,sans-serif', marginBottom:8 }}>Ticket Required</h2>
-        <p style={{ fontSize:14, color:C.textMuted, fontFamily:'DM Sans,sans-serif', marginBottom:24 }}>You need a ticket to attend this event.</p>
-        <button onClick={()=>router.push(`/events/${eventId}`)} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:C.gold, color:'#141010', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>Get Ticket →</button>
+        <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', marginBottom:8 }}>Ticket Required</h2>
+        <p style={{ fontSize:14, color:C.textMuted, fontFamily:'Inter,sans-serif', marginBottom:24 }}>You need a ticket to attend this event.</p>
+        <button onClick={()=>router.push(`/events/${eventId}`)} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:C.gold, color:'#0B0B0C', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Get Ticket →</button>
       </div>
     </div>
   )
@@ -706,26 +706,26 @@ export default function LiveRoomPage() {
 
       {/* Waiting placeholder */}
       {((!streaming&&vStatus!=='connected'))&&mode!=='board' && (
-        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, background:'linear-gradient(180deg,#000 0%,#141010 100%)', zIndex:2 }}>
+        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, background:'linear-gradient(180deg,#000 0%,#0B0B0C 100%)', zIndex:2 }}>
           <div style={{ width:80, height:80, borderRadius:'50%', overflow:'hidden', border:`3px solid ${uac(event?.users?.id||'')}44`, flexShrink:0 }}>
-            {event?.users?.photo_url ? <img src={event.users.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <div style={{ width:'100%', height:'100%', background:uac(event?.users?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:700, color:uac(event?.users?.id||''), fontFamily:'Syne,sans-serif' }}>{uinits(event?.users)}</div>}
+            {event?.users?.photo_url ? <img src={event.users.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : <div style={{ width:'100%', height:'100%', background:uac(event?.users?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:700, color:uac(event?.users?.id||''), fontFamily:'Sora,sans-serif' }}>{uinits(event?.users)}</div>}
           </div>
           <div style={{ textAlign:'center', maxWidth:300, padding:'0 20px' }}>
             {canCtrl ? (
               <>
-                <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Syne,sans-serif', marginBottom:6 }}>You are the host</p>
-                <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:24 }}>Click Go Live to start broadcasting</p>
-                {streamErr && <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif' }}>{streamErr}</p></div>}
-                <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'13px 32px', borderRadius:14, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15, cursor:'pointer', boxShadow:'0 6px 24px rgba(239,68,68,0.4)' }}>
+                <p style={{ color:'#fff', fontWeight:700, fontSize:16, fontFamily:'Sora,sans-serif', marginBottom:6 }}>You are the host</p>
+                <p style={{ color:C.textMuted, fontSize:13, fontFamily:'Inter,sans-serif', marginBottom:24 }}>Click Go Live to start broadcasting</p>
+                {streamErr && <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, background:C.redDim, border:'1px solid rgba(239,68,68,0.3)' }}><p style={{ fontSize:12, color:C.red, fontFamily:'Inter,sans-serif' }}>{streamErr}</p></div>}
+                <button onClick={goLive} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'13px 32px', borderRadius:14, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:15, cursor:'pointer', boxShadow:'0 6px 24px rgba(239,68,68,0.4)' }}>
                   <Radio style={{ width:18, height:18 }}/>Go Live
                 </button>
               </>
             ) : (
               <>
-                <p style={{ color:'#fff', fontWeight:600, fontSize:15, fontFamily:'Syne,sans-serif', marginBottom:6 }}>{uname(event?.users)}</p>
-                {vStatus==='connecting' && <><p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:14 }}>Connecting to stream...</p><div style={{ width:28, height:28, border:`3px solid ${C.blue}`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>{retries>0&&<p style={{ color:C.textDim, fontSize:11, marginTop:10, fontFamily:'DM Sans,sans-serif' }}>Retry {retries}...</p>}</>}
-                {vStatus==='idle'   && <p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif' }}>{event?.status==='live'?'Stream starting...':'Waiting for host to go live'}</p>}
-                {vStatus==='failed' && <><p style={{ color:C.textMuted, fontSize:13, fontFamily:'DM Sans,sans-serif', marginBottom:14 }}>Connection lost. Reconnecting...</p><div style={{ width:28, height:28, border:`3px solid ${C.red}`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/></>}
+                <p style={{ color:'#fff', fontWeight:600, fontSize:15, fontFamily:'Sora,sans-serif', marginBottom:6 }}>{uname(event?.users)}</p>
+                {vStatus==='connecting' && <><p style={{ color:C.textMuted, fontSize:13, fontFamily:'Inter,sans-serif', marginBottom:14 }}>Connecting to stream...</p><div style={{ width:28, height:28, border:`3px solid ${C.blue}`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>{retries>0&&<p style={{ color:C.textDim, fontSize:11, marginTop:10, fontFamily:'Inter,sans-serif' }}>Retry {retries}...</p>}</>}
+                {vStatus==='idle'   && <p style={{ color:C.textMuted, fontSize:13, fontFamily:'Inter,sans-serif' }}>{event?.status==='live'?'Stream starting...':'Waiting for host to go live'}</p>}
+                {vStatus==='failed' && <><p style={{ color:C.textMuted, fontSize:13, fontFamily:'Inter,sans-serif', marginBottom:14 }}>Connection lost. Reconnecting...</p><div style={{ width:28, height:28, border:`3px solid ${C.red}`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/></>}
               </>
             )}
           </div>
@@ -734,7 +734,7 @@ export default function LiveRoomPage() {
 
       {streaming&&!camOn&&mode==='camera' && (
         <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:C.surface, zIndex:4 }}>
-          <div style={{ textAlign:'center' }}><div style={{ width:56, height:56, borderRadius:'50%', background:uac(uRef.current?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:700, color:uac(uRef.current?.id||''), margin:'0 auto 8px' }}>{uinits(pRef.current)}</div><p style={{ color:C.textMuted, fontSize:12, fontFamily:'DM Sans,sans-serif' }}>Camera off</p></div>
+          <div style={{ textAlign:'center' }}><div style={{ width:56, height:56, borderRadius:'50%', background:uac(uRef.current?.id||'')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:700, color:uac(uRef.current?.id||''), margin:'0 auto 8px' }}>{uinits(pRef.current)}</div><p style={{ color:C.textMuted, fontSize:12, fontFamily:'Inter,sans-serif' }}>Camera off</p></div>
         </div>
       )}
 
@@ -744,21 +744,21 @@ export default function LiveRoomPage() {
           style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', zIndex:10, cursor:'pointer', background:'rgba(0,0,0,0.5)' }}>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, padding:'20px 32px', borderRadius:16, background:C.card, border:`1px solid ${C.border}` }}>
             <Volume2 style={{ width:32, height:32, color:C.blueL }}/>
-            <p style={{ color:C.text, fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:15 }}>Tap to enable audio</p>
+            <p style={{ color:C.text, fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:15 }}>Tap to enable audio</p>
           </div>
         </div>
       )}
 
       {/* Mode badges */}
       {mode==='screen' && <div style={{ position:'absolute', top:12, left:12, zIndex:5, display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:20, background:'rgba(37,99,235,0.25)', backdropFilter:'blur(8px)', border:'1px solid rgba(37,99,235,0.4)' }}><Monitor style={{ width:13, height:13, color:C.blueL }}/><span style={{ fontSize:11, fontWeight:700, color:C.blueL }}>Screen Sharing</span></div>}
-      {mode==='board'  && <div style={{ position:'absolute', top:12, left:12, zIndex:5, display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:20, background:'rgba(124,58,237,0.25)', backdropFilter:'blur(8px)', border:'1px solid rgba(124,58,237,0.4)' }}><PenLine style={{ width:13, height:13, color:'#9B7B6E' }}/><span style={{ fontSize:11, fontWeight:700, color:'#9B7B6E' }}>Board Live</span></div>}
+      {mode==='board'  && <div style={{ position:'absolute', top:12, left:12, zIndex:5, display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:20, background:'rgba(124,58,237,0.25)', backdropFilter:'blur(8px)', border:'1px solid rgba(124,58,237,0.4)' }}><PenLine style={{ width:13, height:13, color:'#8A817C' }}/><span style={{ fontSize:11, fontWeight:700, color:'#8A817C' }}>Board Live</span></div>}
 
       <div style={{ position:'absolute', top:10, right:10, zIndex:10 }}>
         <button onClick={toggleFS} style={{ width:32, height:32, borderRadius:8, border:'none', cursor:'pointer', background:'rgba(0,0,0,0.5)', backdropFilter:'blur(8px)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
           {fullscreen?<Minimize style={{ width:14, height:14 }}/>:<Maximize style={{ width:14, height:14 }}/>}
         </button>
       </div>
-      {hands.length>0&&canCtrl && <div style={{ position:'absolute', bottom:12, left:12, zIndex:5, padding:'6px 12px', borderRadius:20, background:'rgba(245,158,11,0.2)', border:'1px solid rgba(245,158,11,0.4)', backdropFilter:'blur(8px)' }}><span style={{ fontSize:12, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>✋ {hands.length} hand{hands.length>1?'s':''} raised</span></div>}
+      {hands.length>0&&canCtrl && <div style={{ position:'absolute', bottom:12, left:12, zIndex:5, padding:'6px 12px', borderRadius:20, background:'rgba(245,158,11,0.2)', border:'1px solid rgba(245,158,11,0.4)', backdropFilter:'blur(8px)' }}><span style={{ fontSize:12, color:C.gold, fontFamily:'Inter,sans-serif' }}>✋ {hands.length} hand{hands.length>1?'s':''} raised</span></div>}
     </div>
   )
 
@@ -778,23 +778,23 @@ export default function LiveRoomPage() {
       {/* Mode switcher */}
       {streaming && (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 12px', borderBottom:`1px solid ${C.border}`, flexWrap:'wrap' }}>
-          <button onClick={toCamera} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='camera'?'rgba(167,141,120,0.4)':'transparent'}`, background:mode==='camera'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='camera'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+          <button onClick={toCamera} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='camera'?'rgba(255,255,255,0.18)':'transparent'}`, background:mode==='camera'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='camera'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
             <Video style={{ width:13, height:13 }}/>Camera
           </button>
-          <button onClick={mode==='screen'?stopScreen:startScreen} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='screen'?'rgba(167,141,120,0.4)':'transparent'}`, background:mode==='screen'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='screen'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+          <button onClick={mode==='screen'?stopScreen:startScreen} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='screen'?'rgba(255,255,255,0.18)':'transparent'}`, background:mode==='screen'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='screen'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
             {mode==='screen'?<MonitorOff style={{ width:13, height:13 }}/>:<Monitor style={{ width:13, height:13 }}/>}
             {mode==='screen'?'Stop Share':'Screen'}
           </button>
           {/* Board dropdown */}
           <div ref={wbDropRef} style={{ position:'relative' }}>
-            <button onClick={()=>setWbBgOpen(p=>!p)} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='board'?'rgba(124,58,237,0.4)':'transparent'}`, background:mode==='board'?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)', color:mode==='board'?'#9B7B6E':C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+            <button onClick={()=>setWbBgOpen(p=>!p)} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='board'?'rgba(124,58,237,0.4)':'transparent'}`, background:mode==='board'?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)', color:mode==='board'?'#8A817C':C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
               <PenLine style={{ width:13, height:13 }}/>Board<ChevronDown style={{ width:11, height:11, marginLeft:1 }}/>
             </button>
             {wbBgOpen && (
               <div style={{ position:'absolute', bottom:'calc(100% + 4px)', left:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:10, overflow:'hidden', zIndex:50, minWidth:130, boxShadow:'0 8px 24px rgba(0,0,0,0.5)' }}>
                 {[{ n:'White', v:'#F8FAFC' },{ n:'Dark', v:'#0A0A0F' },{ n:'Green', v:'#064E3B' }].map(b=>(
                   <button key={b.v} onClick={()=>{ startBoard(b.v); setWbBgOpen(false) }}
-                    style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 14px', border:'none', background:boardBg===b.v&&mode==='board'?'rgba(124,58,237,0.15)':'transparent', color:boardBg===b.v&&mode==='board'?'#9B7B6E':C.text, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif', textAlign:'left' }}>
+                    style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 14px', border:'none', background:boardBg===b.v&&mode==='board'?'rgba(124,58,237,0.15)':'transparent', color:boardBg===b.v&&mode==='board'?'#8A817C':C.text, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left' }}>
                     <div style={{ width:14, height:14, borderRadius:3, background:b.v, border:'1px solid rgba(255,255,255,0.25)', flexShrink:0 }}/>{b.n}
                   </button>
                 ))}
@@ -813,27 +813,27 @@ export default function LiveRoomPage() {
           {camOn?<Video style={{ width:19, height:19 }}/>:<VideoOff style={{ width:19, height:19 }}/>}
         </button>
         {streaming
-          ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
-          : <button onClick={goLive}    style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'DM Sans,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
+          ? <button onClick={endStream} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:C.red, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><PhoneOff style={{ width:17, height:17 }}/>End Stream</button>
+          : <button onClick={goLive}    style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:24, border:'none', background:`linear-gradient(135deg,${C.red},#DC2626)`, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.35)' }}><Radio style={{ width:17, height:17 }}/>Go Live</button>
         }
-        {recording && <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:C.red, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}><span style={{ width:8, height:8, borderRadius:'50%', background:C.red, display:'inline-block', animation:'pulse 1s infinite' }}/>{recFmt(recTime)}</div>}
-        {recStatus && <span style={{ fontSize:11, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>{recStatus}</span>}
+        {recording && <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:C.red, fontFamily:'Inter,sans-serif', fontWeight:700 }}><span style={{ width:8, height:8, borderRadius:'50%', background:C.red, display:'inline-block', animation:'pulse 1s infinite' }}/>{recFmt(recTime)}</div>}
+        {recStatus && <span style={{ fontSize:11, color:C.gold, fontFamily:'Inter,sans-serif' }}>{recStatus}</span>}
       </div>
-      {slowMode && <p style={{ textAlign:'center', fontSize:11, color:C.gold, paddingBottom:8, fontFamily:'DM Sans,sans-serif' }}>⏱ Slow mode ON</p>}
+      {slowMode && <p style={{ textAlign:'center', fontSize:11, color:C.gold, paddingBottom:8, fontFamily:'Inter,sans-serif' }}>⏱ Slow mode ON</p>}
     </div>
   )
 
   const renderViewerBar = () => (
     <div style={{ flexShrink:0, background:C.surface, borderTop:`1px solid ${C.border}`, padding:'10px 16px', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-      <button onClick={doLike} disabled={liked} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, border:`1px solid ${liked?C.red+'44':C.border}`, background:liked?C.redDim:C.card, color:liked?C.red:C.textMuted, cursor:liked?'default':'pointer', fontSize:12, fontFamily:'DM Sans,sans-serif', opacity:liked?0.8:1 }}>
+      <button onClick={doLike} disabled={liked} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, border:`1px solid ${liked?C.red+'44':C.border}`, background:liked?C.redDim:C.card, color:liked?C.red:C.textMuted, cursor:liked?'default':'pointer', fontSize:12, fontFamily:'Inter,sans-serif', opacity:liked?0.8:1 }}>
         <Heart style={{ width:14, height:14, fill:liked?C.red:'none', stroke:liked?C.red:'currentColor' }}/>{reactions>0?reactions:(!isMobile?'Like':'')}
       </button>
-      <button onClick={toggleHand} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, border:`1px solid ${myHand?C.gold+'44':C.border}`, background:myHand?C.goldDim:C.card, color:myHand?C.gold:C.textMuted, cursor:'pointer', fontSize:12, fontFamily:'DM Sans,sans-serif' }}>
+      <button onClick={toggleHand} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, border:`1px solid ${myHand?C.gold+'44':C.border}`, background:myHand?C.goldDim:C.card, color:myHand?C.gold:C.textMuted, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif' }}>
         <Hand style={{ width:14, height:14 }}/>{!isMobile&&(myHand?'Lower Hand':'Raise Hand')}
       </button>
       <div style={{ flex:1 }}/>
-      {isMobile && <button onClick={()=>{ setShowChat(true); setUnread(0) }} style={{ position:'relative', display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, border:`1px solid ${C.border}`, background:C.card, color:C.blueL, cursor:'pointer', fontSize:12, fontFamily:'DM Sans,sans-serif' }}><MessageCircle style={{ width:14, height:14 }}/>Chat{unread>0&&<span style={{ position:'absolute', top:-4, right:-4, width:16, height:16, borderRadius:'50%', background:C.red, fontSize:8, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>{unread>9?'9+':unread}</span>}</button>}
-      <button onClick={()=>router.push('/dashboard')} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 16px', borderRadius:20, border:'none', background:C.redDim, color:C.red, cursor:'pointer', fontSize:12, fontFamily:'DM Sans,sans-serif', fontWeight:600 }}><PhoneOff style={{ width:13, height:13 }}/>Leave</button>
+      {isMobile && <button onClick={()=>{ setShowChat(true); setUnread(0) }} style={{ position:'relative', display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, border:`1px solid ${C.border}`, background:C.card, color:C.blueL, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif' }}><MessageCircle style={{ width:14, height:14 }}/>Chat{unread>0&&<span style={{ position:'absolute', top:-4, right:-4, width:16, height:16, borderRadius:'50%', background:C.red, fontSize:8, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>{unread>9?'9+':unread}</span>}</button>}
+      <button onClick={()=>router.push('/dashboard')} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 16px', borderRadius:20, border:'none', background:C.redDim, color:C.red, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif', fontWeight:600 }}><PhoneOff style={{ width:13, height:13 }}/>Leave</button>
     </div>
   )
 
@@ -841,7 +841,7 @@ export default function LiveRoomPage() {
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:C.bg }}>
       <div style={{ padding:'12px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:C.card, flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'DM Sans,sans-serif' }}>Live Chat</span>
+          <span style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:'Inter,sans-serif' }}>Live Chat</span>
           {slowMode&&<span style={{ fontSize:10, padding:'2px 6px', borderRadius:4, background:C.goldDim, color:C.gold, fontWeight:700 }}>SLOW</span>}
           <div style={{ display:'flex', alignItems:'center', gap:3, fontSize:12, color:C.textMuted }}><Users style={{ width:11, height:11 }}/>{viewers}</div>
           {reactions>0&&<div style={{ display:'flex', alignItems:'center', gap:3, fontSize:12, color:C.red }}><Heart style={{ width:11, height:11, fill:C.red }}/>{reactions}</div>}
@@ -850,12 +850,12 @@ export default function LiveRoomPage() {
       </div>
       {canCtrl&&hands.length>0&&(
         <div style={{ padding:'8px 12px', borderBottom:`1px solid ${C.border}`, background:'rgba(245,158,11,0.05)', flexShrink:0 }}>
-          <p style={{ fontSize:11, color:C.gold, fontFamily:'DM Sans,sans-serif', fontWeight:600, marginBottom:4 }}>✋ Raised Hands ({hands.length})</p>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>{hands.map(uid=><span key={uid} style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:C.goldDim, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>{uid.slice(0,8)}</span>)}</div>
+          <p style={{ fontSize:11, color:C.gold, fontFamily:'Inter,sans-serif', fontWeight:600, marginBottom:4 }}>✋ Raised Hands ({hands.length})</p>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>{hands.map(uid=><span key={uid} style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:C.goldDim, color:C.gold, fontFamily:'Inter,sans-serif' }}>{uid.slice(0,8)}</span>)}</div>
         </div>
       )}
       <div style={{ flex:1, overflowY:'auto', padding:'12px', display:'flex', flexDirection:'column', gap:10 }}>
-        {messages.length===0&&<div style={{ textAlign:'center', paddingTop:40 }}><p style={{ fontSize:12, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>Chat is live — say hello! 👋</p></div>}
+        {messages.length===0&&<div style={{ textAlign:'center', paddingTop:40 }}><p style={{ fontSize:12, color:C.textDim, fontFamily:'Inter,sans-serif' }}>Chat is live — say hello! 👋</p></div>}
         {messages.map(m=>(
           <div key={m.id} style={{ display:'flex', gap:8 }}>
             <div style={{ width:30, height:30, borderRadius:'50%', flexShrink:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', background:m.isHost?`linear-gradient(135deg,${C.gold},#F97316)`:`linear-gradient(135deg,${C.blue},${C.blueL})` }}>
@@ -863,26 +863,26 @@ export default function LiveRoomPage() {
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:2 }}>
-                <span style={{ fontSize:11, fontWeight:700, color:m.isHost?C.gold:C.blueL, fontFamily:'DM Sans,sans-serif' }}>{m.name}</span>
+                <span style={{ fontSize:11, fontWeight:700, color:m.isHost?C.gold:C.blueL, fontFamily:'Inter,sans-serif' }}>{m.name}</span>
                 {m.isHost&&<span style={{ fontSize:8, padding:'1px 5px', borderRadius:3, background:C.goldDim, color:C.gold, fontWeight:700 }}>HOST</span>}
-                <span style={{ fontSize:10, color:C.textDim, fontFamily:'DM Sans,sans-serif' }}>{tsAgo(m.ts)}</span>
+                <span style={{ fontSize:10, color:C.textDim, fontFamily:'Inter,sans-serif' }}>{tsAgo(m.ts)}</span>
                 {canCtrl&&<button onClick={()=>setMutedUsers(p=>new Set([...p,m.user_id]))} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:C.textDim, fontSize:9, padding:'1px 4px', borderRadius:3 }}>🔇</button>}
               </div>
-              <p style={{ fontSize:13, color:'#D4DBEE', fontFamily:'DM Sans,sans-serif', lineHeight:1.5, wordBreak:'break-word' }}>{m.text}</p>
+              <p style={{ fontSize:13, color:'#D4DBEE', fontFamily:'Inter,sans-serif', lineHeight:1.5, wordBreak:'break-word' }}>{m.text}</p>
             </div>
           </div>
         ))}
         <div ref={chatEnd}/>
       </div>
       <div style={{ padding:'10px 12px', borderTop:`1px solid ${C.border}`, flexShrink:0 }}>
-        {slowCD>0&&<p style={{ fontSize:11, color:C.gold, marginBottom:6, textAlign:'center', fontFamily:'DM Sans,sans-serif' }}>⏱ {slowCD}s until next message</p>}
+        {slowCD>0&&<p style={{ fontSize:11, color:C.gold, marginBottom:6, textAlign:'center', fontFamily:'Inter,sans-serif' }}>⏱ {slowCD}s until next message</p>}
         <div style={{ display:'flex', gap:8 }}>
           <input type="text" value={newMsg} onChange={e=>setNewMsg(e.target.value)}
             onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&sendMsg()}
             placeholder="Say something..."
             maxLength={500}
-            style={{ flex:1, padding:'10px 14px', borderRadius:12, border:`1px solid ${C.border}`, background:C.surface, color:C.text, fontSize:13, fontFamily:'DM Sans,sans-serif', outline:'none' }}
-            onFocus={e=>(e.target.style.borderColor='rgba(167,141,120,0.5)')}
+            style={{ flex:1, padding:'10px 14px', borderRadius:12, border:`1px solid ${C.border}`, background:C.surface, color:C.text, fontSize:13, fontFamily:'Inter,sans-serif', outline:'none' }}
+            onFocus={e=>(e.target.style.borderColor='rgba(255,255,255,0.2)')}
             onBlur={e=>(e.target.style.borderColor=C.border)}
           />
           <button onClick={sendMsg} disabled={!newMsg.trim()||sending||slowCD>0}
@@ -898,11 +898,11 @@ export default function LiveRoomPage() {
     <div style={{ padding:'10px 16px', background:C.card, borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0, flex:1 }}>
         {event?.status==='live'&&<span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:C.redDim, color:C.red, flexShrink:0 }}><span style={{ width:5, height:5, borderRadius:'50%', background:C.red, animation:'pulse 1.2s infinite' }}/>LIVE</span>}
-        <h1 style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:'DM Sans,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{event?.title}</h1>
+        <h1 style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:'Inter,sans-serif', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{event?.title}</h1>
         {canCtrl&&<span style={{ display:'flex', alignItems:'center', gap:3, fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:5, background:C.goldDim, color:C.gold, flexShrink:0 }}><Crown style={{ width:9, height:9 }}/>{isHost?'Host':'Co-host'}</span>}
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-        {isHost&&earnings>0&&<span style={{ fontSize:13, fontWeight:700, color:C.gold, fontFamily:'DM Sans,sans-serif' }}>${(earnings/100).toFixed(2)}</span>}
+        {isHost&&earnings>0&&<span style={{ fontSize:13, fontWeight:700, color:C.gold, fontFamily:'Inter,sans-serif' }}>${(earnings/100).toFixed(2)}</span>}
         <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:C.textMuted }}><Users style={{ width:12, height:12 }}/>{viewers}</div>
         {!isMobile&&!showChat&&<button onClick={()=>{ setShowChat(true); setUnread(0) }} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:8, border:`1px solid ${C.border}`, background:'transparent', color:C.blueL, cursor:'pointer', fontSize:12 }}><MessageCircle style={{ width:12, height:12 }}/>Chat{unread>0&&` (${unread})`}</button>}
       </div>
