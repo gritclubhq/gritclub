@@ -13,14 +13,14 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
-  border:'rgba(255,255,255,0.07)', borderFocus:'rgba(255,59,59,0.5)',
-  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
-  blue:'#FF3B3B', blueL:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
-  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
+  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.2)',
+  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
+  blue:'#FF4D2D', blueL:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
-  purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
+  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
+  purple:'#C24E2A', purpleDim:'rgba(124,58,237,0.1)',
 }
 
 const ICE: RTCIceServer[] = [
@@ -34,7 +34,7 @@ const ICE: RTCIceServer[] = [
 type Tab = 'chat' | 'files' | 'call' | 'settings'
 const getName  = (u:any) => u?.full_name||u?.email?.split('@')[0]||'User'
 const getInits = (u:any) => getName(u).slice(0,2).toUpperCase()
-const AC = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669','#0891B2']
+const AC = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
 const ac  = (id:string) => AC[(id?.charCodeAt(0)||0)%AC.length]
 const fmtB = (b:number) => b<1024?`${b}B`:b<1048576?`${(b/1024).toFixed(1)}KB`:`${(b/1048576).toFixed(1)}MB`
 const ago  = (ts:string) => { const m=Math.floor((Date.now()-new Date(ts).getTime())/60000); return m<1?'now':m<60?`${m}m`:m<1440?`${Math.floor(m/60)}h ago`:`${Math.floor(m/1440)}d ago` }
@@ -92,7 +92,7 @@ function RemoteTile({stream,name,uid}:{stream:MediaStream;name:string;uid:string
         <button onClick={handleUnmute}
           style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.6)',border:'none',cursor:'pointer',flexDirection:'column',gap:8}}>
           <span style={{fontSize:32}}>🔇</span>
-          <span style={{fontSize:13,color:'#fff',fontWeight:600,fontFamily:'DM Sans,sans-serif'}}>Tap to hear audio</span>
+          <span style={{fontSize:13,color:'#fff',fontWeight:600,fontFamily:'Inter,sans-serif'}}>Tap to hear audio</span>
         </button>
       )}
     </div>
@@ -140,7 +140,7 @@ function ChatTab({groupId,currentUser}:{groupId:string;currentUser:any}) {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{flex:1,overflowY:'auto',padding:16,display:'flex',flexDirection:'column',gap:10}}>
-        {messages.length===0 && <div style={{textAlign:'center',paddingTop:48,color:C.textDim,fontSize:13,fontFamily:'DM Sans,sans-serif'}}>No messages yet — say hello!</div>}
+        {messages.length===0 && <div style={{textAlign:'center',paddingTop:48,color:C.textDim,fontSize:13,fontFamily:'Inter,sans-serif'}}>No messages yet — say hello!</div>}
         {messages.map(m => {
           const isMe = m.user_id===currentUser?.id
           const u = m.users||{full_name:m.user_name,photo_url:m.user_avatar}
@@ -148,8 +148,8 @@ function ChatTab({groupId,currentUser}:{groupId:string;currentUser:any}) {
             <div key={m.id} style={{display:'flex',gap:8,flexDirection:isMe?'row-reverse':'row',alignItems:'flex-end'}}>
               {!isMe && <Av user={u} size={26}/>}
               <div style={{display:'flex',flexDirection:'column',gap:2,maxWidth:'70%',alignItems:isMe?'flex-end':'flex-start'}}>
-                {!isMe && <span style={{fontSize:11,fontWeight:600,color:C.textMuted,marginLeft:2,fontFamily:'DM Sans,sans-serif'}}>{getName(u)}</span>}
-                <div style={{padding:'8px 12px',borderRadius:isMe?'16px 16px 4px 16px':'4px 16px 16px 16px',background:isMe?C.blue:C.card,color:isMe?'#fff':C.text,fontSize:13,lineHeight:1.55,wordBreak:'break-word',fontFamily:'DM Sans,sans-serif'}}>
+                {!isMe && <span style={{fontSize:11,fontWeight:600,color:C.textMuted,marginLeft:2,fontFamily:'Inter,sans-serif'}}>{getName(u)}</span>}
+                <div style={{padding:'8px 12px',borderRadius:isMe?'16px 16px 4px 16px':'4px 16px 16px 16px',background:isMe?C.blue:C.card,color:isMe?'#fff':C.text,fontSize:13,lineHeight:1.55,wordBreak:'break-word',fontFamily:'Inter,sans-serif'}}>
                   {m.text}
                 </div>
               </div>
@@ -162,7 +162,7 @@ function ChatTab({groupId,currentUser}:{groupId:string;currentUser:any}) {
         <input value={text} onChange={e=>setText(e.target.value)}
           onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send() } }}
           placeholder="Message..." maxLength={2000}
-          style={{flex:1,padding:'10px 14px',borderRadius:12,border:`1px solid ${C.border}`,background:C.card,color:C.text,fontSize:13,outline:'none',fontFamily:'DM Sans,sans-serif',transition:'border-color .15s'}}
+          style={{flex:1,padding:'10px 14px',borderRadius:12,border:`1px solid ${C.border}`,background:C.card,color:C.text,fontSize:13,outline:'none',fontFamily:'Inter,sans-serif',transition:'border-color .15s'}}
           onFocus={e=>(e.target.style.borderColor=C.borderFocus)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
         <button onClick={send} disabled={!text.trim()||sending}
           style={{width:42,height:42,borderRadius:12,border:'none',background:C.blue,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,opacity:!text.trim()||sending?0.4:1}}>
@@ -221,7 +221,7 @@ function FilesTab({groupId,currentUser}:{groupId:string;currentUser:any}) {
         onDrop={e=>{e.preventDefault();setDragging(false);handleFiles(e.dataTransfer.files)}}
         onClick={()=>inputRef.current?.click()}>
         <Upload style={{width:22,height:22,color:dragging?C.blueL:C.textDim,margin:'0 auto 8px'}}/>
-        <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>Drop files or <span style={{color:C.blueL}}>browse</span> · Max 50MB</p>
+        <p style={{fontSize:13,color:C.textMuted,fontFamily:'Inter,sans-serif'}}>Drop files or <span style={{color:C.blueL}}>browse</span> · Max 50MB</p>
         <input ref={inputRef} type="file" style={{display:'none'}} onChange={e=>handleFiles(e.target.files)}/>
       </div>
       {uploading && (
@@ -238,8 +238,8 @@ function FilesTab({groupId,currentUser}:{groupId:string;currentUser:any}) {
           <div key={f.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:12,background:C.card,border:`1px solid ${C.border}`}}>
             <span style={{fontSize:22,flexShrink:0}}>{icon(f.file_type)}</span>
             <div style={{flex:1,minWidth:0}}>
-              <p style={{fontSize:13,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'DM Sans,sans-serif'}}>{f.file_name}</p>
-              <p style={{fontSize:11,color:C.textDim,fontFamily:'DM Sans,sans-serif'}}>{fmtB(f.file_size||0)} · {getName(f.users)} · {ago(f.uploaded_at)}</p>
+              <p style={{fontSize:13,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Inter,sans-serif'}}>{f.file_name}</p>
+              <p style={{fontSize:11,color:C.textDim,fontFamily:'Inter,sans-serif'}}>{fmtB(f.file_size||0)} · {getName(f.users)} · {ago(f.uploaded_at)}</p>
             </div>
             <div style={{display:'flex',gap:6,flexShrink:0}}>
               <a href={f.file_url} target="_blank" rel="noopener noreferrer" download>
@@ -565,14 +565,14 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
             <PhoneCall style={{width:28,height:28,color:C.blueL}}/>
           </div>
           <div style={{textAlign:'center'}}>
-            <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:6}}>No active call</p>
-            <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>
+            <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Sora,sans-serif',marginBottom:6}}>No active call</p>
+            <p style={{fontSize:13,color:C.textMuted,fontFamily:'Inter,sans-serif'}}>
               {isCtrl ? 'Start a call — all members will be notified instantly' : 'Waiting for the owner or admin to start a call'}
             </p>
           </div>
           {isCtrl && (
             <button onClick={startCall} disabled={joining||!notifyReady}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'12px 32px',borderRadius:24,border:'none',background:notifyReady?`linear-gradient(135deg,${C.green},#059669)`:'rgba(16,185,129,0.3)',color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:joining||!notifyReady?'not-allowed':'pointer',opacity:joining?0.6:1,boxShadow:notifyReady?'0 4px 20px rgba(16,185,129,0.35)':'none'}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'12px 32px',borderRadius:24,border:'none',background:notifyReady?`linear-gradient(135deg,${C.green},#059669)`:'rgba(16,185,129,0.3)',color:'#fff',fontFamily:'Inter,sans-serif',fontWeight:700,fontSize:14,cursor:joining||!notifyReady?'not-allowed':'pointer',opacity:joining?0.6:1,boxShadow:notifyReady?'0 4px 20px rgba(16,185,129,0.35)':'none'}}>
               {joining ? <Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/> : <PhoneCall style={{width:16,height:16}}/>}
               {joining ? 'Starting...' : 'Start Group Call'}
             </button>
@@ -587,17 +587,17 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
             <Phone style={{width:28,height:28,color:C.green}}/>
           </div>
           <div style={{textAlign:'center'}}>
-            <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:6}}>Group call is live</p>
-            <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif'}}>Join to see and hear everyone</p>
+            <p style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Sora,sans-serif',marginBottom:6}}>Group call is live</p>
+            <p style={{fontSize:13,color:C.textMuted,fontFamily:'Inter,sans-serif'}}>Join to see and hear everyone</p>
           </div>
           <div style={{display:'flex',gap:12}}>
             <button onClick={doJoin} disabled={joining}
-              style={{display:'flex',alignItems:'center',gap:8,padding:'12px 28px',borderRadius:24,border:'none',background:C.green,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:14,cursor:'pointer',opacity:joining?0.6:1,boxShadow:'0 4px 16px rgba(16,185,129,0.3)'}}>
+              style={{display:'flex',alignItems:'center',gap:8,padding:'12px 28px',borderRadius:24,border:'none',background:C.green,color:'#fff',fontFamily:'Inter,sans-serif',fontWeight:700,fontSize:14,cursor:'pointer',opacity:joining?0.6:1,boxShadow:'0 4px 16px rgba(16,185,129,0.3)'}}>
               {joining ? <Loader2 style={{width:16,height:16,animation:'spin 1s linear infinite'}}/> : <Phone style={{width:16,height:16}}/>}
               {joining ? 'Joining...' : 'Join Call'}
             </button>
             {isCtrl && (
-              <button onClick={endCall} style={{display:'flex',alignItems:'center',gap:6,padding:'12px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+              <button onClick={endCall} style={{display:'flex',alignItems:'center',gap:6,padding:'12px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'Inter,sans-serif',fontWeight:700,fontSize:13,cursor:'pointer'}}>
                 <X style={{width:15,height:15}}/>End for All
               </button>
             )}
@@ -642,7 +642,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
             <div style={{position:'absolute',bottom:6,left:8,fontSize:11,fontWeight:700,color:'#fff',background:'rgba(0,0,0,0.65)',padding:'2px 8px',borderRadius:6}}>
               You{!micOn?' 🔇':''}
             </div>
-            {screenOn && <div style={{position:'absolute',top:6,right:8,fontSize:10,fontWeight:700,color:C.blueL,background:'rgba(255,59,59,0.2)',padding:'2px 8px',borderRadius:6,border:'1px solid rgba(255,59,59,0.4)'}}>Sharing</div>}
+            {screenOn && <div style={{position:'absolute',top:6,right:8,fontSize:10,fontWeight:700,color:C.blueL,background:'rgba(37,99,235,0.2)',padding:'2px 8px',borderRadius:6,border:'1px solid rgba(37,99,235,0.4)'}}>Sharing</div>}
           </div>
 
           {/* Remote tiles */}
@@ -668,11 +668,11 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
 
         {/* Raised hands bar */}
         {isCtrl&&hands.length>0 && (
-          <div style={{flexShrink:0,background:'rgba(255,215,0,0.1)',borderTop:'1px solid rgba(255,215,0,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
+          <div style={{flexShrink:0,background:'rgba(166,124,82,0.12)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
             <Hand style={{width:14,height:14,color:C.gold,flexShrink:0}}/>
-            <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0}}>Raised hands:</span>
+            <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:'Inter,sans-serif',flexShrink:0}}>Raised hands:</span>
             {hands.map((h,i) => (
-              <div key={h.uid} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:20,background:'rgba(255,215,0,0.15)',fontSize:11,color:C.gold,fontFamily:'DM Sans,sans-serif',flexShrink:0,whiteSpace:'nowrap'}}>
+              <div key={h.uid} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:20,background:'rgba(245,158,11,0.15)',fontSize:11,color:C.gold,fontFamily:'Inter,sans-serif',flexShrink:0,whiteSpace:'nowrap'}}>
                 {i+1}. {h.name}
                 <button onClick={()=>dismissHand(h.uid)} style={{background:'none',border:'none',cursor:'pointer',color:C.textDim,padding:0,marginLeft:2,fontSize:10}}>&#10005;</button>
               </div>
@@ -693,7 +693,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
               {camOn ? <Video style={{width:17,height:17}}/> : <VideoOff style={{width:17,height:17}}/>}
             </button>
             {!isMob && <button onClick={toggleScreen} title={screenOn?'Stop sharing':'Share screen'}
-              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(255,59,59,0.4)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(255,255,255,0.18)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
               {screenOn ? <MonitorOff style={{width:17,height:17}}/> : <Monitor style={{width:17,height:17}}/>}
             </button>}
             <button onClick={toggleRaiseHand} title={raiseHand?'Lower hand':'Raise hand'}
@@ -719,7 +719,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
                 ))}
               </div>
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:3,fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif',padding:'0 2px',flexShrink:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:3,fontSize:12,color:C.textMuted,fontFamily:'Inter,sans-serif',padding:'0 2px',flexShrink:0}}>
               <Users style={{width:12,height:12}}/>{peerList.length+1}
             </div>
             {isCtrl && !isMob && <button onClick={muteAll} title="Mute everyone"
@@ -732,12 +732,12 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
             </button>
             {/* Leave button — always visible */}
             <button onClick={()=>doLeave()}
-              style={{display:'flex',alignItems:'center',gap:5,padding:isMob?'9px 14px':'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:isMob?12:13,cursor:'pointer',flexShrink:0,boxShadow:'0 2px 12px rgba(239,68,68,0.35)'}}>
+              style={{display:'flex',alignItems:'center',gap:5,padding:isMob?'9px 14px':'10px 20px',borderRadius:24,border:'none',background:C.red,color:'#fff',fontFamily:'Inter,sans-serif',fontWeight:700,fontSize:isMob?12:13,cursor:'pointer',flexShrink:0,boxShadow:'0 2px 12px rgba(239,68,68,0.35)'}}>
               <PhoneOff style={{width:14,height:14}}/>Leave
             </button>
             {isCtrl && (
               <button onClick={endCall}
-                style={{display:'flex',alignItems:'center',gap:5,padding:isMob?'9px 14px':'10px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:isMob?12:13,cursor:'pointer',flexShrink:0}}>
+                style={{display:'flex',alignItems:'center',gap:5,padding:isMob?'9px 14px':'10px 20px',borderRadius:24,border:`1px solid ${C.red}55`,background:C.redDim,color:C.red,fontFamily:'Inter,sans-serif',fontWeight:700,fontSize:isMob?12:13,cursor:'pointer',flexShrink:0}}>
                 <X style={{width:14,height:14}}/>{isMob?'End All':'End for All'}
               </button>
             )}
@@ -786,35 +786,35 @@ function SettingsTab({group,myRole,currentUser,onDeleted}:{group:any;myRole:stri
   return (
     <div style={{height:'100%',overflowY:'auto',padding:20,display:'flex',flexDirection:'column',gap:16}}>
       <div style={{padding:16,borderRadius:16,background:C.card,border:`1px solid ${C.border}`}}>
-        <p style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'DM Sans,sans-serif',marginBottom:10}}>Group Info</p>
-        <p style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',marginBottom:4}}>{group?.name}</p>
-        <p style={{fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif',lineHeight:1.5}}>{group?.description||'No description'}</p>
-        {group?.category && <span style={{display:'inline-block',marginTop:8,fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,background:C.blueDim,color:C.blueL,fontFamily:'DM Sans,sans-serif'}}>{group.category}</span>}
+        <p style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'Inter,sans-serif',marginBottom:10}}>Group Info</p>
+        <p style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:'Sora,sans-serif',marginBottom:4}}>{group?.name}</p>
+        <p style={{fontSize:12,color:C.textMuted,fontFamily:'Inter,sans-serif',lineHeight:1.5}}>{group?.description||'No description'}</p>
+        {group?.category && <span style={{display:'inline-block',marginTop:8,fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:6,background:C.blueDim,color:C.blueL,fontFamily:'Inter,sans-serif'}}>{group.category}</span>}
       </div>
       <div style={{padding:16,borderRadius:16,background:C.card,border:`1px solid ${C.border}`}}>
-        <p style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'DM Sans,sans-serif',marginBottom:8}}>Your Role</p>
+        <p style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'Inter,sans-serif',marginBottom:8}}>Your Role</p>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           {myRole==='owner' && <Crown style={{width:16,height:16,color:C.gold}}/>}
           {myRole==='admin' && <Shield style={{width:16,height:16,color:C.purple}}/>}
-          <span style={{fontSize:14,fontWeight:700,color:myRole==='owner'?C.gold:myRole==='admin'?C.purple:C.text,fontFamily:'DM Sans,sans-serif',textTransform:'capitalize'}}>{myRole}</span>
+          <span style={{fontSize:14,fontWeight:700,color:myRole==='owner'?C.gold:myRole==='admin'?C.purple:C.text,fontFamily:'Inter,sans-serif',textTransform:'capitalize'}}>{myRole}</span>
         </div>
       </div>
       {isOwner && (
         <div style={{padding:20,borderRadius:16,background:'rgba(239,68,68,0.06)',border:'1px solid rgba(239,68,68,0.25)'}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
             <AlertTriangle style={{width:16,height:16,color:C.red}}/>
-            <p style={{fontSize:12,fontWeight:700,color:C.red,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'DM Sans,sans-serif'}}>Danger Zone</p>
+            <p style={{fontSize:12,fontWeight:700,color:C.red,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'Inter,sans-serif'}}>Danger Zone</p>
           </div>
-          <p style={{fontSize:13,color:C.textMuted,fontFamily:'DM Sans,sans-serif',lineHeight:1.6,marginBottom:16}}>
+          <p style={{fontSize:13,color:C.textMuted,fontFamily:'Inter,sans-serif',lineHeight:1.6,marginBottom:16}}>
             Permanently delete this group and all its data. <strong style={{color:C.text}}>This cannot be undone.</strong>
           </p>
-          <p style={{fontSize:12,color:C.textMuted,fontFamily:'DM Sans,sans-serif',marginBottom:8}}>
+          <p style={{fontSize:12,color:C.textMuted,fontFamily:'Inter,sans-serif',marginBottom:8}}>
             Type <strong style={{color:C.text,fontFamily:'monospace'}}>{required}</strong> to confirm:
           </p>
           <input value={confirmText} onChange={e=>setConfirmText(e.target.value)} placeholder={required}
-            style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`1px solid ${confirmText===required?C.red:C.border}`,background:C.surface,color:C.text,fontSize:13,outline:'none',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box',marginBottom:12,transition:'border-color .15s'}}/>
+            style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`1px solid ${confirmText===required?C.red:C.border}`,background:C.surface,color:C.text,fontSize:13,outline:'none',fontFamily:'Inter,sans-serif',boxSizing:'border-box',marginBottom:12,transition:'border-color .15s'}}/>
           <button onClick={deleteGroup} disabled={confirmText!==required||deleting}
-            style={{width:'100%',padding:'11px',borderRadius:12,border:'none',background:confirmText===required?C.red:'rgba(239,68,68,0.2)',color:confirmText===required?'#fff':'rgba(239,68,68,0.4)',fontFamily:'DM Sans,sans-serif',fontWeight:700,fontSize:13,cursor:confirmText===required?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+            style={{width:'100%',padding:'11px',borderRadius:12,border:'none',background:confirmText===required?C.red:'rgba(239,68,68,0.2)',color:confirmText===required?'#fff':'rgba(239,68,68,0.4)',fontFamily:'Inter,sans-serif',fontWeight:700,fontSize:13,cursor:confirmText===required?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
             {deleting ? <><Loader2 style={{width:14,height:14,animation:'spin 1s linear infinite'}}/>Deleting...</> : <><Trash2 style={{width:14,height:14}}/>Delete Group Permanently</>}
           </button>
         </div>
@@ -941,12 +941,12 @@ export default function GroupRoomPage() {
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-              <h1 style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:160}}>{group?.name}</h1>
+              <h1 style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:'Sora,sans-serif',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:160}}>{group?.name}</h1>
               {group?.is_private ? <Lock style={{width:10,height:10,color:C.gold,flexShrink:0}}/> : <Globe style={{width:10,height:10,color:C.textDim,flexShrink:0}}/>}
               {myRole==='owner' && <span style={{display:'flex',alignItems:'center',gap:3,fontSize:10,fontWeight:700,padding:'1px 5px',borderRadius:4,background:C.goldDim,color:C.gold}}><Crown style={{width:8,height:8}}/>Owner</span>}
               {myRole==='admin' && <span style={{display:'flex',alignItems:'center',gap:3,fontSize:10,fontWeight:700,padding:'1px 5px',borderRadius:4,background:C.purpleDim,color:C.purple}}><Shield style={{width:8,height:8}}/>Admin</span>}
             </div>
-            <p style={{fontSize:11,color:C.textDim,fontFamily:'DM Sans,sans-serif'}}>{activeMemberCount} member{activeMemberCount!==1?'s':''} · {group?.category}</p>
+            <p style={{fontSize:11,color:C.textDim,fontFamily:'Inter,sans-serif'}}>{activeMemberCount} member{activeMemberCount!==1?'s':''} · {group?.category}</p>
           </div>
           <button onClick={()=>setShowMembers(p=>!p)}
             style={{display:'flex',alignItems:'center',gap:4,padding:'5px 9px',borderRadius:8,border:'none',background:showMembers?C.blueDim:C.card,color:showMembers?C.blueL:C.textMuted,cursor:'pointer',fontSize:12,fontWeight:600,flexShrink:0}}>
@@ -963,7 +963,7 @@ export default function GroupRoomPage() {
             <div style={{display:'flex',alignItems:'center',gap:2,padding:'7px 10px',background:C.surface,borderBottom:`1px solid ${C.border}`,flexShrink:0,overflowX:'auto'}}>
               {TABS.map(t => (
                 <button key={t.id} onClick={()=>setActiveTab(t.id)}
-                  style={{display:'flex',alignItems:'center',gap:5,padding:'6px 13px',borderRadius:8,border:'none',background:activeTab===t.id?C.blue:'transparent',color:activeTab===t.id?'#fff':C.textMuted,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif',flexShrink:0,transition:'background .15s,color .15s'}}>
+                  style={{display:'flex',alignItems:'center',gap:5,padding:'6px 13px',borderRadius:8,border:'none',background:activeTab===t.id?C.blue:'transparent',color:activeTab===t.id?'#fff':C.textMuted,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif',flexShrink:0,transition:'background .15s,color .15s'}}>
                   <t.icon style={{width:13,height:13}}/>{t.label}
                 </button>
               ))}
@@ -993,20 +993,20 @@ export default function GroupRoomPage() {
           {showMembers && (
             <div style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',overflow:'hidden',background:C.surface,borderLeft:`1px solid ${C.border}`}}>
               <div style={{padding:'11px 14px',borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
-                <p style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'DM Sans,sans-serif'}}>Members</p>
+                <p style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'Inter,sans-serif'}}>Members</p>
               </div>
               <div style={{flex:1,overflowY:'auto',padding:8,display:'flex',flexDirection:'column',gap:2}}>
 
                 {isCtrl&&pendingMembers.length>0 && (
                   <>
-                    <p style={{fontSize:10,fontWeight:700,color:C.gold,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'DM Sans,sans-serif',padding:'4px 8px'}}>
+                    <p style={{fontSize:10,fontWeight:700,color:C.gold,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'Inter,sans-serif',padding:'4px 8px'}}>
                       Requests ({pendingMembers.length})
                     </p>
                     {pendingMembers.map(m => (
-                      <div key={m.id} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 8px',borderRadius:8,background:'rgba(255,215,0,0.06)',border:'1px solid rgba(255,215,0,0.15)',marginBottom:2}}>
+                      <div key={m.id} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 8px',borderRadius:8,background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.15)',marginBottom:2}}>
                         <Av user={m.users} size={22}/>
                         <div style={{flex:1,minWidth:0}}>
-                          <p style={{fontSize:11,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'DM Sans,sans-serif'}}>{getName(m.users)}</p>
+                          <p style={{fontSize:11,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Inter,sans-serif'}}>{getName(m.users)}</p>
                         </div>
                         <button onClick={()=>approveRequest(m.id)} disabled={promoting===m.id} title="Approve"
                           style={{width:22,height:22,borderRadius:5,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',background:C.greenDim,color:C.green,flexShrink:0}}>
@@ -1019,7 +1019,7 @@ export default function GroupRoomPage() {
                       </div>
                     ))}
                     <div style={{height:1,background:C.border,margin:'4px 0'}}/>
-                    <p style={{fontSize:10,fontWeight:700,color:C.textDim,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'DM Sans,sans-serif',padding:'4px 8px'}}>
+                    <p style={{fontSize:10,fontWeight:700,color:C.textDim,textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'Inter,sans-serif',padding:'4px 8px'}}>
                       Active ({activeMembers.length})
                     </p>
                   </>
@@ -1037,8 +1037,8 @@ export default function GroupRoomPage() {
                       onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='transparent'}}>
                       <Av user={m.users} size={24}/>
                       <div style={{flex:1,minWidth:0}}>
-                        <p style={{fontSize:12,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'DM Sans,sans-serif'}}>{getName(m.users)}{isMe?' (you)':''}</p>
-                        <p style={{fontSize:10,color:C.textDim,fontFamily:'DM Sans,sans-serif',textTransform:'capitalize'}}>{mRole}</p>
+                        <p style={{fontSize:12,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Inter,sans-serif'}}>{getName(m.users)}{isMe?' (you)':''}</p>
+                        <p style={{fontSize:10,color:C.textDim,fontFamily:'Inter,sans-serif',textTransform:'capitalize'}}>{mRole}</p>
                       </div>
                       {mRole==='owner' && <Crown style={{width:11,height:11,color:C.gold,flexShrink:0}}/>}
                       {mRole==='admin' && <Shield style={{width:11,height:11,color:C.purple,flexShrink:0}}/>}
