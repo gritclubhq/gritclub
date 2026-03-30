@@ -10,17 +10,17 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0B0B0C', surface:'#141416', card:'#141416', cardHover:'#1C1C1E',
-  border:'rgba(255,255,255,0.06)', borderHover:'rgba(255,255,255,0.14)',
-  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
-  blue:'#FF4D2D', blueLight:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
+  bg:'#0A1120', surface:'#0F172A', card:'#0F172A', cardHover:'#1E293B',
+  border:'rgba(255,255,255,0.06)', borderHover:'rgba(255,255,255,0.12)',
+  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
+  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
-  purple:'#C24E2A', purpleDim:'rgba(124,58,237,0.1)',
+  green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
+  purple:'#2563EB', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-const AVATAR_COLORS = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInitials = (u: any) => getName(u).slice(0,2).toUpperCase()
@@ -385,7 +385,7 @@ export default function NetworkPage() {
                     <Search style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', width:16, height:16, color:C.textDim }} />
                     <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search by name, @handle, or email..."
                       style={{ width:'100%', padding:'12px 14px 12px 42px', borderRadius:14, background:C.card, border:`1px solid ${C.border}`, color:C.text, fontFamily:'Inter,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' }}
-                      onFocus={e=>(e.target.style.borderColor='rgba(255,255,255,0.2)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
+                      onFocus={e=>(e.target.style.borderColor='rgba(255,255,255,0.12)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
                     {search && <button onClick={()=>{setSearch('');if(currentUser)loadDiscover(currentUser.id,'')}} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:C.textDim }}><X style={{ width:14, height:14 }} /></button>}
                   </div>
                   {people.length === 0 ? (
