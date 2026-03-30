@@ -76,7 +76,7 @@ export default function HostDashboard() {
       value: loading ? '...' : formatCurrency(earnings),
       sub: 'You keep 80%',
       icon: DollarSign,
-      color: '#A67C52',
+      color: '#94A3B8',
       bg: 'rgba(255,215,0,0.08)',
       border: 'rgba(255,215,0,0.2)',
       trend: '+12%',
@@ -96,7 +96,7 @@ export default function HostDashboard() {
       value: loading ? '...' : events.length.toString(),
       sub: `${scheduledEvents.length} upcoming`,
       icon: Calendar,
-      color: '#8A817C',
+      color: '#6B7280',
       bg: 'rgba(167,139,250,0.08)',
       border: 'rgba(167,139,250,0.2)',
       trend: null,
@@ -137,7 +137,7 @@ export default function HostDashboard() {
             <Link
               href="/host/create"
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-              style={{ background: '#A67C52', color: '#0F172A' }}
+              style={{ background: '#94A3B8', color: '#0F172A' }}
             >
               <PlusCircle className="w-4 h-4" />
               New Event
@@ -238,7 +238,7 @@ export default function HostDashboard() {
                 <Link
                   href="/host/create"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
-                  style={{ background: '#A67C52', color: '#0F172A' }}
+                  style={{ background: '#94A3B8', color: '#0F172A' }}
                 >
                   <Zap className="w-4 h-4" />
                   Create First Event
@@ -291,7 +291,7 @@ export default function HostDashboard() {
 
                       {/* Earnings */}
                       <div className="hidden sm:block text-right flex-shrink-0">
-                        <p className="text-sm font-bold" style={{ color: '#A67C52' }}>
+                        <p className="text-sm font-bold" style={{ color: '#94A3B8' }}>
                           {formatCurrency(eventEarnings)}
                         </p>
                         <p className="text-xs text-slate-600">earned</p>
@@ -337,7 +337,7 @@ export default function HostDashboard() {
           {/* ── Quick links ── */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { href: '/host/earnings', label: 'Earnings', icon: BarChart2, color: '#A67C52' },
+              { href: '/host/earnings', label: 'Earnings', icon: BarChart2, color: '#94A3B8' },
               { href: '/host/payouts', label: 'Payouts', icon: DollarSign, color: '#4ADE80' },
               { href: '/host/network', label: 'Network', icon: Users, color: '#38BDF8' },
             ].map(item => (
