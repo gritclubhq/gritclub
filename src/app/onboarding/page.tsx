@@ -7,23 +7,23 @@ import { Upload, Check, X, AlertCircle, User, AtSign, ChevronRight, Loader2 } fr
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#141010',
-  surface:   '#1C1410',
-  card:      '#291C0E',
-  border:    'rgba(167,141,120,0.15)',
-  borderFocus:'rgba(167,141,120,0.5)',
-  text:      '#E1D4C2',
-  textMuted: '#BEB5A9',
-  textDim:   '#715451',
-  blue:      '#A78D78',
-  blueLight: '#BEB5A9',
-  blueDim:   'rgba(167,141,120,0.15)',
-  gold:      '#C4956A',
-  goldDim:   'rgba(196,149,106,0.15)',
+  bg:        '#0A1120',
+  surface:   '#0F172A',
+  card:      '#0F172A',
+  border:    'rgba(255,255,255,0.06)',
+  borderFocus:'rgba(255,255,255,0.12)',
+  text:      '#E5E7EB',
+  textMuted: '#9CA3AF',
+  textDim:   '#6B7280',
+  blue:      '#3B82F6',
+  blueLight: '#9CA3AF',
+  blueDim:   'rgba(255,255,255,0.06)',
+  gold:      '#94A3B8',
+  goldDim:   'rgba(148,163,184,0.12)',
   red:       '#EF4444',
   redDim:    'rgba(239,68,68,0.1)',
-  green:     '#8FAF8A',
-  greenDim:  'rgba(143,175,138,0.15)',
+  green:     '#34D399',
+  greenDim:  'rgba(52,211,153,0.12)',
 }
 
 // ─── Security: username sanitisation ─────────────────────────────────────────
@@ -315,7 +315,7 @@ export default function OnboardingPage() {
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[120px] opacity-10"
-          style={{ background: 'radial-gradient(circle, #A78D78, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, #FF4D2D, transparent)' }} />
       </div>
 
       <div className="relative w-full max-w-md">
@@ -324,7 +324,7 @@ export default function OnboardingPage() {
         <div className="text-center mb-8">
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
-            style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
+            style={{ background: '#FF4D2D'Dim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
             WELCOME TO GRITCLUB
@@ -386,7 +386,7 @@ export default function OnboardingPage() {
                 onClick={handleStep1}
                 disabled={!fullName.trim()}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                style={{ background: C.blue, color: '#fff' }}
+                style={{ background: '#FF4D2D', color: '#fff' }}
               >
                 Continue <ChevronRight className="w-4 h-4" />
               </button>
@@ -469,7 +469,7 @@ export default function OnboardingPage() {
                   onClick={handleFinish}
                   disabled={saving || uploading || availStatus === 'taken' || availStatus === 'checking' || !username || !!userError}
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                  style={{ background: C.gold, color: '#141010' }}
+                  style={{ background: C.gold, color: '#0A1120' }}
                 >
                   {saving ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
