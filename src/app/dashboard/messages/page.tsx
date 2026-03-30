@@ -11,23 +11,23 @@ import {
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
-export const viewport = { themeColor: '#0B0B0C' }
+export const viewport = { themeColor: '#0A1120' }
 
 const C = {
-  bg:        '#0B0B0C',
-  surface:   '#141416',
-  card:      '#141416',
+  bg:        '#0A1120',
+  surface:   '#0F172A',
+  card:      '#0F172A',
   border:    'rgba(255,255,255,0.06)',
-  text:      '#F5F5F5',
-  textMuted: '#B0A8A3',
-  textDim:   '#8A817C',
-  red:       '#FF4D2D',
+  text:      '#E5E7EB',
+  textMuted: '#9CA3AF',
+  textDim:   '#6B7280',
+  red:       '#3B82F6',
   redDim:    'rgba(255,255,255,0.06)',
-  gold:      '#A67C52',
-  green:     '#6B9E6B',
+  gold:      '#94A3B8',
+  green:     '#34D399',
 }
 
-const ACOLORS = ['#FF4D2D','#8A817C','#38BDF8','#A67C52','#6B9E6B','#F97316']
+const ACOLORS = ['#3B82F6','#6B7280','#38BDF8','#94A3B8','#34D399','#F97316']
 const aBg     = (id: string) => ACOLORS[(id?.charCodeAt(0) || 0) % ACOLORS.length]
 const getName = (u: any)     => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInit = (u: any)     => getName(u).slice(0, 2).toUpperCase()
@@ -60,8 +60,8 @@ function Avatar({ user, size = 36 }: { user: any; size?: number }) {
 function RoleBadge({ role }: { role?: string }) {
   if (!role || role === 'audience') return null
   const map: Record<string, { bg: string; color: string }> = {
-    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#A67C52' },
-    admin: { bg: 'rgba(255,255,255,0.06)', color: '#FF4D2D' },
+    host:  { bg: 'rgba(255,215,0,0.12)',  color: '#94A3B8' },
+    admin: { bg: 'rgba(255,255,255,0.06)', color: '#3B82F6' },
   }
   const s = map[role]
   if (!s) return null
@@ -184,7 +184,7 @@ function ConvoList({
                 borderLeft: `3px solid ${isActive ? C.red : 'transparent'}`,
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)' }}
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
               onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = isActive ? C.redDim : 'transparent' }}
             >
               <Avatar user={conv.partner} size={42} />
@@ -633,8 +633,8 @@ function DMPage() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0B0B0C' }}>
-        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,77,45,0.25)', borderTopColor: '#FF4D2D', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0A1120' }}>
+        <div style={{ width: 28, height: 28, border: '3px solid rgba(255,77,45,0.25)', borderTopColor: '#3B82F6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
     }>
