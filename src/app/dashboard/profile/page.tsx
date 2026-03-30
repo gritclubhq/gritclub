@@ -11,13 +11,13 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0B0B0C', surface:'#141416', card:'#141416',
-  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.2)',
-  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
-  blue:'#FF4D2D', blueLight:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
+  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.12)',
+  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
+  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
+  green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
 }
 
 const SQL_KEYWORDS = ['select','insert','update','delete','drop','union','script','exec']
@@ -393,7 +393,7 @@ export default function ProfilePage() {
           {/* Privacy */}
           <div style={{ borderRadius:20, padding:20, background:C.card, border:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:10 }}>
             <p style={{ fontSize:11, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase', color:C.textMuted, fontFamily:'Inter,sans-serif' }}>Privacy</p>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${showEmail?'rgba(255,77,45,0.25)':C.border}`, cursor:'pointer' }}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', borderRadius:12, background:C.surface, border:`1px solid ${showEmail?'rgba(59,130,246,0.25)':C.border}`, cursor:'pointer' }}
               onClick={() => setShowEmail(!showEmail)}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <Mail style={{ width:15, height:15, color:showEmail?C.red:C.textDim }} />
