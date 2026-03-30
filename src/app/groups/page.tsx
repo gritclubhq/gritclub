@@ -12,24 +12,24 @@ import {
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
-  bg:         '#0B0B0C',
-  surface:    '#141416',
-  card:       '#141416',
-  cardHover:  '#1C1C1E',
+  bg:         '#0A1120',
+  surface:    '#0F172A',
+  card:       '#0F172A',
+  cardHover:  '#1E293B',
   border:     'rgba(255,255,255,0.06)',
-  borderHover:'rgba(255,255,255,0.14)',
-  text:       '#F5F5F5',
-  textMuted:  '#B0A8A3',
-  textDim:    '#8A817C',
-  blue:       '#FF4D2D',
-  blueLight:  '#B0A8A3',
+  borderHover:'rgba(255,255,255,0.12)',
+  text:       '#E5E7EB',
+  textMuted:  '#9CA3AF',
+  textDim:    '#6B7280',
+  blue:       '#3B82F6',
+  blueLight:  '#9CA3AF',
   blueDim:    'rgba(255,255,255,0.06)',
-  gold:       '#A67C52',
-  goldDim:    'rgba(166,124,82,0.12)',
+  gold:       '#94A3B8',
+  goldDim:    'rgba(148,163,184,0.12)',
   red:        '#EF4444',
   redDim:     'rgba(239,68,68,0.1)',
-  green:      '#6B9E6B',
-  greenDim:   'rgba(107,158,107,0.12)',
+  green:      '#34D399',
+  greenDim:   'rgba(52,211,153,0.12)',
 }
 
 const CATEGORIES = [
@@ -146,7 +146,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
 
           <button
             className="w-full py-3 rounded-xl text-sm font-bold mb-2 transition-all hover:opacity-90"
-            style={{ background: C.gold, color: '#0B0B0C' }}
+            style={{ background: C.gold, color: '#0A1120' }}
           >
             Upgrade Now →
           </button>
@@ -418,7 +418,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: {
               onClick={handleCreate}
               disabled={creating || uploadingBanner}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-              style={{ background: C.blue, color: '#fff' }}
+              style={{ background: '#FF4D2D', color: '#fff' }}
             >
               {creating
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
@@ -494,7 +494,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
             <h3 className="text-sm font-bold leading-tight" style={{ color: C.text }}>{group.name}</h3>
           </div>
           <span className="text-xs font-medium px-2 py-0.5 rounded-md"
-            style={{ background: C.blueDim, color: C.blueLight }}>
+            style={{ background: '#FF4D2D', color: '#fff' }}>
             {group.category}
           </span>
           <p className="text-xs mt-2 line-clamp-2 leading-relaxed" style={{ color: C.textMuted }}>
@@ -529,7 +529,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
             <button
               onClick={() => router.push(`/groups/${group.id}`)}
               className="w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: C.blueDim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
+              style={{ background: '#FF4D2D', color: '#fff', border: `1px solid rgba(37,99,235,0.2)` }}
             >
               Open Group →
             </button>
@@ -685,7 +685,7 @@ export default function GroupsPage() {
           {/* Pending banner */}
           {showPendingBanner && (
             <div className="flex items-center justify-between gap-3 p-4 rounded-2xl"
-              style={{ background: 'rgba(166,124,82,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
               <div className="flex items-center gap-3">
                 <span style={{ fontSize: 20 }}>⏳</span>
                 <div>
@@ -713,7 +713,7 @@ export default function GroupsPage() {
             <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90 flex-shrink-0"
-              style={{ background: C.gold, color: '#0B0B0C' }}
+              style={{ background: C.gold, color: '#0A1120' }}
             >
               <Plus className="w-4 h-4" /> Create Group
             </button>
@@ -823,7 +823,7 @@ export default function GroupsPage() {
                 <button
                   onClick={() => setShowCreate(true)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                  style={{ background: C.gold, color: '#0B0B0C' }}
+                  style={{ background: C.gold, color: '#0A1120' }}
                 >
                   <Plus className="w-4 h-4" /> Create First Group
                 </button>
