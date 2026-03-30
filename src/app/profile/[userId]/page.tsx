@@ -12,17 +12,17 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0B0B0C', surface:'#141416', card:'#141416',
+  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
   border:'rgba(255,255,255,0.06)',
-  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
-  blue:'#FF4D2D', blueLight:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
+  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
+  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
-  purple:'#C24E2A', purpleDim:'rgba(124,58,237,0.1)',
+  green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
+  purple:'#2563EB', purpleDim:'rgba(124,58,237,0.1)',
 }
 
-const AVATAR_COLORS = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const timeAgo = (ts: string) => {
@@ -254,7 +254,7 @@ export default function PublicProfilePage() {
               {currentUser && (
                 <>
                   <button onClick={() => router.push(`/dashboard/messages?user=${targetId}`)}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(255,77,45,0.28)`, cursor:'pointer', background:'rgba(255,77,45,0.08)', color:'#FF6B4A', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:13 }}>
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(59,130,246,0.22)`, cursor:'pointer', background:'rgba(59,130,246,0.12)', color:'#60A5FA', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:13 }}>
                     <MessageSquare style={{ width:13, height:13 }} />
                     Message
                   </button>
