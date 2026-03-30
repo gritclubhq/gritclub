@@ -7,13 +7,13 @@ import { Check, X, Crown, Zap, Building2, Users, Video, Lock, Radio, Star } from
 import Link from 'next/link'
 
 const C = {
-  bg:'#0B0B0C', surface:'#141416', card:'#141416',
-  cardHover:'#1C1C1E', border:'rgba(255,255,255,0.06)',
-  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
-  blue:'#FF4D2D', blueL:'#B0A8A3',
-  purple:'#C24E2A', purpleL:'#C24E2A',
-  gold:'#A67C52', goldL:'#B8915F',
-  red:'#EF4444', green:'#6B9E6B',
+  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  cardHover:'#1E293B', border:'rgba(255,255,255,0.06)',
+  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
+  blue:'#3B82F6', blueL:'#9CA3AF',
+  purple:'#2563EB', purpleL:'#2563EB',
+  gold:'#94A3B8', goldL:'#94A3B8',
+  red:'#EF4444', green:'#34D399',
 }
 
 const PLANS = [
@@ -112,8 +112,8 @@ const PLANS = [
     icon: Building2,
     monthlyPrice: null,
     yearlyPrice: null,
-    color: '#8A817C',
-    glow: 'rgba(255,77,45,0.1)',
+    color: '#6B7280',
+    glow: 'rgba(59,130,246,0.15)',
     borderColor: 'rgba(167,139,250,0.3)',
     highlight: false,
     badge: null,
@@ -211,12 +211,12 @@ export default function PricingPage() {
       {/* Nav */}
       <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:50,height:60,background:'rgba(7,11,20,0.9)',backdropFilter:'blur(16px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px'}}>
         <Link href="/" style={{textDecoration:'none',display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:28,height:28,background:'#FF4D2D',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',fontWeight:800,fontSize:13,color:'#fff',clipPath:'polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)'}}>G</div>
-          <span style={{fontFamily:'Syne',fontWeight:800,fontSize:17,letterSpacing:'-0.02em'}}>GRIT<span style={{color:'#FF4D2D'}}>CLUB</span></span>
+          <div style={{width:28,height:28,background:'#3B82F6',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',fontWeight:800,fontSize:13,color:'#fff',clipPath:'polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)'}}>G</div>
+          <span style={{fontFamily:'Syne',fontWeight:800,fontSize:17,letterSpacing:'-0.02em'}}>GRIT<span style={{color:'#3B82F6'}}>CLUB</span></span>
         </Link>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,color:C.textMuted,padding:'7px 16px',borderRadius:8,border:`1px solid ${C.border}`}}>Sign In</Link>
-          <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',padding:'7px 16px',borderRadius:8,background:'#FF4D2D'}}>Join Free</Link>
+          <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',padding:'7px 16px',borderRadius:8,background:'#3B82F6'}}>Join Free</Link>
         </div>
       </nav>
 
@@ -224,7 +224,7 @@ export default function PricingPage() {
 
         {/* Header */}
         <div style={{textAlign:'center',marginBottom:48}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(166,124,82,0.12)',border:'1px solid rgba(245,158,11,0.3)',marginBottom:20}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(148,163,184,0.12)',border:'1px solid rgba(245,158,11,0.3)',marginBottom:20}}>
             <Star style={{width:12,height:12,color:C.gold}}/>
             <span style={{fontSize:11,fontWeight:700,color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase'}}>Simple, Transparent Pricing</span>
           </div>
@@ -301,7 +301,7 @@ export default function PricingPage() {
                 <div style={{flex:1,display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
                   {plan.features.map(f => (
                     <div key={f} style={{display:'flex',alignItems:'flex-start',gap:8}}>
-                      <div style={{width:16,height:16,borderRadius:'50%',background:plan.highlight?'rgba(245,158,11,0.15)':'rgba(107,158,107,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
+                      <div style={{width:16,height:16,borderRadius:'50%',background:plan.highlight?'rgba(245,158,11,0.15)':'rgba(52,211,153,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
                         <Check style={{width:9,height:9,color:plan.highlight?C.gold:C.green}}/>
                       </div>
                       <span style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>{f}</span>
