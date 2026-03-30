@@ -7,13 +7,13 @@ import Link from 'next/link'
 import { Search, Radio, Lock, Globe, X, Loader2, Calendar, Users, Tag, ChevronRight, Zap } from 'lucide-react'
 
 const C = {
-  bg:         '#0B0B0C', surface:    '#141416', card:       '#141416', cardHover:  '#1C1C1E',
-  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(255,255,255,0.14)',
-  text:       '#F5F5F5', textMuted:  '#B0A8A3', textDim:    '#8A817C',
-  blue:       '#FF4D2D', blueLight:  '#B0A8A3', blueDim:    'rgba(255,255,255,0.06)',
-  gold:       '#A67C52', goldDim:    'rgba(166,124,82,0.12)',
+  bg:         '#0A1120', surface:    '#0F172A', card:       '#0F172A', cardHover:  '#1E293B',
+  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(255,255,255,0.12)',
+  text:       '#E5E7EB', textMuted:  '#9CA3AF', textDim:    '#6B7280',
+  blue:       '#3B82F6', blueLight:  '#9CA3AF', blueDim:    'rgba(255,255,255,0.06)',
+  gold:       '#94A3B8', goldDim:    'rgba(148,163,184,0.12)',
   red:        '#EF4444', redDim:     'rgba(239,68,68,0.1)',
-  green:      '#6B9E6B', greenDim:   'rgba(107,158,107,0.12)',
+  green:      '#34D399', greenDim:   'rgba(52,211,153,0.12)',
 }
 
 const CATEGORIES = ['All','AI & Tech','SaaS','FinTech','HealthTech','EdTech','E-commerce','Climate','Fundraising','Growth','Product']
@@ -38,7 +38,7 @@ function EventCard({ event, currentUserId }: { event: any; currentUserId: string
       <div
         className="rounded-2xl overflow-hidden transition-all duration-200 flex flex-col cursor-pointer"
         style={{ background: C.card, border: `1px solid ${isLive ? 'rgba(239,68,68,0.25)' : C.border}` }}
-        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${isLive ? 'rgba(239,68,68,0.08)' : 'rgba(255,77,45,0.06)'}` }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.5)' : C.borderHover; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = `0 8px 32px ${isLive ? 'rgba(239,68,68,0.08)' : 'rgba(59,130,246,0.1)'}` }}
         onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = isLive ? 'rgba(239,68,68,0.25)' : C.border; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none' }}
       >
         {/* Banner */}
@@ -137,9 +137,9 @@ function EventCard({ event, currentUserId }: { event: any; currentUserId: string
             <div
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
               style={{
-                background: isLive ? C.red     : soldOut ? C.border   : C.blueDim,
+                background: isLive ? '#FF4D2D' : soldOut ? C.border : 'rgba(59,130,246,0.15)',
                 color:      isLive ? '#fff'    : soldOut ? C.textDim  : C.blueLight,
-                border:     `1px solid ${isLive ? C.red : soldOut ? C.border : 'rgba(37,99,235,0.2)'}`,
+                border:     `1px solid ${isLive ? '#FF4D2D' : soldOut ? C.border : 'rgba(59,130,246,0.25)'}`,
               }}>
               {isLive ? 'Join Now →' : soldOut ? 'Sold Out' : 'Get Ticket →'}
             </div>
@@ -232,7 +232,7 @@ export default function EventsPage() {
               {isHost && (
                 <Link href="/host/create">
                   <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                    style={{ background: C.gold, color: '#0B0B0C' }}>
+                    style={{ background: C.gold, color: '#0A1120' }}>
                     <Zap className="w-4 h-4" /> Create Event
                   </button>
                 </Link>
