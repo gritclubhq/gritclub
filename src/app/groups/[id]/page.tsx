@@ -13,14 +13,14 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0B0B0C', surface:'#141416', card:'#141416',
-  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.2)',
-  text:'#F5F5F5', textMuted:'#B0A8A3', textDim:'#8A817C',
-  blue:'#FF4D2D', blueL:'#B0A8A3', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#A67C52', goldDim:'rgba(166,124,82,0.12)',
+  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.12)',
+  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
+  blue:'#3B82F6', blueL:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#6B9E6B', greenDim:'rgba(107,158,107,0.12)',
-  purple:'#C24E2A', purpleDim:'rgba(124,58,237,0.1)',
+  green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
+  purple:'#2563EB', purpleDim:'rgba(124,58,237,0.1)',
 }
 
 const ICE: RTCIceServer[] = [
@@ -34,7 +34,7 @@ const ICE: RTCIceServer[] = [
 type Tab = 'chat' | 'files' | 'call' | 'settings'
 const getName  = (u:any) => u?.full_name||u?.email?.split('@')[0]||'User'
 const getInits = (u:any) => getName(u).slice(0,2).toUpperCase()
-const AC = ['#FF4D2D','#C24E2A','#DB2777','#D97706','#059669','#0891B2']
+const AC = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
 const ac  = (id:string) => AC[(id?.charCodeAt(0)||0)%AC.length]
 const fmtB = (b:number) => b<1024?`${b}B`:b<1048576?`${(b/1024).toFixed(1)}KB`:`${(b/1048576).toFixed(1)}MB`
 const ago  = (ts:string) => { const m=Math.floor((Date.now()-new Date(ts).getTime())/60000); return m<1?'now':m<60?`${m}m`:m<1440?`${Math.floor(m/60)}h ago`:`${Math.floor(m/1440)}d ago` }
@@ -668,7 +668,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
 
         {/* Raised hands bar */}
         {isCtrl&&hands.length>0 && (
-          <div style={{flexShrink:0,background:'rgba(166,124,82,0.12)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
+          <div style={{flexShrink:0,background:'rgba(148,163,184,0.12)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
             <Hand style={{width:14,height:14,color:C.gold,flexShrink:0}}/>
             <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:'Inter,sans-serif',flexShrink:0}}>Raised hands:</span>
             {hands.map((h,i) => (
@@ -693,7 +693,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
               {camOn ? <Video style={{width:17,height:17}}/> : <VideoOff style={{width:17,height:17}}/>}
             </button>
             {!isMob && <button onClick={toggleScreen} title={screenOn?'Stop sharing':'Share screen'}
-              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(255,255,255,0.18)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+              style={{width:44,height:44,borderRadius:'50%',border:`1px solid ${screenOn?'rgba(255,255,255,0.12)':C.border}`,background:screenOn?C.blueDim:C.card,color:screenOn?C.blueL:C.textMuted,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
               {screenOn ? <MonitorOff style={{width:17,height:17}}/> : <Monitor style={{width:17,height:17}}/>}
             </button>}
             <button onClick={toggleRaiseHand} title={raiseHand?'Lower hand':'Raise hand'}
