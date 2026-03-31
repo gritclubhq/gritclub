@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2, ArrowRight, Mail, Lock, AlertCircle } from 'lucide-react'
 
 const C = {
@@ -21,9 +21,9 @@ const C = {
   fontInter:   "'Inter', system-ui, sans-serif",
 }
 
-// ── Inner component uses useSearchParams — must be inside Suspense ────────────
 function LoginForm() {
   const searchParams = useSearchParams()
+  const router       = useRouter()
   const [mode,       setMode]       = useState<'signin' | 'signup'>('signin')
   const [email,      setEmail]      = useState('')
   const [password,   setPassword]   = useState('')
@@ -35,18 +35,25 @@ function LoginForm() {
 
   useEffect(() => {
     const err = searchParams.get('error')
-    if (err === 'auth_failed') {
-      setError('Sign in failed. Please try again or use a different method.')
-    }
+    if (err) setError('Sign in failed. Please try again or use a different method.')
   }, [searchParams])
+
+  // Listen for successful auth — redirect to dashboard
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+        router.push('/dashboard')
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [router])
 
   const handleGoogle = async () => {
     setGoogleLoad(true); setError('')
-    const redirectTo = `${window.location.origin}/auth/callback`
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })
@@ -61,17 +68,19 @@ function LoginForm() {
 
     if (mode === 'signup') {
       const { error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(), password,
+        email: email.trim().toLowerCase(),
+        password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) { setError(error.message); setLoading(false) }
       else { setSuccess('Account created! Check your email to verify, then sign in.'); setLoading(false); setMode('signin') }
     } else {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), password,
+        email: email.trim().toLowerCase(),
+        password,
       })
       if (error) { setError(error.message); setLoading(false) }
-      // On success Supabase triggers onAuthStateChange → DashboardLayout redirects
+      // Success handled by onAuthStateChange listener above
     }
   }
 
@@ -89,7 +98,6 @@ function LoginForm() {
 
       <div style={{ width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
 
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <h1 style={{
@@ -104,10 +112,8 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* Card */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 32, boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
 
-          {/* Mode toggle */}
           <div style={{ display: 'flex', background: C.bg, borderRadius: 10, padding: 3, marginBottom: 28, border: `1px solid ${C.border}` }}>
             {(['signin', 'signup'] as const).map(m => (
               <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }}
@@ -140,11 +146,10 @@ function LoginForm() {
             </div>
           )}
 
-          {/* Google */}
           <button onClick={handleGoogle} disabled={googleLoad}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px', borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.text, cursor: googleLoad ? 'wait' : 'pointer', fontFamily: C.fontInter, fontWeight: 500, fontSize: 14, marginBottom: 20, opacity: googleLoad ? 0.65 : 1, transition: 'all 0.2s' }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.borderFocus }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = C.border }}>
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.borderFocus }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border }}>
             {googleLoad ? <Loader2 style={{ width: 17, height: 17, animation: 'spin 0.8s linear infinite' }} /> : (
               <svg width="17" height="17" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -212,7 +217,6 @@ function LoginForm() {
   )
 }
 
-// ── Suspense wrapper — required for useSearchParams in Next.js 14 ─────────────
 export default function LoginPage() {
   return (
     <Suspense fallback={
