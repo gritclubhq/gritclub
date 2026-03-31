@@ -324,14 +324,14 @@ export default function OnboardingPage() {
         <div className="text-center mb-8">
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
-            style={{ background: '#FF4D2D'Dim, color: C.blueLight, border: `1px solid rgba(37,99,235,0.2)` }}
+            style={{ background: 'rgba(59,130,246,0.15)', color: C.blueLight, border: `1px solid rgba(59,130,246,0.2)` }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
             WELCOME TO GRITCLUB
           </div>
           <h1
             className="text-3xl font-bold mb-2"
-            style={{ color: C.text, fontFamily: 'Syne, sans-serif', letterSpacing: '-0.02em' }}
+            style={{ color: C.text, fontFamily: "'Sora', system-ui, sans-serif", letterSpacing: '-0.02em' }}
           >
             Set up your<br />
             <span style={{ color: C.gold }}>profile</span>
