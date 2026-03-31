@@ -11,13 +11,13 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
-  border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.12)',
-  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
-  red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
-  green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
+  bg:'#291C0E', surface:'#2F2115', card:'#2F2115',
+  border:'rgba(225,212,194,0.08)', borderFocus:'rgba(225,212,194,0.18)',
+  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#A78D78',
+  blue:'#C4956A', blueLight:'#BEB5A9', blueDim:'rgba(225,212,194,0.08)',
+  gold:'#A78D78', goldDim:'rgba(148,163,184,0.12)',
+  red:'#C0614A', redDim:'rgba(239,68,68,0.1)',
+  green:'#6B9E7A', greenDim:'rgba(52,211,153,0.12)',
 }
 
 const SQL_KEYWORDS = ['select','insert','update','delete','drop','union','script','exec']
