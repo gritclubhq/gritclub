@@ -14,31 +14,31 @@ import NotificationBell from '@/components/NotificationBell'
 
 const C = {
   // Backgrounds
-  bg:           '#0A1120',
-  sidebar:      '#0D1526',
-  card:         '#1A2338',
-  surface:      '#1E293B',
+  bg:           '#291C0E',
+  sidebar:      '#2F2115',
+  card:         '#3D2B1F',
+  surface:      '#4A3327',
   // Borders
-  border:       'rgba(255,255,255,0.06)',
-  borderStrong: 'rgba(255,255,255,0.12)',
+  border:       'rgba(225,212,194,0.08)',
+  borderStrong: 'rgba(225,212,194,0.18)',
   // Text
-  text:         '#E5E7EB',
-  textMuted:    '#9CA3AF',
-  textDim:      '#6B7280',
+  text:         '#E1D4C2',
+  textMuted:    '#BEB5A9',
+  textDim:      '#A78D78',
   // Blue — structure / nav / states
-  blue:         '#3B82F6',
-  blueH:        '#60A5FA',
-  blueSoft:     'rgba(59,130,246,0.15)',
-  blueDim:      'rgba(59,130,246,0.08)',
+  blue:         '#C4956A',
+  blueH:        '#E1D4C2',
+  blueSoft:     'rgba(196,149,106,0.15)',
+  blueDim:      'rgba(196,149,106,0.08)',
   // Ember — action only
-  ember:        '#FF4D2D',
-  emberSoft:    'rgba(255,77,45,0.1)',
+  ember:        '#C4956A',
+  emberSoft:    'rgba(196,149,106,0.1)',
   // Semantic
   gold:         '#94A3B8',
   goldDim:      'rgba(148,163,184,0.1)',
-  red:          '#EF4444',
-  redDim:       'rgba(239,68,68,0.09)',
-  green:        '#34D399',
+  red:          '#C0614A',
+  redDim:       'rgba(192,97,74,0.09)',
+  green:        '#6B9E7A',
   // Fonts
   fontSora:  "'Sora', system-ui, sans-serif",
   fontInter: "'Inter', system-ui, sans-serif",
