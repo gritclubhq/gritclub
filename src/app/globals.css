@@ -139,11 +139,10 @@
   .bg-gradient-card    { background: linear-gradient(145deg, #1E293B, #1A2338); }
 
   /* Glows — controlled, not neon */
-  .glow-brand  { box-shadow: 0 0 12px rgba(59,130,246,0.28), 0 0 28px rgba(59,130,246,0.08); }
-  .glow-ember  { box-shadow: 0 0 12px rgba(255,77,45,0.3),   0 0 28px rgba(255,77,45,0.08); }
+  .glow-brand      { box-shadow: 0 0 12px rgba(59,130,246,0.28), 0 0 28px rgba(59,130,246,0.08); }
+  .glow-ember      { box-shadow: 0 0 12px rgba(255,77,45,0.3),   0 0 28px rgba(255,77,45,0.08); }
   .glow-brand-text { text-shadow: 0 0 20px rgba(59,130,246,0.3); }
-  .glow-brand { @apply glow-brand; }
-  .shadow-brand { @apply glow-brand; }
+  .shadow-brand    { box-shadow: 0 0 12px rgba(59,130,246,0.28), 0 0 28px rgba(59,130,246,0.08); }
 
   /* Button base utilities */
   .btn-primary {
