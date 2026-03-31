@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { AuthProvider } from '@/context/AuthContext'
 
 export const metadata: Metadata = {
   title: 'GritClub — Where Ambition Meets Action',
@@ -29,8 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="bg-[#0A1120] text-[#F5F5F5] antialiased" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-        {children}
+      <body style={{ background: '#291C0E', color: '#E1D4C2', fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )
