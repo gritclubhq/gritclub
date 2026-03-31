@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -21,7 +21,8 @@ const C = {
   fontInter:   "'Inter', system-ui, sans-serif",
 }
 
-export default function LoginPage() {
+// ── Inner component uses useSearchParams — must be inside Suspense ────────────
+function LoginForm() {
   const searchParams = useSearchParams()
   const [mode,       setMode]       = useState<'signin' | 'signup'>('signin')
   const [email,      setEmail]      = useState('')
@@ -39,14 +40,13 @@ export default function LoginPage() {
     }
   }, [searchParams])
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window?.location?.origin || 'https://gritclub.live'
-
   const handleGoogle = async () => {
     setGoogleLoad(true); setError('')
+    const redirectTo = `${window.location.origin}/auth/callback`
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : siteUrl}/auth/callback`,
+        redirectTo,
         queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })
@@ -62,9 +62,7 @@ export default function LoginPage() {
     if (mode === 'signup') {
       const { error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(), password,
-        options: {
-          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : siteUrl}/auth/callback`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) { setError(error.message); setLoading(false) }
       else { setSuccess('Account created! Check your email to verify, then sign in.'); setLoading(false); setMode('signin') }
@@ -73,6 +71,7 @@ export default function LoginPage() {
         email: email.trim().toLowerCase(), password,
       })
       if (error) { setError(error.message); setLoading(false) }
+      // On success Supabase triggers onAuthStateChange → DashboardLayout redirects
     }
   }
 
@@ -85,9 +84,7 @@ export default function LoginPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: C.fontInter, position: 'relative', overflow: 'hidden' }}>
-      {/* Subtle grid */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      {/* Subtle top glow */}
       <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 300, background: 'radial-gradient(ellipse, rgba(255,255,255,0.03) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
@@ -100,9 +97,7 @@ export default function LoginPage() {
               letterSpacing: '-0.03em', margin: 0, lineHeight: 1,
               background: 'linear-gradient(135deg, #E8E8E8 0%, #CFCFCF 25%, #FFFFFF 50%, #B8B8B8 75%, #EDEDED 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>
-              GRITCLUB
-            </h1>
+            }}>GRITCLUB</h1>
           </Link>
           <p style={{ fontFamily: C.fontInter, fontSize: 13, color: C.textDim, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 8 }}>
             Build With People Who Refuse Average
@@ -112,7 +107,7 @@ export default function LoginPage() {
         {/* Card */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 32, boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
 
-          {/* Toggle */}
+          {/* Mode toggle */}
           <div style={{ display: 'flex', background: C.bg, borderRadius: 10, padding: 3, marginBottom: 28, border: `1px solid ${C.border}` }}>
             {(['signin', 'signup'] as const).map(m => (
               <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }}
@@ -133,14 +128,12 @@ export default function LoginPage() {
             {mode === 'signin' ? 'Sign in to your account' : 'Start building with serious people'}
           </p>
 
-          {/* Error */}
           {error && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 13px', borderRadius: 10, marginBottom: 16, background: 'rgba(255,69,58,0.08)', border: '1px solid rgba(255,69,58,0.2)' }}>
               <AlertCircle style={{ width: 14, height: 14, color: C.red, flexShrink: 0 }} />
               <p style={{ fontSize: 13, color: C.red, margin: 0, fontFamily: C.fontInter }}>{error}</p>
             </div>
           )}
-          {/* Success */}
           {success && (
             <div style={{ padding: '10px 13px', borderRadius: 10, marginBottom: 16, background: 'rgba(50,215,75,0.08)', border: '1px solid rgba(50,215,75,0.2)' }}>
               <p style={{ fontSize: 13, color: C.green, margin: 0, fontFamily: C.fontInter }}>{success}</p>
@@ -216,5 +209,19 @@ export default function LoginPage() {
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
+  )
+}
+
+// ── Suspense wrapper — required for useSearchParams in Next.js 14 ─────────────
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: '#0B0B0C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 style={{ width: 24, height: 24, color: '#8A8A8F', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
