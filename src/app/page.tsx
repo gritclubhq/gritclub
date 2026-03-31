@@ -87,7 +87,7 @@ const Navbar = ({ visible }: { visible: boolean }) => {
             ))}
             <Link href="/auth/login">
               <button className="ml-4 px-5 py-2 bg-gradient-brand text-primary-foreground font-heading font-bold tracking-wider uppercase text-sm rounded hover:shadow-brand transition-all duration-500">
-                Enter GritClub
+                Enter the Network
               </button>
             </Link>
           </div>
@@ -117,7 +117,7 @@ const Navbar = ({ visible }: { visible: boolean }) => {
               ))}
               <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
                 <button className="mt-2 w-full px-5 py-2 bg-gradient-brand text-primary-foreground font-heading font-bold tracking-wider uppercase text-sm rounded">
-                  Enter GritClub
+                  Enter the Network
                 </button>
               </Link>
             </div>
@@ -232,17 +232,17 @@ export default function LandingPage() {
   }
 
   const pillars = [
-    { icon: Radio,          title: 'Live Events',         desc: 'Ticketed sessions with whiteboard, screen share, and live Q&A. Real knowledge transfer, not recorded fluff.' },
-    { icon: MessageCircle,  title: '1:1 Conversations',   desc: 'Direct conversations with mentors, co-founders, and industry leaders. No gatekeeping. No vanity metrics.' },
-    { icon: Users,          title: 'Masterminds',         desc: 'Curated groups of 5 ambitious people. Weekly accountability. Lifetime access. Zero cost for founding members.' },
-    { icon: Zap,            title: 'The Network',         desc: 'Filtered by ambition stage — aspiring, building, scaling, exited. Connect with people at your level or above.' },
+    { icon: Radio,          title: 'Live Sessions',   desc: 'Interactive sessions with founders and operators. Real workflows, real decisions, no pre-recorded content.' },
+    { icon: MessageCircle,  title: 'Direct Access',   desc: 'Message founders, mentors, and builders directly. No audience walls or artificial barriers.' },
+    { icon: Users,          title: 'Small Groups',    desc: 'Groups of 5 with aligned goals. Built for accountability, consistency, and long-term progress.' },
+    { icon: Zap,            title: 'Curated Network', desc: 'People filtered by intent and stage — from early builders to experienced operators.' },
   ]
 
   const steps = [
-    { num: '01', title: 'Enter',  desc: 'Create your profile. Zero cost. Instant access to the network.' },
-    { num: '02', title: 'Connect',desc: 'Find your people. Message mentors, builders, and leaders directly.' },
-    { num: '03', title: 'Learn',  desc: 'Join live sessions. Real strategies from people who\'ve done it.' },
-    { num: '04', title: 'Lead',   desc: 'Host your own sessions. Build authority. Keep 80% of every ticket.' },
+    { num: '01', title: 'Enter',   desc: 'Create a simple profile and enter the network.' },
+    { num: '02', title: 'Connect', desc: 'Find and connect with people working on similar or higher-level problems.' },
+    { num: '03', title: 'Learn',   desc: 'Join live sessions and learn directly from people executing in real time.' },
+    { num: '04', title: 'Lead',    desc: 'Host sessions, share knowledge, and build your own authority.' },
   ]
 
   const tools = [
@@ -279,26 +279,25 @@ export default function LandingPage() {
                 transition={{ delay: 0.3, duration: 1 }}
               >
                 <p className="font-heading text-primary tracking-[0.4em] uppercase text-xs md:text-sm mb-8">
-                  The platform for the relentless
+                  A private network for builders
                 </p>
                 <h1 className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold leading-[0.9] mb-8">
-                  <span className="text-foreground">Success Is</span>
+                  <span className="text-foreground">Find the People</span>
                   <br />
-                  <span className="text-gradient-brand glow-brand">Not Rented.</span>
+                  <span className="text-gradient-brand glow-brand">You Build With</span>
                 </h1>
                 <p className="font-body text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
-                  Where hustlers learn from winners through live sessions, 1:1 conversations with mentors,
-                  and mastermind groups that actually hold you accountable.
+                  A focused environment to connect with founders, learn from operators, and build alongside people who are actually doing the work.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link href="/auth/login">
                     <button className="inline-flex items-center gap-2 text-base px-10 py-5 bg-gradient-brand text-primary-foreground font-heading font-bold tracking-wider uppercase rounded hover:shadow-brand transition-all duration-500">
-                      Enter GritClub <ArrowRight className="w-5 h-5" />
+                      Enter the Network <ArrowRight className="w-5 h-5" />
                     </button>
                   </Link>
                   <Link href="/dashboard">
                     <button className="inline-flex items-center gap-2 text-base px-10 py-5 border-2 border-primary bg-transparent text-primary font-heading font-bold tracking-wider uppercase rounded hover:bg-primary/10 transition-all duration-500">
-                      Browse Events
+                      Explore Live Sessions
                     </button>
                   </Link>
                 </div>
@@ -313,7 +312,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* ═══ LAMBORGHINI QUOTE ═══ */}
+          {/* ═══ ABOUT SECTION (replaces Lamborghini quote) ═══ */}
           <Section id="about">
             <div className="max-w-5xl mx-auto px-6 text-center">
               <motion.div
@@ -322,13 +321,11 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="h-[1px] bg-gradient-brand w-24 mx-auto mb-12 origin-center"
               />
-              <blockquote className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold italic leading-tight text-foreground">
-                &ldquo;Nobody puts a poster of an{' '}
-                <span className="text-gradient-brand">accountant</span>{' '}
-                on their wall.&rdquo;
-              </blockquote>
-              <p className="font-heading text-primary tracking-[0.3em] uppercase text-sm mt-8">
-                — Ferruccio Lamborghini
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+                Most people don&apos;t fail because they lack ambition.
+              </h2>
+              <p className="font-body text-muted-foreground mt-6 text-lg max-w-2xl mx-auto">
+                They fail because they build alone, learn from the wrong people, and never get real feedback.
               </p>
               <motion.div
                 initial={{ scaleX: 0 }}
@@ -344,10 +341,10 @@ export default function LandingPage() {
             <div className="max-w-6xl mx-auto px-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
                 {[
-                  { end: 80, suffix: '%', label: 'Revenue to hosts' },
-                  { end: 0, prefix: '$', suffix: '', label: 'Setup fees', display: '$0' },
-                  { end: 5, suffix: '', label: 'Free mastermind seats' },
-                  { end: 29, prefix: '$', suffix: '', label: 'Per live session' },
+                  { end: 80,  suffix: '%', label: 'Host earnings share' },
+                  { end: 0,   prefix: '$', suffix: '', label: 'Platform entry cost', display: '$0' },
+                  { end: 5,   suffix: '',  label: 'Founding group size' },
+                  { end: 29,  prefix: '$', suffix: '', label: 'Typical session price' },
                 ].map((stat, i) => (
                   <motion.div
                     key={i}
@@ -375,7 +372,7 @@ export default function LandingPage() {
               <div className="text-center mb-16">
                 <p className="font-heading text-primary tracking-[0.4em] uppercase text-xs mb-4">The Framework</p>
                 <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-                  Four Ways to <span className="text-gradient-brand">Dominate</span>
+                  Four Ways to <span className="text-gradient-brand">Grow</span>
                 </h2>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
@@ -417,7 +414,7 @@ export default function LandingPage() {
                       { from: true,  text: 'Saw your session on cold outbound — the LinkedIn strategy was 🔥' },
                       { from: false, text: 'Thanks! Happy to share my exact sequence. Want to jump on a call this week?' },
                       { from: true,  text: 'Absolutely. Wednesday work? I\'ll bring my current metrics for feedback.' },
-                      { from: false, text: 'Perfect. This is what GritClub is about — no gatekeeping. See you Wed.' },
+                      { from: false, text: 'Good. Bring your numbers. We\'ll go through it properly.' },
                     ].map((msg, i) => (
                       <motion.div
                         key={i}
@@ -490,13 +487,16 @@ export default function LandingPage() {
             </div>
           </Section>
 
-          {/* ═══ 80% REVENUE ═══ */}
+          {/* ═══ REVENUE SECTION ═══ */}
           <Section>
             <div className="max-w-4xl mx-auto px-6 text-center">
               <p className="font-heading text-primary tracking-[0.4em] uppercase text-xs mb-4">Host Economics</p>
-              <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-8">
-                You Keep <span className="text-gradient-brand glow-brand">Everything</span> You Earn
+              <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">
+                Built for People Who <span className="text-gradient-brand glow-brand">Create Value</span>
               </h2>
+              <p className="font-body text-muted-foreground text-lg max-w-xl mx-auto mb-12">
+                If you teach, build, or share real knowledge — the platform is designed to support you, not take from you.
+              </p>
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -597,7 +597,7 @@ export default function LandingPage() {
                   Mastermind <span className="text-gradient-brand">Groups</span>
                 </h2>
                 <p className="font-body text-muted-foreground text-lg mt-4 max-w-xl mx-auto">
-                  5 founding members join free — forever. Build with people who match your intensity.
+                  5 founding members join free — forever. Work with people who take execution seriously.
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -645,7 +645,7 @@ export default function LandingPage() {
             </div>
           </Section>
 
-          {/* ═══ SECOND QUOTE ═══ */}
+          {/* ═══ SECOND QUOTE (kept as atmospheric section) ═══ */}
           <Section className="border-y border-border">
             <Particles />
             <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
@@ -671,15 +671,16 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full animate-pulse-glow" />
                 <div className="relative z-10">
                   <h2 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-foreground mb-6">
-                    Stop <span className="text-gradient-brand glow-brand">Dreaming.</span>
+                    Start Building With{' '}
+                    <span className="text-gradient-brand glow-brand">the Right People.</span>
                   </h2>
                   <p className="font-body text-muted-foreground text-lg md:text-xl max-w-xl mx-auto mb-12">
-                    The next session starts soon. The next connection is one message away.
-                    The only thing missing is you.
+                    The right environment changes everything.{' '}
+                    One conversation can shift your trajectory.
                   </p>
                   <Link href="/auth/login">
                     <button className="inline-flex items-center gap-2 text-lg px-12 py-6 bg-gradient-brand text-primary-foreground font-heading font-bold tracking-wider uppercase rounded hover:shadow-brand transition-all duration-500">
-                      Enter GritClub <ArrowRight className="w-5 h-5" />
+                      Enter the Network <ArrowRight className="w-5 h-5" />
                     </button>
                   </Link>
                 </div>
