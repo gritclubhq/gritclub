@@ -7,13 +7,13 @@ import { Check, X, Crown, Zap, Building2, Users, Video, Lock, Radio, Star } from
 import Link from 'next/link'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
-  cardHover:'#1E293B', border:'rgba(255,255,255,0.06)',
-  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueL:'#9CA3AF',
+  bg:'#291C0E', surface:'#2F2115', card:'#2F2115',
+  cardHover:'#4A3327', border:'rgba(225,212,194,0.08)',
+  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#A78D78',
+  blue:'#C4956A', blueL:'#BEB5A9',
   purple:'#2563EB', purpleL:'#2563EB',
   gold:'#94A3B8', goldL:'#94A3B8',
-  red:'#EF4444', green:'#34D399',
+  red:'#C0614A', green:'#6B9E7A',
 }
 
 const PLANS = [
@@ -24,7 +24,7 @@ const PLANS = [
     monthlyPrice: 0,
     yearlyPrice: 0,
     color: C.blueL,
-    glow: 'rgba(255,255,255,0.06)',
+    glow: 'rgba(225,212,194,0.08)',
     borderColor: 'rgba(167,141,120,0.2)',
     highlight: false,
     badge: null,
@@ -55,7 +55,7 @@ const PLANS = [
     yearlyPrice: 70,
     yearlySaving: '42%',
     color: C.blueL,
-    glow: 'rgba(255,255,255,0.06)',
+    glow: 'rgba(225,212,194,0.08)',
     borderColor: 'rgba(59,130,246,0.35)',
     highlight: false,
     badge: null,
@@ -112,7 +112,7 @@ const PLANS = [
     icon: Building2,
     monthlyPrice: null,
     yearlyPrice: null,
-    color: '#6B7280',
+    color: '#A78D78',
     glow: 'rgba(59,130,246,0.15)',
     borderColor: 'rgba(167,139,250,0.3)',
     highlight: false,
@@ -211,12 +211,12 @@ export default function PricingPage() {
       {/* Nav */}
       <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:50,height:60,background:'rgba(7,11,20,0.9)',backdropFilter:'blur(16px)',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px'}}>
         <Link href="/" style={{textDecoration:'none',display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:28,height:28,background:'#3B82F6',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',fontWeight:800,fontSize:13,color:'#fff',clipPath:'polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)'}}>G</div>
-          <span style={{fontFamily:'Syne',fontWeight:800,fontSize:17,letterSpacing:'-0.02em'}}>GRIT<span style={{color:'#3B82F6'}}>CLUB</span></span>
+          <div style={{width:28,height:28,background:'#C4956A',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',fontWeight:800,fontSize:13,color:'#fff',clipPath:'polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)'}}>G</div>
+          <span style={{fontFamily:'Syne',fontWeight:800,fontSize:17,letterSpacing:'-0.02em'}}>GRIT<span style={{color:'#C4956A'}}>CLUB</span></span>
         </Link>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,color:C.textMuted,padding:'7px 16px',borderRadius:8,border:`1px solid ${C.border}`}}>Sign In</Link>
-          <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',padding:'7px 16px',borderRadius:8,background:'#3B82F6'}}>Join Free</Link>
+          <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',padding:'7px 16px',borderRadius:8,background:'#C4956A'}}>Join Free</Link>
         </div>
       </nav>
 
