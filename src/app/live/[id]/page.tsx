@@ -12,13 +12,13 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
-  border:'rgba(255,255,255,0.06)', text:'#E5E7EB',
-  textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueL:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
-  red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
-  green:'#34D399',
+  bg:'#291C0E', surface:'#2F2115', card:'#2F2115',
+  border:'rgba(225,212,194,0.08)', text:'#E1D4C2',
+  textMuted:'#BEB5A9', textDim:'#A78D78',
+  blue:'#C4956A', blueL:'#BEB5A9', blueDim:'rgba(225,212,194,0.08)',
+  gold:'#A78D78', goldDim:'rgba(148,163,184,0.12)',
+  red:'#C0614A', redDim:'rgba(239,68,68,0.12)',
+  green:'#6B9E7A',
 }
 
 const ICE: RTCIceServer[] = [
@@ -34,7 +34,7 @@ const BAD    = ['spam','scam','fuck','shit','bitch','asshole','dick','pussy','cu
 const hasBad = (t: string) => BAD.some(w => t.toLowerCase().includes(w))
 const uname  = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const uinits = (u: any) => uname(u).slice(0, 2).toUpperCase()
-const AC     = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
+const AC     = ['#C4956A','#2563EB','#DB2777','#D97706','#059669','#0891B2']
 const uac    = (id: string) => AC[(id?.charCodeAt(0) || 0) % AC.length]
 const tsAgo  = (ts: number) => { const m = Math.floor((Date.now()-ts)/60000); return m<1?'now':m<60?`${m}m`:`${Math.floor(m/60)}h` }
 const recFmt = (s: number) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
@@ -189,7 +189,7 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
     { id:'circle',      label:'Circle',      I:Circle },
   ] as any[]
 
-  const COLS = ['#FFFFFF','#000000','#EF4444','#9CA3AF','#94A3B8','#34D399','#6B7280','#FB923C','#EC4899','#06B6D4']
+  const COLS = ['#FFFFFF','#000000','#C0614A','#BEB5A9','#A78D78','#6B9E7A','#A78D78','#FB923C','#EC4899','#06B6D4']
 
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', background:C.surface, borderTop:`1px solid ${C.border}`, flexWrap:'wrap', flexShrink:0 }}>
@@ -199,7 +199,7 @@ function BoardToolbar({ bg, canvasRef, toolRef, colorRef, sizeRef, opacityRef, t
           <button key={id} onClick={()=>setTool(id)} title={label}
             style={{ width:28, height:28, borderRadius:6, border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
               background: tool===id ? (id==='highlighter'?'rgba(251,191,36,0.3)':id==='marker'?'rgba(16,185,129,0.2)':C.blue) : 'transparent',
-              color: tool===id ? (id==='highlighter'?'#94A3B8':id==='marker'?C.green:'#fff') : C.textMuted,
+              color: tool===id ? (id==='highlighter'?'#A78D78':id==='marker'?C.green:'#fff') : C.textMuted,
               outline: tool===id ? `2px solid ${id==='highlighter'?'rgba(251,191,36,0.5)':id==='marker'?'rgba(16,185,129,0.4)':C.blue}` : 'none',
               outlineOffset: '1px'
             }}>
@@ -689,7 +689,7 @@ export default function LiveRoomPage() {
         <Shield style={{ width:44, height:44, color:C.red, marginBottom:16 }}/>
         <h2 style={{ fontSize:20, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', marginBottom:8 }}>Ticket Required</h2>
         <p style={{ fontSize:14, color:C.textMuted, fontFamily:'Inter,sans-serif', marginBottom:24 }}>You need a ticket to attend this event.</p>
-        <button onClick={()=>router.push(`/events/${eventId}`)} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:C.gold, color:'#0A1120', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Get Ticket →</button>
+        <button onClick={()=>router.push(`/events/${eventId}`)} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:C.gold, color:'#291C0E', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Get Ticket →</button>
       </div>
     </div>
   )
@@ -751,7 +751,7 @@ export default function LiveRoomPage() {
 
       {/* Mode badges */}
       {mode==='screen' && <div style={{ position:'absolute', top:12, left:12, zIndex:5, display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:20, background:'rgba(37,99,235,0.25)', backdropFilter:'blur(8px)', border:'1px solid rgba(37,99,235,0.4)' }}><Monitor style={{ width:13, height:13, color:C.blueL }}/><span style={{ fontSize:11, fontWeight:700, color:C.blueL }}>Screen Sharing</span></div>}
-      {mode==='board'  && <div style={{ position:'absolute', top:12, left:12, zIndex:5, display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:20, background:'rgba(124,58,237,0.25)', backdropFilter:'blur(8px)', border:'1px solid rgba(124,58,237,0.4)' }}><PenLine style={{ width:13, height:13, color:'#6B7280' }}/><span style={{ fontSize:11, fontWeight:700, color:'#6B7280' }}>Board Live</span></div>}
+      {mode==='board'  && <div style={{ position:'absolute', top:12, left:12, zIndex:5, display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:20, background:'rgba(124,58,237,0.25)', backdropFilter:'blur(8px)', border:'1px solid rgba(124,58,237,0.4)' }}><PenLine style={{ width:13, height:13, color:'#A78D78' }}/><span style={{ fontSize:11, fontWeight:700, color:'#A78D78' }}>Board Live</span></div>}
 
       <div style={{ position:'absolute', top:10, right:10, zIndex:10 }}>
         <button onClick={toggleFS} style={{ width:32, height:32, borderRadius:8, border:'none', cursor:'pointer', background:'rgba(0,0,0,0.5)', backdropFilter:'blur(8px)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -778,23 +778,23 @@ export default function LiveRoomPage() {
       {/* Mode switcher */}
       {streaming && (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 12px', borderBottom:`1px solid ${C.border}`, flexWrap:'wrap' }}>
-          <button onClick={toCamera} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='camera'?'rgba(255,255,255,0.12)':'transparent'}`, background:mode==='camera'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='camera'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+          <button onClick={toCamera} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='camera'?'rgba(225,212,194,0.18)':'transparent'}`, background:mode==='camera'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='camera'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
             <Video style={{ width:13, height:13 }}/>Camera
           </button>
-          <button onClick={mode==='screen'?stopScreen:startScreen} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='screen'?'rgba(255,255,255,0.12)':'transparent'}`, background:mode==='screen'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='screen'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+          <button onClick={mode==='screen'?stopScreen:startScreen} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='screen'?'rgba(225,212,194,0.18)':'transparent'}`, background:mode==='screen'?C.blueDim:'rgba(51,65,85,0.4)', color:mode==='screen'?C.blueL:C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
             {mode==='screen'?<MonitorOff style={{ width:13, height:13 }}/>:<Monitor style={{ width:13, height:13 }}/>}
             {mode==='screen'?'Stop Share':'Screen'}
           </button>
           {/* Board dropdown */}
           <div ref={wbDropRef} style={{ position:'relative' }}>
-            <button onClick={()=>setWbBgOpen(p=>!p)} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='board'?'rgba(124,58,237,0.4)':'transparent'}`, background:mode==='board'?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)', color:mode==='board'?'#6B7280':C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+            <button onClick={()=>setWbBgOpen(p=>!p)} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:8, border:`1px solid ${mode==='board'?'rgba(124,58,237,0.4)':'transparent'}`, background:mode==='board'?'rgba(124,58,237,0.15)':'rgba(51,65,85,0.4)', color:mode==='board'?'#A78D78':C.textDim, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
               <PenLine style={{ width:13, height:13 }}/>Board<ChevronDown style={{ width:11, height:11, marginLeft:1 }}/>
             </button>
             {wbBgOpen && (
               <div style={{ position:'absolute', bottom:'calc(100% + 4px)', left:0, background:C.card, border:`1px solid ${C.border}`, borderRadius:10, overflow:'hidden', zIndex:50, minWidth:130, boxShadow:'0 8px 24px rgba(0,0,0,0.5)' }}>
                 {[{ n:'White', v:'#F8FAFC' },{ n:'Dark', v:'#0A0A0F' },{ n:'Green', v:'#064E3B' }].map(b=>(
                   <button key={b.v} onClick={()=>{ startBoard(b.v); setWbBgOpen(false) }}
-                    style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 14px', border:'none', background:boardBg===b.v&&mode==='board'?'rgba(124,58,237,0.15)':'transparent', color:boardBg===b.v&&mode==='board'?'#6B7280':C.text, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left' }}>
+                    style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 14px', border:'none', background:boardBg===b.v&&mode==='board'?'rgba(124,58,237,0.15)':'transparent', color:boardBg===b.v&&mode==='board'?'#A78D78':C.text, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left' }}>
                     <div style={{ width:14, height:14, borderRadius:3, background:b.v, border:'1px solid rgba(255,255,255,0.25)', flexShrink:0 }}/>{b.n}
                   </button>
                 ))}
@@ -882,7 +882,7 @@ export default function LiveRoomPage() {
             placeholder="Say something..."
             maxLength={500}
             style={{ flex:1, padding:'10px 14px', borderRadius:12, border:`1px solid ${C.border}`, background:C.surface, color:C.text, fontSize:13, fontFamily:'Inter,sans-serif', outline:'none' }}
-            onFocus={e=>(e.target.style.borderColor='rgba(255,255,255,0.12)')}
+            onFocus={e=>(e.target.style.borderColor='rgba(225,212,194,0.18)')}
             onBlur={e=>(e.target.style.borderColor=C.border)}
           />
           <button onClick={sendMsg} disabled={!newMsg.trim()||sending||slowCD>0}
