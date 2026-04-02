@@ -2,46 +2,46 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const PROTECTED_PREFIXES = ['/dashboard', '/host', '/admin', '/groups', '/profile', '/onboarding']
-const PUBLIC_ONLY = ['/auth/login']
+const PROTECTED = ['/dashboard', '/host', '/admin', '/onboarding']
+const AUTH_ONLY  = ['/auth/login']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
+  // Create Supabase server client that reads/writes cookies
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+        setAll(cookiesToSet) {
+          // Write updated cookies to both request and response
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, {
-              ...options,
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-            })
+            response.cookies.set(name, value, options)
           )
         },
       },
     }
   )
 
-  // Always refresh session — this is critical for persistence
+  // IMPORTANT: getUser() validates the JWT with Supabase servers
+  // This also refreshes the session token if needed
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  if (user && PUBLIC_ONLY.some(p => path.startsWith(p))) {
+  // Authenticated user trying to access login → send to dashboard
+  if (user && AUTH_ONLY.some(p => path.startsWith(p))) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  if (!user && PROTECTED_PREFIXES.some(p => path.startsWith(p))) {
-    const loginUrl = new URL('/auth/login', request.url)
-    loginUrl.searchParams.set('next', path)
-    return NextResponse.redirect(loginUrl)
+  // Unauthenticated user trying to access protected route → send to login
+  if (!user && PROTECTED.some(p => path.startsWith(p))) {
+    const url = new URL('/auth/login', request.url)
+    url.searchParams.set('next', path)
+    return NextResponse.redirect(url)
   }
 
   return response
@@ -49,6 +49,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Skip static files, images, and Stripe webhooks
     '/((?!_next/static|_next/image|favicon.ico|manifest.json|logo.png|hero-bg|hero-meeting|hero-aerial|api/stripe).*)',
   ],
 }
