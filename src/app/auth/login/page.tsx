@@ -35,9 +35,14 @@ function LoginForm() {
   const [success,    setSuccess]    = useState('')
 
   // Show error from callback redirect (?error=auth_failed)
+  // Then strip the param from the URL so a page refresh doesn't re-show it
   useEffect(() => {
     if (searchParams.get('error')) {
       setError('Sign in failed. Please try again.')
+      // Clean the URL without reloading the page
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('error')
+      window.history.replaceState({}, '', clean.toString())
     }
   }, [searchParams])
 
@@ -52,27 +57,42 @@ function LoginForm() {
     return () => subscription.unsubscribe()
   }, [router, searchParams])
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
+  // ── Google OAuth ────────────────────────────────────────────────────────────
   const handleGoogle = async () => {
     setGoogleLoad(true)
     setError('')
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // MUST redirect to our callback PAGE (not a route handler)
-        // so the browser can process the hash/code
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: { access_type: 'offline', prompt: 'consent' },
+        /**
+         * redirectTo must point to the ROUTE HANDLER at /auth/callback
+         * (not a page). The route handler receives the ?code= param and
+         * exchanges it for a session via exchangeCodeForSession().
+         *
+         * The `next` param is forwarded so the callback can redirect
+         * the user to the right page after sign-in.
+         */
+        redirectTo: (() => {
+          const base = `${window.location.origin}/auth/callback`
+          const next = searchParams.get('next')
+          return next ? `${base}?next=${encodeURIComponent(next)}` : base
+        })(),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account', // let user choose account every time
+        },
       },
     })
+
     if (error) {
       setError(error.message)
       setGoogleLoad(false)
     }
-    // On success the browser navigates to Google — no further action needed
+    // On success the browser navigates to Google — no further action
   }
 
+  // ── Email / Password ────────────────────────────────────────────────────────
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmedEmail = email.trim().toLowerCase()
@@ -105,19 +125,22 @@ function LoginForm() {
         password,
       })
       if (error) {
-        setError(
-          error.message.includes('Invalid login')
-            ? 'Incorrect email or password.'
-            : error.message
-        )
+        // Normalize Supabase error messages — never expose raw internal messages
+        const msg = error.message.toLowerCase()
+        if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
+          setError('Incorrect email or password.')
+        } else if (msg.includes('email not confirmed')) {
+          setError('Please confirm your email before signing in.')
+        } else {
+          setError('Sign in failed. Please try again.')
+        }
         setLoading(false)
       }
       // Success → onAuthStateChange fires → redirects above
     }
   }
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
-
+  // ── Styles ──────────────────────────────────────────────────────────────────
   const inp: React.CSSProperties = {
     width: '100%', padding: '12px 14px 12px 42px',
     borderRadius: 10, background: C.surface,
