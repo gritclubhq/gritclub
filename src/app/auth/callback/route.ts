@@ -3,18 +3,6 @@ import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-/**
- * OAuth / Email callback handler.
- *
- * Supabase sends the user here after Google OAuth or email confirmation.
- * The URL contains a `code` query param (PKCE flow).
- * We exchange it for a session, set the cookies, and redirect.
- *
- * Security notes:
- * - We validate `next` against an allowlist to prevent open-redirect attacks.
- * - We never expose internal errors to the client.
- */
-
 const ALLOWED_NEXT_PREFIXES = [
   '/dashboard',
   '/host',
@@ -27,18 +15,23 @@ const ALLOWED_NEXT_PREFIXES = [
 
 function safeNext(raw: string | null): string {
   if (!raw) return '/dashboard'
-  // Must be a relative path starting with /
   if (!raw.startsWith('/')) return '/dashboard'
-  // Must start with one of the allowed prefixes
   if (ALLOWED_NEXT_PREFIXES.some(p => raw.startsWith(p))) return raw
   return '/dashboard'
 }
 
 export async function GET(request: NextRequest) {
-  const url    = new URL(request.url)
-  const code   = url.searchParams.get('code')
-  const next   = safeNext(url.searchParams.get('next'))
-  const origin = url.origin
+  const url  = new URL(request.url)
+  const code = url.searchParams.get('code')
+  const next = safeNext(url.searchParams.get('next'))
+
+  // Use the registered site URL — NOT url.origin.
+  // On Vercel, url.origin may be the .vercel.app deployment URL
+  // which is NOT registered in Supabase allowed redirect URLs → auth fails.
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    url.origin
 
   if (code) {
     const cookieStore = cookies()
@@ -51,13 +44,13 @@ export async function GET(request: NextRequest) {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
             try {
               cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options as Parameters<typeof cookieStore.set>[2])
+                cookieStore.set(name, value, options)
               )
             } catch {
-              // Called from a Server Component — cookies set via middleware instead
+              // Server Component context — cookies set via middleware
             }
           },
         },
@@ -67,13 +60,13 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      // Session set successfully — send to app
+      return NextResponse.redirect(`${siteUrl}${next}`)
     }
 
-    console.error('[auth/callback] code exchange failed:', error.message)
+    console.error('[auth/callback] exchangeCodeForSession failed:', error.message)
   }
 
-  // No code or exchange failed — redirect to login with generic error
-  // (never expose the real error to the browser)
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_failed`)
+  // No code param or exchange failed
+  return NextResponse.redirect(`${siteUrl}/auth/login?error=auth_failed`)
 }
