@@ -34,38 +34,35 @@ function LoginForm() {
   const [error,      setError]      = useState('')
   const [success,    setSuccess]    = useState('')
 
-  // If already logged in, redirect immediately
+  // Redirect if already logged in
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const next = searchParams.get('next') || '/dashboard'
-        router.replace(next)
-      }
+      if (session?.user) router.replace(searchParams.get('next') || '/dashboard')
     })
-  }, [router, searchParams])
+  }, [])
 
-  // Show error from OAuth callback redirect
+  // Show error from failed OAuth callback
   useEffect(() => {
     if (searchParams.get('error')) {
-      setError('Google sign in failed. Please try again.')
+      setError('Sign in failed. Please try again.')
+      // Clean the URL
       const clean = new URL(window.location.href)
       clean.searchParams.delete('error')
       window.history.replaceState({}, '', clean.toString())
     }
-  }, [searchParams])
+  }, [])
 
-  const getNext = () => searchParams.get('next') || '/dashboard'
-
-  // ── Google OAuth ─────────────────────────────────────────────────────────
+  // ── Google OAuth ──────────────────────────────────────────────────────────
   const handleGoogle = async () => {
     setGoogleLoad(true)
     setError('')
 
-    const siteUrl    = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-    const next       = searchParams.get('next')
-    const redirectTo = next
-      ? `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`
-      : `${siteUrl}/auth/callback`
+    // Always use window.location.origin — works on any domain (prod, preview, local)
+    const callbackUrl = `${window.location.origin}/auth/callback`
+    const next        = searchParams.get('next')
+    const redirectTo  = next
+      ? `${callbackUrl}?next=${encodeURIComponent(next)}`
+      : callbackUrl
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -79,6 +76,7 @@ function LoginForm() {
       setError(error.message)
       setGoogleLoad(false)
     }
+    // On success the browser navigates to Google — nothing else needed here
   }
 
   // ── Email / Password ──────────────────────────────────────────────────────
@@ -92,12 +90,12 @@ function LoginForm() {
     setError('')
     setSuccess('')
 
+    // ── Sign Up ──────────────────────────────────────────────────────────────
     if (mode === 'signup') {
-      const siteUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
       const { error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
-        options: { emailRedirectTo: `${siteUrl}/auth/callback` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) {
         setError(error.message)
@@ -110,7 +108,7 @@ function LoginForm() {
       return
     }
 
-    // ── Sign in with email + password ────────────────────────────────────────
+    // ── Sign In ──────────────────────────────────────────────────────────────
     const { data, error } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
@@ -121,26 +119,23 @@ function LoginForm() {
       if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
         setError('Incorrect email or password.')
       } else if (msg.includes('email not confirmed')) {
-        setError('Please confirm your email before signing in.')
+        setError('Please confirm your email first. Check your inbox.')
       } else {
-        // Log the real error server-side so we can debug, show generic message to user
-        console.error('[login] signInWithPassword error:', error.message)
         setError('Sign in failed. Please try again.')
+        console.error('[login]', error.message)
       }
       setLoading(false)
       return
     }
 
-    // ── Success — redirect directly, don't rely on onAuthStateChange ─────────
     if (data.session) {
-      router.replace(getNext())
-      // Keep loading=true so button stays disabled during navigation
-      return
+      // Session is set — navigate immediately
+      router.replace(searchParams.get('next') || '/dashboard')
+      // Keep loading spinner until navigation completes
+    } else {
+      setError('Something went wrong. Please try again.')
+      setLoading(false)
     }
-
-    // Unexpected: no error but no session either
-    setError('Something went wrong. Please try again.')
-    setLoading(false)
   }
 
   const inp: React.CSSProperties = {
@@ -152,22 +147,14 @@ function LoginForm() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: C.bg, display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: 20,
-      fontFamily: C.fi, position: 'relative', overflow: 'hidden',
+      minHeight: '100vh', background: C.bg,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20, fontFamily: C.fi, position: 'relative', overflow: 'hidden',
     }}>
-      {/* Background dot grid */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
-      }} />
-      {/* Top glow */}
-      <div style={{
-        position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)',
-        width: 700, height: 400, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse, rgba(255,255,255,0.025) 0%, transparent 65%)',
-      }} />
+      {/* Dot grid */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      {/* Top ambient glow */}
+      <div style={{ position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)', width: 700, height: 400, pointerEvents: 'none', background: 'radial-gradient(ellipse, rgba(255,255,255,0.025) 0%, transparent 65%)' }} />
 
       <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
 
@@ -179,29 +166,18 @@ function LoginForm() {
               letterSpacing: '-0.03em', margin: 0, lineHeight: 1,
               background: 'linear-gradient(135deg, #D0D0D0 0%, #FFFFFF 50%, #B0B0B0 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>
-              GRITCLUB
-            </h1>
+            }}>GRITCLUB</h1>
           </Link>
-          <p style={{
-            fontFamily: C.fi, fontSize: 12, color: C.textDim,
-            letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 10,
-          }}>
+          <p style={{ fontFamily: C.fi, fontSize: 12, color: C.textDim, letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 10 }}>
             Build With People Who Refuse Average
           </p>
         </div>
 
         {/* Card */}
-        <div style={{
-          background: C.card, border: `1px solid ${C.border}`,
-          borderRadius: 18, padding: 32, boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
-        }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, padding: 32, boxShadow: '0 32px 80px rgba(0,0,0,0.7)' }}>
 
-          {/* Toggle */}
-          <div style={{
-            display: 'flex', background: C.bg, borderRadius: 11,
-            padding: 3, marginBottom: 28, border: `1px solid ${C.border}`,
-          }}>
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', background: C.bg, borderRadius: 11, padding: 3, marginBottom: 28, border: `1px solid ${C.border}` }}>
             {(['signin', 'signup'] as const).map(m => (
               <button key={m}
                 onClick={() => { setMode(m); setError(''); setSuccess('') }}
@@ -217,41 +193,30 @@ function LoginForm() {
             ))}
           </div>
 
-          <h2 style={{
-            fontFamily: C.fs, fontSize: 21, fontWeight: 700, color: C.text,
-            textAlign: 'center', marginBottom: 4, letterSpacing: '-0.02em',
-          }}>
+          <h2 style={{ fontFamily: C.fs, fontSize: 21, fontWeight: 700, color: C.text, textAlign: 'center', marginBottom: 4, letterSpacing: '-0.02em' }}>
             {mode === 'signin' ? 'Welcome back' : 'Join GritClub'}
           </h2>
           <p style={{ fontFamily: C.fi, fontSize: 13, color: C.textDim, textAlign: 'center', marginBottom: 26 }}>
             {mode === 'signin' ? 'Sign in to your account' : 'Start your journey today'}
           </p>
 
-          {/* Error */}
+          {/* Error banner */}
           {error && (
-            <div style={{
-              display: 'flex', alignItems: 'flex-start', gap: 9,
-              padding: '11px 14px', borderRadius: 10, marginBottom: 18,
-              background: 'rgba(255,69,58,0.08)', border: '1px solid rgba(255,69,58,0.22)',
-            }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '11px 14px', borderRadius: 10, marginBottom: 18, background: 'rgba(255,69,58,0.08)', border: '1px solid rgba(255,69,58,0.22)' }}>
               <AlertCircle style={{ width: 15, height: 15, color: C.red, flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 13, color: C.red, margin: 0, fontFamily: C.fi, lineHeight: 1.5 }}>{error}</p>
             </div>
           )}
 
-          {/* Success */}
+          {/* Success banner */}
           {success && (
-            <div style={{
-              display: 'flex', alignItems: 'flex-start', gap: 9,
-              padding: '11px 14px', borderRadius: 10, marginBottom: 18,
-              background: 'rgba(50,215,75,0.08)', border: '1px solid rgba(50,215,75,0.22)',
-            }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '11px 14px', borderRadius: 10, marginBottom: 18, background: 'rgba(50,215,75,0.08)', border: '1px solid rgba(50,215,75,0.22)' }}>
               <CheckCircle style={{ width: 15, height: 15, color: C.green, flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 13, color: C.green, margin: 0, fontFamily: C.fi, lineHeight: 1.5 }}>{success}</p>
             </div>
           )}
 
-          {/* Google */}
+          {/* Google OAuth button */}
           <button
             onClick={handleGoogle}
             disabled={googleLoad || loading}
@@ -268,7 +233,7 @@ function LoginForm() {
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.border }}
           >
             {googleLoad
-              ? <Loader2 style={{ width: 17, height: 17, animation: 'spin 0.8s linear infinite' }} />
+              ? <div style={{ width: 17, height: 17, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', animation: 'spin 0.7s linear infinite' }} />
               : (
                 <svg width="17" height="17" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -288,7 +253,7 @@ function LoginForm() {
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
 
-          {/* Form */}
+          {/* Email + Password form */}
           <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ position: 'relative' }}>
               <Mail style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: C.textDim, pointerEvents: 'none' }} />
@@ -296,10 +261,9 @@ function LoginForm() {
                 type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com" autoComplete="email" style={inp}
                 onFocus={e => { e.target.style.borderColor = C.borderFocus; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.04)' }}
-                onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none' }}
+                onBlur={e =>  { e.target.style.borderColor = C.border;      e.target.style.boxShadow = 'none' }}
               />
             </div>
-
             <div style={{ position: 'relative' }}>
               <Lock style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: C.textDim, pointerEvents: 'none' }} />
               <input
@@ -309,7 +273,7 @@ function LoginForm() {
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 style={{ ...inp, paddingRight: 46 }}
                 onFocus={e => { e.target.style.borderColor = C.borderFocus; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.04)' }}
-                onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none' }}
+                onBlur={e =>  { e.target.style.borderColor = C.border;      e.target.style.boxShadow = 'none' }}
               />
               <button type="button" onClick={() => setShowPass(p => !p)}
                 style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.textDim, padding: 4, display: 'flex', alignItems: 'center' }}>
@@ -333,7 +297,7 @@ function LoginForm() {
               onMouseLeave={e => { if (!loading && email.trim() && password) (e.currentTarget as HTMLElement).style.background = '#FFFFFF' }}
             >
               {loading
-                ? <Loader2 style={{ width: 15, height: 15, animation: 'spin 0.8s linear infinite' }} />
+                ? <div style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#000', animation: 'spin 0.7s linear infinite' }} />
                 : <ArrowRight style={{ width: 15, height: 15 }} />
               }
               {loading ? 'Signing in…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
@@ -344,8 +308,7 @@ function LoginForm() {
             {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
             <button
               onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setSuccess('') }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontWeight: 600, fontSize: 13, fontFamily: C.fi, textDecoration: 'underline', textUnderlineOffset: 3 }}
-            >
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontWeight: 600, fontSize: 13, fontFamily: C.fi, textDecoration: 'underline', textUnderlineOffset: 3 }}>
               {mode === 'signin' ? 'Create one free' : 'Sign in'}
             </button>
           </p>
@@ -361,10 +324,7 @@ function LoginForm() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        input:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0 30px #1C1C1F inset !important;
-          -webkit-text-fill-color: #FFFFFF !important;
-        }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #1C1C1F inset !important; -webkit-text-fill-color: #FFFFFF !important; }
       `}</style>
     </div>
   )
@@ -374,7 +334,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div style={{ minHeight: '100vh', background: '#0B0B0C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 style={{ width: 24, height: 24, color: '#6B7280', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'rgba(255,255,255,0.6)', animation: 'spin 0.7s linear infinite' }} />
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     }>
