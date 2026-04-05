@@ -74,7 +74,11 @@ function LoginForm() {
          * the user to the right page after sign-in.
          */
         redirectTo: (() => {
-          const base = `${window.location.origin}/auth/callback`
+          // CRITICAL FIX: Use the canonical site URL, not window.location.origin.
+          // window.location.origin can differ from the registered Supabase
+          // redirect URL if the user is on a preview/staging URL.
+          const siteUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+          const base = `${siteUrl}/auth/callback`
           const next = searchParams.get('next')
           return next ? `${base}?next=${encodeURIComponent(next)}` : base
         })(),
@@ -108,7 +112,7 @@ function LoginForm() {
         email: trimmedEmail,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
         },
       })
       if (error) {
