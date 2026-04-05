@@ -25,13 +25,13 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get('code')
   const next = safeNext(url.searchParams.get('next'))
 
-  // Use the registered site URL — NOT url.origin.
-  // On Vercel, url.origin may be the .vercel.app deployment URL
-  // which is NOT registered in Supabase allowed redirect URLs → auth fails.
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    url.origin
+  // CRITICAL FIX: Always use the canonical production URL.
+  // NEVER use url.origin — on Vercel preview deployments url.origin
+  // can be a .vercel.app URL that is NOT listed in Supabase's allowed
+  // redirect URLs, causing Supabase to reject the exchange → auth_failed.
+  //
+  // Set NEXT_PUBLIC_APP_URL=https://gritclub.live in Vercel env vars.
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gritclub.live'
 
   if (code) {
     const cookieStore = cookies()
