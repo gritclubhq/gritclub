@@ -16,8 +16,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          // Write cookies to both request and response so session is refreshed
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -28,17 +27,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // getUser() validates the JWT server-side and refreshes the session if needed.
-  // This is the only reliable way to check auth in middleware.
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  // Logged-in user visiting login page → send to dashboard
   if (user && AUTH_ONLY.some(p => path.startsWith(p))) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Logged-out user visiting protected page → send to login with ?next= param
   if (!user && PROTECTED.some(p => path.startsWith(p))) {
     const loginUrl = new URL('/auth/login', request.url)
     loginUrl.searchParams.set('next', path)
@@ -50,11 +45,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Exclude:
-    // - _next/static, _next/image (Next.js internals)
-    // - public assets (favicon, images, manifest)
-    // - api/stripe (webhook must not be blocked)
-    // - auth/callback (PKCE exchange must run BEFORE any session exists)
     '/((?!_next/static|_next/image|favicon.ico|manifest.json|logo.png|hero-bg|hero-meeting|hero-aerial|api/stripe|auth/callback).*)',
   ],
 }
