@@ -25,15 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router                = useRouter()
 
   useEffect(() => {
-    // Initial session check — getSession() is fine here for speed,
-    // the onAuthStateChange will update with validated user
+    // Get initial session immediately to avoid flash
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Listen for ALL auth events — this is the source of truth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Subscribe to all auth changes — this is the single source of truth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
@@ -48,12 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router])
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      loading,
-      logout,
-    }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )
