@@ -25,12 +25,9 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get('code')
   const next = safeNext(url.searchParams.get('next'))
 
-  // CRITICAL FIX: Always use the canonical production URL.
-  // NEVER use url.origin — on Vercel preview deployments url.origin
-  // can be a .vercel.app URL that is NOT listed in Supabase's allowed
-  // redirect URLs, causing Supabase to reject the exchange → auth_failed.
-  //
-  // Set NEXT_PUBLIC_APP_URL=https://gritclub.live in Vercel env vars.
+  // Always use the canonical production URL — never url.origin.
+  // On Vercel, url.origin can be a preview .vercel.app URL that is
+  // NOT registered in Supabase redirect URLs → causes auth_failed.
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gritclub.live'
 
   if (code) {
@@ -50,7 +47,7 @@ export async function GET(request: NextRequest) {
                 cookieStore.set(name, value, options)
               )
             } catch {
-              // Server Component context — cookies set via middleware
+              // Server Component context — middleware handles cookies
             }
           },
         },
@@ -60,13 +57,11 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Session set successfully — send to app
       return NextResponse.redirect(`${siteUrl}${next}`)
     }
 
     console.error('[auth/callback] exchangeCodeForSession failed:', error.message)
   }
 
-  // No code param or exchange failed
   return NextResponse.redirect(`${siteUrl}/auth/login?error=auth_failed`)
 }
