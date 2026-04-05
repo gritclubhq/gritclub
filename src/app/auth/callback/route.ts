@@ -1,62 +1,57 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 /**
- * /auth/callback — server-side PKCE code exchange
+ * GET /auth/callback
  *
- * With flowType: 'pkce' on the browser client, Google OAuth redirects back
- * with ?code= in the URL (not #access_token= in the hash).
- * This route handler runs on the server, exchanges the code for a session,
- * and stores the session in HTTP-only cookies that the middleware can read.
+ * Exchanges the PKCE ?code= for a session and writes it into cookies
+ * on the Response — so the middleware sees the session immediately.
  *
- * This is why the loop was happening before: the old client-side page
- * stored tokens in localStorage only — invisible to server-side middleware.
+ * Key: We attach cookies to the NextResponse object (NOT next/headers cookies())
+ * because in Next.js 14 Route Handlers, next/headers cookies() is read-only.
  */
 export async function GET(request: NextRequest) {
   const url  = new URL(request.url)
   const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') || '/dashboard'
+  const next = url.searchParams.get('next') ?? '/dashboard'
 
-  // Canonicalize the site origin — always use the real production domain,
-  // not url.origin which can be a Vercel preview URL.
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || url.origin
+  const safeNext = next.startsWith('/') ? next : '/dashboard'
 
-  if (code) {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options as Parameters<typeof cookieStore.set>[2])
-              )
-            } catch {
-              // Called from Server Component — middleware handles cookie refresh
-            }
-          },
-        },
-      }
-    )
-
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (!error) {
-      // Session is now in cookies — middleware will see it and allow access
-      const safeNext = next.startsWith('/') ? next : '/dashboard'
-      return NextResponse.redirect(`${siteUrl}${safeNext}`)
-    }
-
-    console.error('[auth/callback] exchangeCodeForSession failed:', error.message)
+  if (!code) {
+    console.error('[auth/callback] No code in URL')
+    return NextResponse.redirect(`${siteUrl}/auth/login?error=no_code`)
   }
 
-  // No code or exchange failed → back to login
-  return NextResponse.redirect(`${siteUrl}/auth/login?error=auth_failed`)
+  // Build the redirect response FIRST so we can attach cookies to it
+  const response = NextResponse.redirect(`${siteUrl}${safeNext}`)
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        // Write cookies directly onto the response object (not next/headers)
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options ?? {})
+          })
+        },
+      },
+    }
+  )
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (error) {
+    console.error('[auth/callback] exchangeCodeForSession error:', error.message)
+    return NextResponse.redirect(`${siteUrl}/auth/login?error=auth_failed`)
+  }
+
+  // Cookies are set on response — middleware will see the session on next request
+  return response
 }
