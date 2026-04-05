@@ -25,13 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router                = useRouter()
 
   useEffect(() => {
-    // Get initial session immediately to avoid flash
+    // Get initial session — fast, from local storage
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Subscribe to all auth changes — this is the single source of truth
+    // Subscribe to auth changes — this fires on login, logout, token refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
