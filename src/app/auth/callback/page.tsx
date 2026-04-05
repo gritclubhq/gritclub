@@ -1,68 +1,85 @@
 'use client'
 
 /**
- * AUTH CALLBACK PAGE
+ * /auth/callback — handles ALL post-auth redirects:
  *
- * This MUST be a client page (not a route handler) because:
- * - Google OAuth (implicit flow) returns tokens in the URL HASH (#access_token=...)
- * - URL hashes are never sent to the server — only the browser can read them
- * - The Supabase JS client automatically detects and processes the hash on load
+ *   1. Google OAuth (implicit flow)
+ *      Supabase redirects back with tokens in the URL hash: #access_token=...
+ *      The Supabase JS client processes the hash automatically on page load.
+ *      We just wait for onAuthStateChange to fire.
  *
- * This page handles all three callback cases:
- *   1. Google OAuth   → hash contains access_token
- *   2. Email confirm  → URL has ?code= param (PKCE exchange done client-side)
- *   3. Already authed → just redirect to dashboard
+ *   2. Email magic link / confirmation (PKCE flow)
+ *      Supabase redirects back with ?code= in the query string.
+ *      supabase.auth.exchangeCodeForSession(code) exchanges it for a session.
+ *
+ *   3. Already authenticated
+ *      Session already in localStorage — just redirect to dashboard.
+ *
+ * WHY this is a client page and NOT a route handler:
+ *   Google OAuth returns tokens in the URL hash (#access_token=...).
+ *   URL hashes are never sent to the server — only the browser can read them.
+ *   A route.ts handler would never see the Google tokens.
+ *   The Supabase browser client handles hash detection automatically.
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 
 export default function AuthCallbackPage() {
-  const router = useRouter()
+  const router  = useRouter()
+  const ranOnce = useRef(false)
 
   useEffect(() => {
-    const run = async () => {
-      // Case 1 & 2: Let the Supabase client process whatever is in the URL
-      // (hash tokens for OAuth, or ?code= for email confirmation)
-      // onAuthStateChange fires automatically when it detects a session in the URL
-      const { data: { session }, error } = await supabase.auth.getSession()
+    // Prevent double-run in React Strict Mode
+    if (ranOnce.current) return
+    ranOnce.current = true
 
+    const run = async () => {
+      const params = new URLSearchParams(window.location.search)
+      const code   = params.get('code')
+      const next   = params.get('next') || '/dashboard'
+
+      // ── Case 1: PKCE code exchange (email magic link / confirmation) ──────
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error) {
+          router.replace(next)
+          return
+        }
+        // Code exchange failed — fall through to session check
+      }
+
+      // ── Case 2: Already have a session (OAuth hash already processed) ─────
+      const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        // Session already established (e.g. came back from a refresh, or
-        // Supabase SDK already processed the hash before we called getSession)
-        const params = new URLSearchParams(window.location.search)
-        const next = params.get('next') || '/dashboard'
         router.replace(next)
         return
       }
 
-      // If no session yet, wait for the auth state change event
-      // (Supabase SDK processes the URL hash asynchronously)
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          subscription.unsubscribe()
-          const params = new URLSearchParams(window.location.search)
-          const next = params.get('next') || '/dashboard'
-          router.replace(next)
-        } else if (event === 'SIGNED_OUT' || error) {
-          subscription.unsubscribe()
-          router.replace('/auth/login?error=auth_failed')
-        }
-      })
-
-      // Timeout fallback — if nothing happens in 5s, something went wrong
-      setTimeout(() => {
-        subscription.unsubscribe()
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            const params = new URLSearchParams(window.location.search)
-            router.replace(params.get('next') || '/dashboard')
-          } else {
-            router.replace('/auth/login?error=auth_failed')
+      // ── Case 3: Wait for Supabase to process the OAuth hash async ─────────
+      // The Supabase SDK detects #access_token in the URL and fires SIGNED_IN
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            subscription.unsubscribe()
+            router.replace(next)
           }
-        })
-      }, 5000)
+        }
+      )
+
+      // Safety timeout: if nothing fires in 6 seconds → back to login
+      const timer = setTimeout(async () => {
+        subscription.unsubscribe()
+        const { data: { session } } = await supabase.auth.getSession()
+        router.replace(session ? next : '/auth/login?error=auth_failed')
+      }, 6000)
+
+      // Clean up timer if component unmounts (e.g. fast navigation)
+      return () => {
+        clearTimeout(timer)
+        subscription.unsubscribe()
+      }
     }
 
     run()
@@ -76,17 +93,19 @@ export default function AuthCallbackPage() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 16,
+      gap: 18,
     }}>
       {/* Spinner */}
       <div style={{
-        width: 32, height: 32, borderRadius: '50%',
-        border: '2px solid rgba(255,255,255,0.08)',
-        borderTopColor: 'rgba(255,255,255,0.5)',
-        animation: 'spin 0.7s linear infinite',
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        border: '2.5px solid rgba(255,255,255,0.08)',
+        borderTopColor: 'rgba(255,255,255,0.55)',
+        animation: 'spin 0.75s linear infinite',
       }} />
       <p style={{
-        color: '#6B7280',
+        color: '#8A8A8F',
         fontFamily: "'Inter', system-ui, sans-serif",
         fontSize: 14,
         letterSpacing: '0.04em',
