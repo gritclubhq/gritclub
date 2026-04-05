@@ -3,10 +3,9 @@ import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function GET(request: NextRequest) {
-  const url  = new URL(request.url)
-  const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') ?? '/dashboard'
-
+  const url      = new URL(request.url)
+  const code     = url.searchParams.get('code')
+  const next     = url.searchParams.get('next') ?? '/dashboard'
   const siteUrl  = process.env.NEXT_PUBLIC_APP_URL || url.origin
   const safeNext = next.startsWith('/') ? next : '/dashboard'
 
@@ -21,13 +20,11 @@ export async function GET(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, any> }[]) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options ?? {})
-          })
+          )
         },
       },
     }
