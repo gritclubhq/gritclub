@@ -1,9 +1,14 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-// Single shared instance — no custom auth options.
-// The default Supabase client handles both implicit (OAuth hash) and
-// PKCE (email confirmation code) automatically.
+// PKCE flow: OAuth returns ?code= in URL (not #access_token= hash).
+// The server-side route handler /auth/callback exchanges the code for a
+// session stored in cookies — which the middleware can then read.
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      flowType: 'pkce',
+    },
+  }
 )
