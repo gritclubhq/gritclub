@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 const PROTECTED = ['/dashboard', '/host', '/admin', '/onboarding']
-const AUTH_ONLY  = ['/auth/login']
+const AUTH_ONLY = ['/auth/login']
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
@@ -35,9 +35,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user && PROTECTED.some(p => path.startsWith(p))) {
-    const url = new URL('/auth/login', request.url)
-    url.searchParams.set('next', path)
-    return NextResponse.redirect(url)
+    const loginUrl = new URL('/auth/login', request.url)
+    loginUrl.searchParams.set('next', path)
+    return NextResponse.redirect(loginUrl)
   }
 
   return response
@@ -45,8 +45,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // CRITICAL: auth/callback MUST be excluded — it sets session cookies itself.
-    // If middleware runs on this path before cookies are written, it sees no session.
+    // auth/callback MUST be excluded — it sets the session cookie itself.
+    // If middleware runs there first, getUser() returns null and breaks the flow.
     '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|logo\\.png|hero-bg|hero-meeting|hero-aerial|api/stripe|auth/callback).*)',
   ],
 }
