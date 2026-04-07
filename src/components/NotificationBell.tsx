@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation'
 import { Bell, X, Check, Users, Heart, MessageCircle, UserPlus, Megaphone, Loader2, Radio } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214',
   border:'rgba(255,255,255,0.06)',
-  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', red:'#EF4444', green:'#34D399',
-  purple:'#2563EB',
+  text:'#FFFFFF', textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#C7C7CC', blueLight:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', red:'#EF4444', green:'#34D399',
+  purple:'#C7C7CC',
 }
 
-const AVATAR_COLORS = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#C7C7CC','#C7C7CC','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 
@@ -26,12 +26,12 @@ const timeAgo = (ts: string) => {
 }
 
 const NOTIF_ICON: Record<string, any> = {
-  connection_request:  { icon: UserPlus,      color: '#9CA3AF' },
+  connection_request:  { icon: UserPlus,      color: '#C7C7CC' },
   connection_accepted: { icon: Users,         color: '#34D399' },
-  follow:              { icon: UserPlus,      color: '#2563EB' },
+  follow:              { icon: UserPlus,      color: '#C7C7CC' },
   post_like:           { icon: Heart,         color: '#EF4444' },
-  post_comment:        { icon: MessageCircle, color: '#94A3B8' },
-  announcement:        { icon: Megaphone,     color: '#94A3B8' },
+  post_comment:        { icon: MessageCircle, color: '#C7C7CC' },
+  announcement:        { icon: Megaphone,     color: '#C7C7CC' },
 }
 
 export default function NotificationBell({ userId }: { userId: string }) {
