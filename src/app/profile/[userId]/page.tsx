@@ -12,17 +12,17 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214',
   border:'rgba(255,255,255,0.06)',
-  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
+  text:'#FFFFFF', textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#C7C7CC', blueLight:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', goldDim:'rgba(199,199,204,0.08)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
   green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
-  purple:'#2563EB', purpleDim:'rgba(124,58,237,0.1)',
+  purple:'#C7C7CC', purpleDim:'rgba(199,199,204,0.08)',
 }
 
-const AVATAR_COLORS = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#C7C7CC','#C7C7CC','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const timeAgo = (ts: string) => {
@@ -254,7 +254,7 @@ export default function PublicProfilePage() {
               {currentUser && (
                 <>
                   <button onClick={() => router.push(`/dashboard/messages?user=${targetId}`)}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(59,130,246,0.22)`, cursor:'pointer', background:'rgba(59,130,246,0.12)', color:'#60A5FA', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:13 }}>
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, border:`1px solid rgba(59,130,246,0.22)`, cursor:'pointer', background:'rgba(255,255,255,0.06)', color:'#C7C7CC', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:13 }}>
                     <MessageSquare style={{ width:13, height:13 }} />
                     Message
                   </button>
