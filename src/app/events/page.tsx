@@ -7,11 +7,11 @@ import Link from 'next/link'
 import { Calendar, Users, Clock, Search, Filter, Radio } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
-  border:'rgba(255,255,255,0.06)', text:'#E5E7EB',
-  textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueL:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214',
+  border:'rgba(255,255,255,0.06)', text:'#FFFFFF',
+  textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#C7C7CC', blueL:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', goldDim:'rgba(199,199,204,0.08)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
   green:'#34D399',
 }
@@ -63,8 +63,8 @@ export default function EventsPage() {
       {/* Nav */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,15,30,0.95)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${C.border}`, padding: '0 clamp(16px,4vw,48px)', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <div style={{ width: 30, height: 30, background: '#3B82F6', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff', fontFamily: 'Sora,sans-serif' }}>G</div>
-          <span style={{ fontFamily: 'Sora,sans-serif', fontWeight: 800, fontSize: 17, color: C.text }}>Grit<span style={{ color: '#3B82F6' }}>Club</span></span>
+          <div style={{ width: 30, height: 30, background: '#C7C7CC', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff', fontFamily: 'Sora,sans-serif' }}>G</div>
+          <span style={{ fontFamily: 'Sora,sans-serif', fontWeight: 800, fontSize: 17, color: C.text }}>Grit<span style={{ color: '#C7C7CC' }}>Club</span></span>
         </Link>
         <div style={{ display: 'flex', gap: 12 }}>
           {isLoggedIn ? (
