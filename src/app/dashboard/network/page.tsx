@@ -10,17 +10,17 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#291C0E', surface:'#2F2115', card:'#2F2115', cardHover:'#4A3327',
-  border:'rgba(225,212,194,0.08)', borderHover:'rgba(225,212,194,0.18)',
-  text:'#E1D4C2', textMuted:'#BEB5A9', textDim:'#A78D78',
-  blue:'#C4956A', blueLight:'#BEB5A9', blueDim:'rgba(225,212,194,0.08)',
-  gold:'#A78D78', goldDim:'rgba(148,163,184,0.12)',
-  red:'#C0614A', redDim:'rgba(239,68,68,0.1)',
-  green:'#6B9E7A', greenDim:'rgba(52,211,153,0.12)',
-  purple:'#2563EB', purpleDim:'rgba(124,58,237,0.1)',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214', cardHover:'#1C1C1F',
+  border:'rgba(255,255,255,0.06)', borderHover:'rgba(255,255,255,0.12)',
+  text:'#FFFFFF', textMuted:'#C7C7CC', textDim:'#C7C7CC',
+  blue:'#C7C7CC', blueLight:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', goldDim:'rgba(199,199,204,0.08)',
+  red:'#FF453A', redDim:'rgba(239,68,68,0.1)',
+  green:'#32D74B', greenDim:'rgba(52,211,153,0.12)',
+  purple:'#C7C7CC', purpleDim:'rgba(199,199,204,0.08)',
 }
 
-const AVATAR_COLORS = ['#C4956A','#2563EB','#DB2777','#D97706','#059669','#0891B2']
+const AVATAR_COLORS = ['#C7C7CC','#C7C7CC','#DB2777','#D97706','#059669','#0891B2']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'User'
 const getInitials = (u: any) => getName(u).slice(0,2).toUpperCase()
@@ -334,7 +334,7 @@ export default function NetworkPage() {
                 style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:12, border:`1px solid ${tab===t.id?C.blue:C.border}`, cursor:'pointer', background:tab===t.id?C.blue:'transparent', color:tab===t.id?'#fff':C.textMuted, fontFamily:'Inter,sans-serif', fontSize:13, fontWeight:600 }}>
                 {t.label}
                 {t.count !== null && t.count > 0 && (
-                  <span style={{ padding:'1px 7px', borderRadius:10, background:tab===t.id?'rgba(225,212,194,0.18)':C.border, fontSize:11, fontWeight:700, color:tab===t.id?'#fff':t.id==='pending'?C.gold:C.textDim }}>
+                  <span style={{ padding:'1px 7px', borderRadius:10, background:tab===t.id?'rgba(255,255,255,0.12)':C.border, fontSize:11, fontWeight:700, color:tab===t.id?'#fff':t.id==='pending'?C.gold:C.textDim }}>
                     {t.count}
                   </span>
                 )}
@@ -385,7 +385,7 @@ export default function NetworkPage() {
                     <Search style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', width:16, height:16, color:C.textDim }} />
                     <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search by name, @handle, or email..."
                       style={{ width:'100%', padding:'12px 14px 12px 42px', borderRadius:14, background:C.card, border:`1px solid ${C.border}`, color:C.text, fontFamily:'Inter,sans-serif', fontSize:14, outline:'none', boxSizing:'border-box' }}
-                      onFocus={e=>(e.target.style.borderColor='rgba(225,212,194,0.18)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
+                      onFocus={e=>(e.target.style.borderColor='rgba(255,255,255,0.12)')} onBlur={e=>(e.target.style.borderColor=C.border)} />
                     {search && <button onClick={()=>{setSearch('');if(currentUser)loadDiscover(currentUser.id,'')}} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:C.textDim }}><X style={{ width:14, height:14 }} /></button>}
                   </div>
                   {people.length === 0 ? (
