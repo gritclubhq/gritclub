@@ -33,13 +33,13 @@ export default function AuthCallbackPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0A0F1E',
+      minHeight: '100vh', background: '#0B0B0C',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: '50%',
         border: '3px solid rgba(255,255,255,0.1)',
-        borderTopColor: '#2563EB',
+        borderTopColor: '#C7C7CC',
         animation: 'spin 0.8s linear infinite',
       }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
