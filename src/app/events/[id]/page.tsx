@@ -11,16 +11,16 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214',
   border:'rgba(255,255,255,0.06)',
-  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueLight:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
+  text:'#FFFFFF', textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#C7C7CC', blueLight:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', goldDim:'rgba(199,199,204,0.08)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
   green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
 }
 
-const AVATAR_COLORS = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669']
+const AVATAR_COLORS = ['#C7C7CC','#C7C7CC','#DB2777','#D97706','#059669']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'Host'
 const fmt = (cents: number) => cents === 0 ? 'Free' : `$${(cents/100).toFixed(0)}`
@@ -371,7 +371,7 @@ export default function EventDetailPage() {
                 </button>
               ) : (
                 <button onClick={buyPaidTicket} disabled={claiming}
-                  style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:claiming?'wait':'pointer', background:`linear-gradient(135deg, ${C.gold}, #F97316)`, color:'#0A1120', fontFamily:'Inter,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:claiming?0.7:1, boxShadow:'0 4px 20px rgba(245,158,11,0.3)' }}>
+                  style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor:claiming?'wait':'pointer', background:`linear-gradient(135deg, ${C.gold}, #F97316)`, color:'#0B0B0C', fontFamily:'Inter,sans-serif', fontWeight:800, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:claiming?0.7:1, boxShadow:'0 4px 20px rgba(245,158,11,0.3)' }}>
                   {claiming ? <><Loader2 style={{ width:18, height:18, animation:'spin 1s linear infinite' }} /> Redirecting...</> : <>Get Ticket — {fmt(event.price || 0)}</>}
                 </button>
               )}
