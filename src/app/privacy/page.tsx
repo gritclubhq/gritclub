@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export const metadata = { title: 'Privacy Policy | GritClub', description: 'GritClub Privacy Policy' }
 
-const C = { bg: '#0A0F1E', card: '#111827', border: 'rgba(255,255,255,0.06)', text: '#F0F4FF', muted: '#7B8DB0', dim: '#3D4F6E', blue: '#3B82F6', gold: '#F59E0B', green: '#10B981' }
+const C = { bg: '#0B0B0C', card: '#121214', border: 'rgba(255,255,255,0.06)', text: '#FFFFFF', muted: '#C7C7CC', dim: '#8A8A8F', blue: '#C7C7CC', gold: '#C7C7CC', green: '#10B981' }
 
 const Section = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
   <section style={{ marginBottom: 32 }}>
