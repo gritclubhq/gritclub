@@ -9,13 +9,13 @@ import { Ticket, Calendar, Clock, Radio, Check, Loader2, ExternalLink } from 'lu
 const C = {
   bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
   border:'rgba(255,255,255,0.06)',
-  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#3D4F6E',
+  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#8A8A8F',
   blue:'#FF3B3B', blueLight:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
-  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
+  gold:'#C7C7CC', goldDim:'rgba(255,215,0,0.1)',
   red:'#EF4444', green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
 }
 
-const AVATAR_COLORS = ['#FF3B3B','#7C3AED','#DB2777','#D97706','#059669']
+const AVATAR_COLORS = ['#FF3B3B','#C7C7CC','#DB2777','#D97706','#059669']
 const avatarColor = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0)||0) % AVATAR_COLORS.length]
 const getName = (u: any) => u?.full_name || u?.email?.split('@')[0] || 'Host'
 const formatDate = (ts: string) => ts ? new Date(ts).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' }) : 'Date TBD'
