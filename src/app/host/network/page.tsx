@@ -61,9 +61,9 @@ export default function HostNetworkPage() {
           {[
             { label: 'Total Attendees', value: stats.total, icon: Users, color: '#38BDF8' },
             { label: 'Repeat Buyers', value: stats.repeat, icon: TrendingUp, color: '#4ADE80' },
-            { label: 'Your Earnings', value: fmt(stats.revenue), icon: Ticket, color: '#FFD700' },
+            { label: 'Your Earnings', value: fmt(stats.revenue), icon: Ticket, color: '#C7C7CC' },
           ].map(s => (
-            <div key={s.label} className="rounded-2xl p-4" style={{ background: '#1E293B' }}>
+            <div key={s.label} className="rounded-2xl p-4" style={{ background: '#1C1C1F' }}>
               <div className="flex items-center gap-2 mb-2">
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
                 <span className="text-xs text-slate-400">{s.label}</span>
@@ -74,9 +74,9 @@ export default function HostNetworkPage() {
         </div>
         <h2 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-widest">Attendees</h2>
         {loading ? (
-          <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: '#1E293B' }} />)}</div>
+          <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: '#1C1C1F' }} />)}</div>
         ) : attendees.length === 0 ? (
-          <div className="rounded-2xl p-10 text-center" style={{ background: '#1E293B' }}>
+          <div className="rounded-2xl p-10 text-center" style={{ background: '#1C1C1F' }}>
             <Users className="w-10 h-10 mx-auto mb-3 text-slate-600" />
             <p className="text-slate-500 mb-1">No attendees yet</p>
             <p className="text-slate-600 text-xs">Your audience will appear here after your first event</p>
@@ -84,9 +84,9 @@ export default function HostNetworkPage() {
         ) : (
           <div className="space-y-3">
             {attendees.map((person: any, i: number) => (
-              <div key={i} className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: '#1E293B' }}>
+              <div key={i} className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: '#1C1C1F' }}>
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#0F172A' }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden flex-shrink-0" style={{ background: 'linear-gradient(135deg, #38BDF8, #0EA5E9)', color: '#121214' }}>
                     {person.photo_url ? <img src={person.photo_url} alt="" className="w-full h-full object-cover" /> : getInitials(person.email)}
                   </div>
                   <div className="min-w-0">
