@@ -4,23 +4,17 @@ import { AuthProvider } from '@/context/AuthContext'
 
 export const metadata: Metadata = {
   title: 'GritClub — Build With People Who Refuse Average',
-  description: 'GritClub is where serious builders connect, learn, and execute. No noise. No spectators.',
-  keywords: 'founders, live events, mastermind, mentorship, entrepreneurship, GritClub',
+  description: 'A private network for serious builders. Host live events, build groups, and connect with people actually moving forward.',
+  icons: { icon: '/logo.png', apple: '/logo.png' },
   openGraph: {
-    title: 'GritClub — Build With People Who Refuse Average',
-    description: 'Where serious builders connect, learn, and execute.',
+    title: 'GritClub',
+    description: 'Build With People Who Refuse Average',
     url: 'https://gritclub.live',
     siteName: 'GritClub',
-    type: 'website',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'GritClub',
-    description: 'Build With People Who Refuse Average.',
-  },
-  manifest: '/manifest.json',
-  icons: { icon: '/logo.png', apple: '/logo.png', shortcut: '/logo.png' },
 }
+
+export const viewport = { themeColor: '#0B0B0C' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
