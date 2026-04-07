@@ -8,12 +8,12 @@ import DashboardLayout from '@/components/DashboardLayout'
 import Link from 'next/link'
 
 const C = {
-  bg:'#0A0F1E', surface:'#0D1428', card:'#111827',
-  border:'rgba(255,255,255,0.07)', text:'#F0F4FF',
-  textMuted:'#7B8DB0', textDim:'#3D4F6E',
-  blue:'#2563EB', blueL:'#3B82F6', blueDim:'rgba(37,99,235,0.12)',
-  gold:'#F59E0B', goldDim:'rgba(245,158,11,0.1)',
-  red:'#EF4444', purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214',
+  border:'rgba(255,255,255,0.07)', text:'#FFFFFF',
+  textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#C7C7CC', blueL:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', goldDim:'rgba(199,199,204,0.08)',
+  red:'#EF4444', purple:'#C7C7CC', purpleDim:'rgba(199,199,204,0.08)',
   green:'#10B981',
 }
 
