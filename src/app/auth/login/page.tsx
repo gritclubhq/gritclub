@@ -37,13 +37,13 @@ function LoginForm() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0A0F1E',
+      minHeight: '100vh', background: '#0B0B0C',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: 'DM Sans, sans-serif',
     }}>
       <div style={{
         width: '100%', maxWidth: 400, padding: 32,
-        background: '#111827', borderRadius: 20,
+        background: '#121214', borderRadius: 20,
         border: '1px solid rgba(255,255,255,0.08)',
         margin: 16,
       }}>
@@ -56,10 +56,10 @@ function LoginForm() {
             margin: '0 auto 12px', fontSize: 22, fontWeight: 800, color: '#fff',
             fontFamily: 'Syne, sans-serif',
           }}>G</div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#F0F4FF', margin: 0, fontFamily: 'Syne, sans-serif' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#FFFFFF', margin: 0, fontFamily: 'Syne, sans-serif' }}>
             GritClub
           </h1>
-          <p style={{ fontSize: 14, color: '#7B8DB0', marginTop: 6 }}>
+          <p style={{ fontSize: 14, color: '#C7C7CC', marginTop: 6 }}>
             Sign in to continue
           </p>
         </div>
@@ -82,7 +82,7 @@ function LoginForm() {
           style={{
             width: '100%', padding: '13px', borderRadius: 12,
             border: '1px solid rgba(255,255,255,0.12)',
-            background: '#1E293B', color: '#F0F4FF',
+            background: '#1C1C1F', color: '#FFFFFF',
             fontSize: 15, fontWeight: 600, cursor: loading ? 'wait' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',
@@ -99,10 +99,10 @@ function LoginForm() {
           {loading ? 'Redirecting to Google…' : 'Continue with Google'}
         </button>
 
-        <p style={{ textAlign: 'center', fontSize: 12, color: '#3D4F6E', marginTop: 20 }}>
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#8A8A8F', marginTop: 20 }}>
           By signing in you agree to our{' '}
-          <a href="/terms" style={{ color: '#7B8DB0' }}>Terms</a> and{' '}
-          <a href="/privacy" style={{ color: '#7B8DB0' }}>Privacy Policy</a>
+          <a href="/terms" style={{ color: '#C7C7CC' }}>Terms</a> and{' '}
+          <a href="/privacy" style={{ color: '#C7C7CC' }}>Privacy Policy</a>
         </p>
       </div>
     </div>
