@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export const metadata = { title: 'Terms of Service | GritClub', description: 'GritClub Terms of Service' }
 
-const C = { bg: '#0A0F1E', card: '#111827', border: 'rgba(255,255,255,0.06)', text: '#F0F4FF', muted: '#7B8DB0', dim: '#3D4F6E', blue: '#3B82F6', gold: '#F59E0B' }
+const C = { bg: '#0B0B0C', card: '#121214', border: 'rgba(255,255,255,0.06)', text: '#FFFFFF', muted: '#C7C7CC', dim: '#8A8A8F', blue: '#C7C7CC', gold: '#C7C7CC' }
 
 const Section = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
   <section style={{ marginBottom: 32 }}>
@@ -43,7 +43,7 @@ export default function TermsPage() {
           <p style={{ fontSize: 13, color: C.dim, fontFamily: 'DM Mono,sans-serif' }}>
             Last Updated: March 15, 2026 · Effective immediately
           </p>
-          <div style={{ marginTop: 20, padding: '14px 18px', borderRadius: 12, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', color: C.blue, fontSize: 13, fontFamily: 'DM Sans,sans-serif' }}>
+          <div style={{ marginTop: 20, padding: '14px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(37,99,235,0.2)', color: C.blue, fontSize: 13, fontFamily: 'DM Sans,sans-serif' }}>
             By accessing GritClub or creating an account, you agree to these Terms. If you don't agree, please don't use the Service.
           </div>
         </div>
