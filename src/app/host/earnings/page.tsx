@@ -61,10 +61,10 @@ export default function EarningsPage() {
           {[
             { label: 'Total Sales', value: fmt(stats.total), icon: DollarSign, color: '#38BDF8' },
             { label: 'Your Payout (80%)', value: fmt(stats.payout), icon: TrendingUp, color: '#4ADE80' },
-            { label: 'Tickets Sold', value: stats.tickets, icon: Ticket, color: '#FFD700' },
+            { label: 'Tickets Sold', value: stats.tickets, icon: Ticket, color: '#C7C7CC' },
             { label: 'Total Events', value: stats.events, icon: Calendar, color: '#A855F7' },
           ].map(s => (
-            <div key={s.label} className="rounded-2xl p-4" style={{ background: '#1E293B' }}>
+            <div key={s.label} className="rounded-2xl p-4" style={{ background: '#1C1C1F' }}>
               <div className="flex items-center gap-2 mb-2">
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
                 <span className="text-xs text-slate-400">{s.label}</span>
@@ -77,15 +77,15 @@ export default function EarningsPage() {
         {/* Transactions */}
         <h2 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-widest">Transaction History</h2>
         {loading ? (
-          <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: '#1E293B' }} />)}</div>
+          <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: '#1C1C1F' }} />)}</div>
         ) : transactions.length === 0 ? (
-          <div className="rounded-2xl p-10 text-center" style={{ background: '#1E293B' }}>
+          <div className="rounded-2xl p-10 text-center" style={{ background: '#1C1C1F' }}>
             <DollarSign className="w-10 h-10 mx-auto mb-3 text-slate-600" />
             <p className="text-slate-500 mb-1">No sales yet</p>
             <p className="text-slate-600 text-xs">Create and promote your first event to start earning</p>
           </div>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#1E293B' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#1C1C1F' }}>
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid #334155' }}>
