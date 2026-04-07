@@ -7,22 +7,22 @@ import { Upload, Check, X, AlertCircle, User, AtSign, ChevronRight, Loader2 } fr
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:        '#291C0E',
-  surface:   '#2F2115',
-  card:      '#2F2115',
-  border:    'rgba(225,212,194,0.08)',
-  borderFocus:'rgba(225,212,194,0.18)',
-  text:      '#E1D4C2',
-  textMuted: '#BEB5A9',
-  textDim:   '#A78D78',
-  blue:      '#C4956A',
-  blueLight: '#BEB5A9',
-  blueDim:   'rgba(225,212,194,0.08)',
-  gold:      '#A78D78',
-  goldDim:   'rgba(148,163,184,0.12)',
-  red:       '#C0614A',
+  bg:        '#0B0B0C',
+  surface:   '#121214',
+  card:      '#121214',
+  border:    'rgba(255,255,255,0.06)',
+  borderFocus:'rgba(255,255,255,0.12)',
+  text:      '#FFFFFF',
+  textMuted: '#C7C7CC',
+  textDim:   '#C7C7CC',
+  blue:      '#C7C7CC',
+  blueLight: '#C7C7CC',
+  blueDim:   'rgba(255,255,255,0.06)',
+  gold:      '#C7C7CC',
+  goldDim:   'rgba(199,199,204,0.08)',
+  red:       '#FF453A',
   redDim:    'rgba(239,68,68,0.1)',
-  green:     '#6B9E7A',
+  green:     '#32D74B',
   greenDim:  'rgba(52,211,153,0.12)',
 }
 
@@ -386,7 +386,7 @@ export default function OnboardingPage() {
                 onClick={handleStep1}
                 disabled={!fullName.trim()}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                style={{ background: '#8A5F52', color: '#fff' }}
+                style={{ background: '#8A8A8F', color: '#fff' }}
               >
                 Continue <ChevronRight className="w-4 h-4" />
               </button>
@@ -469,7 +469,7 @@ export default function OnboardingPage() {
                   onClick={handleFinish}
                   disabled={saving || uploading || availStatus === 'taken' || availStatus === 'checking' || !username || !!userError}
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                  style={{ background: C.gold, color: '#291C0E' }}
+                  style={{ background: C.gold, color: '#0B0B0C' }}
                 >
                   {saving ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
