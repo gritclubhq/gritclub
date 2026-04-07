@@ -7,13 +7,13 @@ import Link from 'next/link'
 import { Search, Radio, Lock, Globe, X, Loader2, Calendar, Users, Tag, ChevronRight, Zap } from 'lucide-react'
 
 const C = {
-  bg:         '#291C0E', surface:    '#2F2115', card:       '#2F2115', cardHover:  '#4A3327',
-  border:     'rgba(225,212,194,0.08)', borderHover: 'rgba(225,212,194,0.18)',
-  text:       '#E1D4C2', textMuted:  '#BEB5A9', textDim:    '#A78D78',
-  blue:       '#C4956A', blueLight:  '#BEB5A9', blueDim:    'rgba(225,212,194,0.08)',
-  gold:       '#A78D78', goldDim:    'rgba(148,163,184,0.12)',
-  red:        '#C0614A', redDim:     'rgba(239,68,68,0.1)',
-  green:      '#6B9E7A', greenDim:   'rgba(52,211,153,0.12)',
+  bg:         '#0B0B0C', surface:    '#121214', card:       '#121214', cardHover:  '#1C1C1F',
+  border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(255,255,255,0.12)',
+  text:       '#FFFFFF', textMuted:  '#C7C7CC', textDim:    '#C7C7CC',
+  blue:       '#C7C7CC', blueLight:  '#C7C7CC', blueDim:    'rgba(255,255,255,0.06)',
+  gold:       '#C7C7CC', goldDim:    'rgba(199,199,204,0.08)',
+  red:        '#FF453A', redDim:     'rgba(239,68,68,0.1)',
+  green:      '#32D74B', greenDim:   'rgba(52,211,153,0.12)',
 }
 
 const CATEGORIES = ['All','AI & Tech','SaaS','FinTech','HealthTech','EdTech','E-commerce','Climate','Fundraising','Growth','Product']
@@ -109,7 +109,7 @@ function EventCard({ event, currentUserId }: { event: any; currentUserId: string
 
           {/* Capacity bar */}
           <div>
-            <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(225,212,194,0.08)' }}>
+            <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <div className="h-full rounded-full transition-all"
                 style={{ width: `${fill}%`, background: soldOut ? C.red : almostFull ? `linear-gradient(to right, ${C.gold}, #B8915F)` : `linear-gradient(to right, ${C.blue}, ${C.blueLight})` }} />
             </div>
@@ -137,9 +137,9 @@ function EventCard({ event, currentUserId }: { event: any; currentUserId: string
             <div
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
               style={{
-                background: isLive ? '#8A5F52' : soldOut ? C.border : 'rgba(196,149,106,0.15)',
+                background: isLive ? '#8A8A8F' : soldOut ? C.border : 'rgba(196,149,106,0.15)',
                 color:      isLive ? '#fff'    : soldOut ? C.textDim  : C.blueLight,
-                border:     `1px solid ${isLive ? '#8A5F52' : soldOut ? C.border : 'rgba(59,130,246,0.25)'}`,
+                border:     `1px solid ${isLive ? '#8A8A8F' : soldOut ? C.border : 'rgba(59,130,246,0.25)'}`,
               }}>
               {isLive ? 'Join Now →' : soldOut ? 'Sold Out' : 'Get Ticket →'}
             </div>
@@ -232,7 +232,7 @@ export default function EventsPage() {
               {isHost && (
                 <Link href="/host/create">
                   <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                    style={{ background: C.gold, color: '#291C0E' }}>
+                    style={{ background: C.gold, color: '#0B0B0C' }}>
                     <Zap className="w-4 h-4" /> Create Event
                   </button>
                 </Link>
