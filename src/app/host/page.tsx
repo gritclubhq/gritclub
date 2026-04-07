@@ -76,7 +76,7 @@ export default function HostDashboard() {
       value: loading ? '...' : formatCurrency(earnings),
       sub: 'You keep 80%',
       icon: DollarSign,
-      color: '#A78D78',
+      color: '#C7C7CC',
       bg: 'rgba(255,215,0,0.08)',
       border: 'rgba(255,215,0,0.2)',
       trend: '+12%',
@@ -96,7 +96,7 @@ export default function HostDashboard() {
       value: loading ? '...' : events.length.toString(),
       sub: `${scheduledEvents.length} upcoming`,
       icon: Calendar,
-      color: '#A78D78',
+      color: '#C7C7CC',
       bg: 'rgba(167,139,250,0.08)',
       border: 'rgba(167,139,250,0.2)',
       trend: null,
@@ -115,15 +115,15 @@ export default function HostDashboard() {
   ]
 
   const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    live: { label: 'Live', color: '#F87171', bg: 'rgba(239,68,68,0.12)', dot: '#C0614A' },
+    live: { label: 'Live', color: '#F87171', bg: 'rgba(239,68,68,0.12)', dot: '#FF453A' },
     scheduled: { label: 'Scheduled', color: '#38BDF8', bg: 'rgba(56,189,248,0.12)', dot: '#38BDF8' },
-    draft: { label: 'Draft', color: '#A78D78', bg: 'rgba(148,163,184,0.12)', dot: '#64748B' },
+    draft: { label: 'Draft', color: '#C7C7CC', bg: 'rgba(199,199,204,0.08)', dot: '#64748B' },
     ended: { label: 'Ended', color: '#64748B', bg: 'rgba(100,116,139,0.12)', dot: '#475569' },
   }
 
   return (
     <DashboardLayout>
-      <div className="min-h-full" style={{ background: '#2F2115' }}>
+      <div className="min-h-full" style={{ background: '#121214' }}>
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6">
 
           {/* ── Header ── */}
@@ -137,7 +137,7 @@ export default function HostDashboard() {
             <Link
               href="/host/create"
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-              style={{ background: '#A78D78', color: '#2F2115' }}
+              style={{ background: '#C7C7CC', color: '#121214' }}
             >
               <PlusCircle className="w-4 h-4" />
               New Event
@@ -151,13 +151,13 @@ export default function HostDashboard() {
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
             >
               {/* Glow */}
-              <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full opacity-20 blur-2xl" style={{ background: '#C0614A' }} />
+              <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full opacity-20 blur-2xl" style={{ background: '#FF453A' }} />
               <div className="flex items-center gap-3 relative">
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.2)' }}>
                     <Radio className="w-5 h-5 text-red-400" />
                   </div>
-                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 animate-pulse border-2" style={{ borderColor: '#2F2115' }} />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 animate-pulse border-2" style={{ borderColor: '#121214' }} />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-red-400 uppercase tracking-wider">You're Live</p>
@@ -168,7 +168,7 @@ export default function HostDashboard() {
               <Link
                 href={`/live/${liveEvent.id}`}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold relative"
-                style={{ background: '#C0614A', color: 'white' }}
+                style={{ background: '#FF453A', color: 'white' }}
               >
                 <Play className="w-3.5 h-3.5" />
                 Return to Stream
@@ -222,13 +222,13 @@ export default function HostDashboard() {
             {loading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: '#4A3327' }} />
+                  <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: '#1C1C1F' }} />
                 ))}
               </div>
             ) : events.length === 0 ? (
               <div
                 className="rounded-2xl p-12 text-center"
-                style={{ background: '#4A3327', border: '1px solid #334155' }}
+                style={{ background: '#1C1C1F', border: '1px solid #334155' }}
               >
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(56,189,248,0.08)' }}>
                   <Radio className="w-8 h-8 text-slate-600" />
@@ -238,7 +238,7 @@ export default function HostDashboard() {
                 <Link
                   href="/host/create"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
-                  style={{ background: '#A78D78', color: '#2F2115' }}
+                  style={{ background: '#C7C7CC', color: '#121214' }}
                 >
                   <Zap className="w-4 h-4" />
                   Create First Event
@@ -253,7 +253,7 @@ export default function HostDashboard() {
                     <div
                       key={event.id}
                       className="group rounded-2xl p-4 flex items-center gap-4 transition-all hover:border-slate-600"
-                      style={{ background: '#4A3327', border: '1px solid #334155' }}
+                      style={{ background: '#1C1C1F', border: '1px solid #334155' }}
                     >
                       {/* Status indicator */}
                       <div
@@ -291,7 +291,7 @@ export default function HostDashboard() {
 
                       {/* Earnings */}
                       <div className="hidden sm:block text-right flex-shrink-0">
-                        <p className="text-sm font-bold" style={{ color: '#A78D78' }}>
+                        <p className="text-sm font-bold" style={{ color: '#C7C7CC' }}>
                           {formatCurrency(eventEarnings)}
                         </p>
                         <p className="text-xs text-slate-600">earned</p>
@@ -303,7 +303,7 @@ export default function HostDashboard() {
                           <Link
                             href={`/live/${event.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ background: '#C0614A', color: 'white' }}
+                            style={{ background: '#FF453A', color: 'white' }}
                           >
                             <Play className="w-3 h-3" />
                             Go Live
@@ -337,7 +337,7 @@ export default function HostDashboard() {
           {/* ── Quick links ── */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { href: '/host/earnings', label: 'Earnings', icon: BarChart2, color: '#A78D78' },
+              { href: '/host/earnings', label: 'Earnings', icon: BarChart2, color: '#C7C7CC' },
               { href: '/host/payouts', label: 'Payouts', icon: DollarSign, color: '#4ADE80' },
               { href: '/host/network', label: 'Network', icon: Users, color: '#38BDF8' },
             ].map(item => (
@@ -345,7 +345,7 @@ export default function HostDashboard() {
                 key={item.href}
                 href={item.href}
                 className="flex items-center justify-between px-4 py-3.5 rounded-xl group transition-all hover:border-slate-600"
-                style={{ background: '#4A3327', border: '1px solid #334155' }}
+                style={{ background: '#1C1C1F', border: '1px solid #334155' }}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="w-4 h-4" style={{ color: item.color }} />
