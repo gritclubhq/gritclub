@@ -13,14 +13,14 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg:'#0A1120', surface:'#0F172A', card:'#0F172A',
+  bg:'#0B0B0C', surface:'#121214', card:'#121214',
   border:'rgba(255,255,255,0.06)', borderFocus:'rgba(255,255,255,0.12)',
-  text:'#E5E7EB', textMuted:'#9CA3AF', textDim:'#6B7280',
-  blue:'#3B82F6', blueL:'#9CA3AF', blueDim:'rgba(255,255,255,0.06)',
-  gold:'#94A3B8', goldDim:'rgba(148,163,184,0.12)',
+  text:'#FFFFFF', textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#C7C7CC', blueL:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
+  gold:'#C7C7CC', goldDim:'rgba(199,199,204,0.08)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.1)',
   green:'#34D399', greenDim:'rgba(52,211,153,0.12)',
-  purple:'#2563EB', purpleDim:'rgba(124,58,237,0.1)',
+  purple:'#C7C7CC', purpleDim:'rgba(199,199,204,0.08)',
 }
 
 const ICE: RTCIceServer[] = [
@@ -34,7 +34,7 @@ const ICE: RTCIceServer[] = [
 type Tab = 'chat' | 'files' | 'call' | 'settings'
 const getName  = (u:any) => u?.full_name||u?.email?.split('@')[0]||'User'
 const getInits = (u:any) => getName(u).slice(0,2).toUpperCase()
-const AC = ['#3B82F6','#2563EB','#DB2777','#D97706','#059669','#0891B2']
+const AC = ['#C7C7CC','#C7C7CC','#DB2777','#D97706','#059669','#0891B2']
 const ac  = (id:string) => AC[(id?.charCodeAt(0)||0)%AC.length]
 const fmtB = (b:number) => b<1024?`${b}B`:b<1048576?`${(b/1024).toFixed(1)}KB`:`${(b/1048576).toFixed(1)}MB`
 const ago  = (ts:string) => { const m=Math.floor((Date.now()-new Date(ts).getTime())/60000); return m<1?'now':m<60?`${m}m`:m<1440?`${Math.floor(m/60)}h ago`:`${Math.floor(m/1440)}d ago` }
@@ -84,7 +84,7 @@ function RemoteTile({stream,name,uid}:{stream:MediaStream;name:string;uid:string
   }
 
   return (
-    <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',width:'100%',height:'100%'}}>
+    <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0B0B0C',width:'100%',height:'100%'}}>
       <video ref={ref} autoPlay playsInline
         style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
       <div style={{position:'absolute',bottom:6,left:8,fontSize:11,fontWeight:700,color:'#fff',background:'rgba(0,0,0,0.65)',padding:'2px 8px',borderRadius:6}}>{name}</div>
@@ -608,7 +608,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
       {/* In-call UI */}
       <div style={{display:inCall?'flex':'none',flexDirection:'column',
         ...(isFullscreen
-          ? {position:'fixed',inset:0,zIndex:9999,background:'#050510',height:'100dvh'}
+          ? {position:'fixed',inset:0,zIndex:9999,background:'#0B0B0C',height:'100dvh'}
           : {flex:1,minHeight:0,height:'100%'})}}>
 
         {/* Reaction rain */}
@@ -621,18 +621,18 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
         </div>
 
         {/* Video grid — fills all available height, controls always visible */}
-        <div style={{flex:1,background:'#050510',overflow:'hidden',padding:8,display:'grid',gap:6,
+        <div style={{flex:1,background:'#0B0B0C',overflow:'hidden',padding:8,display:'grid',gap:6,
           gridTemplateColumns:spotlitUid&&orderedPeers.length>0?'3fr 1fr':`repeat(${cols},1fr)`,
           gridAutoRows:'1fr',
           minHeight:0,
           WebkitOverflowScrolling:'touch'}}>
 
           {/* My tile */}
-          <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#111',minHeight:0,height:'100%'}}>
+          <div style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#121214',minHeight:0,height:'100%'}}>
             <video ref={localVid} autoPlay playsInline muted={true}
               style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
             {!camOn&&!screenOn && (
-              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'#111'}}>
+              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'#121214'}}>
                 <div style={{textAlign:'center'}}>
                   <div style={{width:44,height:44,borderRadius:'50%',background:ac(myUid)+'22',color:ac(myUid),display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,margin:'0 auto 4px'}}>{getInits(currentUser)}</div>
                   <p style={{fontSize:10,color:C.textMuted}}>Camera off</p>
@@ -649,7 +649,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
           {orderedPeers.map(([uid,{stream,name}]) => {
             const isSpotlit = uid===spotlitUid
             return (
-              <div key={uid} style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0a0a0a',minHeight:120,
+              <div key={uid} style={{position:'relative',borderRadius:12,overflow:'hidden',background:'#0B0B0C',minHeight:120,
                 gridColumn:isSpotlit?'1':'auto',
                 gridRow:isSpotlit?'1 / span 3':'auto',
                 outline:isSpotlit?`2px solid ${C.gold}`:'none'}}>
@@ -668,7 +668,7 @@ function CallTab({groupId,currentUser,isCtrl,activeTab}:{groupId:string;currentU
 
         {/* Raised hands bar */}
         {isCtrl&&hands.length>0 && (
-          <div style={{flexShrink:0,background:'rgba(148,163,184,0.12)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
+          <div style={{flexShrink:0,background:'rgba(199,199,204,0.08)',borderTop:'1px solid rgba(245,158,11,0.3)',padding:'6px 16px',display:'flex',alignItems:'center',gap:8,overflowX:'auto'}}>
             <Hand style={{width:14,height:14,color:C.gold,flexShrink:0}}/>
             <span style={{fontSize:11,fontWeight:700,color:C.gold,fontFamily:'Inter,sans-serif',flexShrink:0}}>Raised hands:</span>
             {hands.map((h,i) => (
