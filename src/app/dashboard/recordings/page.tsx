@@ -12,11 +12,11 @@ import {
 const C = {
   bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
   border:'rgba(255,255,255,0.07)', text:'#E8EAF0',
-  textMuted:'#8A9BBF', textDim:'#3D4F6E',
+  textMuted:'#8A9BBF', textDim:'#8A8A8F',
   blue:'#FF3B3B', blueL:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
-  gold:'#FFD700', goldDim:'rgba(255,215,0,0.1)',
+  gold:'#C7C7CC', goldDim:'rgba(255,215,0,0.1)',
   red:'#EF4444', redDim:'rgba(239,68,68,0.12)',
-  purple:'#7C3AED', purpleDim:'rgba(124,58,237,0.1)',
+  purple:'#C7C7CC', purpleDim:'rgba(199,199,204,0.08)',
   green:'#10B981',
 }
 
