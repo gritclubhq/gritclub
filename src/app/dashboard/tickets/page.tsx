@@ -7,12 +7,12 @@ import Link from 'next/link'
 import { Ticket, Calendar, Clock, Radio, Check, Loader2, ExternalLink } from 'lucide-react'
 
 const C = {
-  bg:'#070B14', surface:'#0D1420', card:'#0F1A2E',
+  bg:'#0B0B0C', surface:'#111113', card:'#121214',
   border:'rgba(255,255,255,0.06)',
-  text:'#E8EAF0', textMuted:'#8A9BBF', textDim:'#8A8A8F',
-  blue:'#FF3B3B', blueLight:'#FF5555', blueDim:'rgba(255,59,59,0.12)',
+  text:'#FFFFFF', textMuted:'#C7C7CC', textDim:'#8A8A8F',
+  blue:'#FFFFFF', blueLight:'#C7C7CC', blueDim:'rgba(255,255,255,0.06)',
   gold:'#C7C7CC', goldDim:'rgba(255,215,0,0.1)',
-  red:'#EF4444', green:'#10B981', greenDim:'rgba(16,185,129,0.1)',
+  red:'#FF453A', redDim:'rgba(255,69,58,0.08)', green:'#32D74B', greenDim:'rgba(50,215,75,0.08)',
 }
 
 const AVATAR_COLORS = ['#FF3B3B','#C7C7CC','#DB2777','#D97706','#059669']
