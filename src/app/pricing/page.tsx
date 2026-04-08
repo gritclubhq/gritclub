@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -154,6 +155,33 @@ function Cell({ val }: { val: boolean | string }) {
   return <span style={{fontSize:12,color:C.textMuted,fontFamily:'Inter,sans-serif'}}>{val}</span>
 }
 
+
+// Auth-aware nav buttons for pricing page
+function PricingNavButtons() {
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false)
+  const [checking, setChecking] = React.useState(true)
+  React.useEffect(() => {
+    import('@/lib/supabase/client').then(({supabase}) => {
+      supabase.auth.getSession().then(({data:{session}}) => {
+        setIsLoggedIn(!!session)
+        setChecking(false)
+      })
+    })
+  }, [])
+  if (checking) return null
+  if (isLoggedIn) return (
+    <Link href="/dashboard" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#000',padding:'7px 18px',borderRadius:8,background:'#FFFFFF',display:'inline-flex',alignItems:'center',gap:6}}>
+      Dashboard
+    </Link>
+  )
+  return (
+    <>
+      <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,color:'rgba(255,255,255,0.6)',padding:'7px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.12)'}}>Sign In</Link>
+      <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#000',padding:'7px 16px',borderRadius:8,background:'#FFFFFF'}}>Join Free</Link>
+    </>
+  )
+}
+
 export default function PricingPage() {
   const router = useRouter()
   const [annual, setAnnual] = useState(false)
@@ -215,8 +243,7 @@ export default function PricingPage() {
           <span style={{fontFamily:'Syne',fontWeight:800,fontSize:17,letterSpacing:'-0.02em'}}>GRIT<span style={{color:'#C7C7CC'}}>CLUB</span></span>
         </Link>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,color:C.textMuted,padding:'7px 16px',borderRadius:8,border:`1px solid ${C.border}`}}>Sign In</Link>
-          <Link href="/auth/login" style={{textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',padding:'7px 16px',borderRadius:8,background:'#C7C7CC'}}>Join Free</Link>
+          <PricingNavButtons />
         </div>
       </nav>
 
