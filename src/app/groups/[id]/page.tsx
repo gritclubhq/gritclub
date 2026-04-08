@@ -754,6 +754,9 @@ function SettingsTab({group,myRole,currentUser,onDeleted}:{group:any;myRole:stri
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const isOwner = myRole==='owner' || myRole==='admin'
+  const memberCount = group?.member_count || 0
+  const memberLimit = group?.max_members || 5
+  const isAtLimit = memberCount >= memberLimit
   const required = 'delete the group'
 
   const deleteGroup = async () => {
