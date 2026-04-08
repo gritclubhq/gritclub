@@ -297,7 +297,7 @@ export default function ProfilePage() {
               <h1 style={{ fontSize:24, fontWeight:800, color:C.text, fontFamily:'Sora,sans-serif', letterSpacing:'-0.02em' }}>Your Profile</h1>
             </div>
             <button onClick={handleSave} disabled={saving||uploadingPhoto}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:14, opacity:(saving||uploadingPhoto)?0.6:1 }}>
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:12, border:'none', cursor:'pointer', background:saved?'rgba(50,215,75,0.1)':'transparent', color:saved?'#32D74B':'#FFFFFF', border:'1px solid rgba(255,255,255,0.15)', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:14, opacity:(saving||uploadingPhoto)?0.5:1, transition:'all 0.2s' }}>
               {saving?<><Loader2 style={{ width:15, height:15, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:15, height:15 }} /> Saved!</>:'Save Changes'}
             </button>
           </div>
@@ -454,7 +454,7 @@ export default function ProfilePage() {
 
           {/* Save button */}
           <button onClick={handleSave} disabled={saving||uploadingPhoto}
-            style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?C.green:C.blue, color:'#fff', fontFamily:'Inter,sans-serif', fontWeight:700, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.7:1 }}>
+            style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor:'pointer', background:saved?'rgba(50,215,75,0.1)':'rgba(255,255,255,0.06)', color:saved?'#32D74B':'#FFFFFF', border:'1px solid rgba(255,255,255,0.12)', fontFamily:'Inter,sans-serif', fontWeight:600, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center', gap:8, opacity:saving?0.5:1, transition:'all 0.2s' }}>
             {saving?<><Loader2 style={{ width:16, height:16, animation:'spin 1s linear infinite' }} /> Saving...</>:saved?<><Check style={{ width:16, height:16 }} /> Saved!</>:'Save Profile'}
           </button>
 
