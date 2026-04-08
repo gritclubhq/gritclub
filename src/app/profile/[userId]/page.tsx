@@ -280,7 +280,10 @@ export default function PublicProfilePage() {
                 {profile.role==='admin' && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.redDim, color:C.red, fontFamily:'Inter,sans-serif', fontWeight:700 }}>ADMIN</span>}
                 {profile.is_premium && <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, background:C.goldDim, color:C.gold, fontFamily:'Inter,sans-serif', fontWeight:700 }}>⭐ PRO</span>}
               </div>
-              {profile.username && <p style={{ fontSize:14, color:C.blueLight, fontFamily:'Inter,sans-serif', marginBottom:10 }}>@{profile.username}</p>}
+              {profile.username && <p style={{ fontSize:14, color:C.blueLight, fontFamily:'Inter,sans-serif', marginBottom:6 }}>@{profile.username}</p>}
+              {profile.show_email && profile.email && (
+                <p style={{ fontSize:13, color:C.textMuted, fontFamily:'Inter,sans-serif', marginBottom:10 }}>{profile.email}</p>
+              )}
               {profile.bio && <p style={{ fontSize:14, color:C.textMuted, fontFamily:'Inter,sans-serif', lineHeight:1.75, marginBottom:16, maxWidth:520 }}>{profile.bio}</p>}
 
               {/* Stats */}
