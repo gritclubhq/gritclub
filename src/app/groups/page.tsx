@@ -418,7 +418,7 @@ function CreateGroupModal({ currentUserId, onClose, onCreated }: {
               onClick={handleCreate}
               disabled={creating || uploadingBanner}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-              style={{ background: '#8A8A8F', color: '#fff' }}
+              style={{ background: 'rgba(255,255,255,0.08)', color: '#C7C7CC' }}
             >
               {creating
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
@@ -494,7 +494,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
             <h3 className="text-sm font-bold leading-tight" style={{ color: C.text }}>{group.name}</h3>
           </div>
           <span className="text-xs font-medium px-2 py-0.5 rounded-md"
-            style={{ background: '#8A8A8F', color: '#fff' }}>
+            style={{ background: 'rgba(255,255,255,0.08)', color: '#C7C7CC' }}>
             {group.category}
           </span>
           <p className="text-xs mt-2 line-clamp-2 leading-relaxed" style={{ color: C.textMuted }}>
@@ -529,7 +529,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
             <button
               onClick={() => router.push(`/groups/${group.id}`)}
               className="w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: '#8A8A8F', color: '#fff', border: `1px solid rgba(37,99,235,0.2)` }}
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', transition:'all 0.2s' }}
             >
               Open Group →
             </button>
@@ -542,7 +542,7 @@ function GroupCard({ group, currentUserId, onJoin }: {
             <button
               onClick={() => onJoin(group)}
               className="w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: group.is_private ? C.goldDim : C.blue, color: group.is_private ? C.gold : '#fff', border: group.is_private ? `1px solid rgba(245,158,11,0.3)` : 'none' }}
+              style={{ background: group.is_private ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', transition:'all 0.2s' }}
             >
               {group.is_private ? '🔒 Request to Join' : 'Join Group'}
             </button>
@@ -615,7 +615,10 @@ export default function GroupsPage() {
   }
 
   const handleJoin = async (group: any) => {
-    if (!currentUser) return
+    if (!currentUser) {
+      router.push('/auth/login?next=/groups')
+      return
+    }
 
     // Check member count — free limit
     if (group.member_count >= FREE_MEMBER_LIMIT && !group.is_premium) {
