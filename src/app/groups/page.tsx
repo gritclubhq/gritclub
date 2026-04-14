@@ -349,7 +349,7 @@ function GroupCard({ group, uid, onJoin }: { group: any; uid: string; onJoin: (g
             </div>
           ) : (
             <button onClick={() => onJoin(group)} disabled={isFull}
-              style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: isFull ? C.border : C.redDim, color: isFull ? C.textDim : C.red, fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 12, cursor: isFull ? 'not-allowed' : 'pointer', border: `1px solid ${isFull ? C.border : 'rgba(255,59,59,0.3)'}`, transition: 'all .15s' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid ${isFull ? C.border : 'rgba(255,59,59,0.3)'}`, background: isFull ? C.border : C.redDim, color: isFull ? C.textDim : C.red, fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 12, cursor: isFull ? 'not-allowed' : 'pointer', transition: 'all .15s' }}
               onMouseEnter={e => { if (!isFull) (e.currentTarget as HTMLElement).style.background = C.red; (e.currentTarget as HTMLElement).style.color = '#fff' }}
               onMouseLeave={e => { if (!isFull) (e.currentTarget as HTMLElement).style.background = C.redDim; (e.currentTarget as HTMLElement).style.color = C.red }}>
               {isFull ? 'Circle Full' : group.is_private ? '🔒 Request Access' : group.require_approval ? '📋 Request to Join' : 'Join Circle'}
