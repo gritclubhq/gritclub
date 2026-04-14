@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import {
   MessageSquare, Folder, Video, Send, Upload, Download, Trash2,
-  Users, Crown, Mic, MicOff, VideoIcon as VideoOffIcon, PhoneOff, Monitor, MonitorOff,
+  Users, Crown, Mic, MicOff, Video, VideoOff, PhoneOff, Monitor, MonitorOff,
   Loader2, Lock, Globe, ChevronLeft, Shield, Zap,
   Phone, PhoneCall, X, Settings, AlertTriangle, Check, UserMinus, Hand,
   Maximize2, Minimize2, Bell, CheckCircle, XCircle, Clock,
