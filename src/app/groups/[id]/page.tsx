@@ -628,12 +628,12 @@ function MembersTab({ groupId, currentUser, myRole, members, onMembersChange }: 
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button onClick={() => approve(m)} disabled={acting === m.id} title="Approve"
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: 'none', background: C.greenDim, color: C.green, fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer', border: `1px solid rgba(34,197,94,0.3)` }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: `1px solid rgba(34,197,94,0.3)`, background: C.greenDim, color: C.green, fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                     {acting === m.id ? <Loader2 style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} /> : <CheckCircle style={{ width: 12, height: 12 }} />}
                     Approve
                   </button>
                   <button onClick={() => reject(m)} disabled={acting === m.id} title="Reject"
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: 'none', background: C.redDim, color: C.red, fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer', border: `1px solid rgba(255,59,59,0.3)` }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: `1px solid rgba(255,59,59,0.3)`, background: C.redDim, color: C.red, fontFamily: 'DM Sans,sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
                     {acting === m.id ? <Loader2 style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} /> : <XCircle style={{ width: 12, height: 12 }} />}
                     Reject
                   </button>
