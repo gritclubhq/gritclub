@@ -574,14 +574,16 @@ function MembersTab({ groupId, currentUser, myRole, members, onMembersChange }: 
 }) {
   const [acting, setActing] = useState<string | null>(null)
   const isCtrl = myRole === 'owner' || myRole === 'admin'
-  const pending = members.filter(m => m.status === 'pending')
-  const active  = members.filter(m => m.status !== 'pending')
+  // Owners are never pending — only show genuine member requests
+  const pending = members.filter(m => m.status === 'pending' && m.role !== 'owner')
+  const active  = members.filter(m => m.status !== 'pending' || m.role === 'owner')
 
   const approve = async (m: any) => {
     setActing(m.id)
     await supabase.from('group_members').update({ status: 'active' }).eq('id', m.id)
-    const activeCount = members.filter(x => x.status === 'active' || !x.status || x.role === 'owner').length
-    await supabase.from('groups').update({ member_count: activeCount + 1 }).eq('id', groupId)
+    // Increment group member_count safely
+    const { data: grp } = await supabase.from('groups').select('member_count').eq('id', groupId).single()
+    await supabase.from('groups').update({ member_count: (grp?.member_count || 0) + 1 }).eq('id', groupId)
     await onMembersChange(); setActing(null)
   }
 
@@ -601,8 +603,12 @@ function MembersTab({ groupId, currentUser, myRole, members, onMembersChange }: 
     if (!confirm(`Remove ${getName(m.users)} from the circle?`)) return
     setActing(m.id)
     await supabase.from('group_members').delete().eq('id', m.id)
-    const activeCount = members.filter(x => (x.status === 'active' || !x.status || x.role === 'owner') && x.id !== m.id).length
-    await supabase.from('groups').update({ member_count: activeCount }).eq('id', groupId)
+    // Only decrement if the kicked member was active (not pending)
+    if (m.status !== 'pending') {
+      const { data: grp } = await supabase.from('groups').select('member_count').eq('id', groupId).single()
+      const newCount = Math.max((grp?.member_count || 1) - 1, 0)
+      await supabase.from('groups').update({ member_count: newCount }).eq('id', groupId)
+    }
     await onMembersChange(); setActing(null)
   }
 
@@ -781,16 +787,62 @@ export default function GroupRoomPage() {
     supabase.auth.getUser().then(async ({ data: { user: u } }) => {
       if (!u) { router.push('/auth/login'); return }
       setCurrentUser(u)
+
       const { data: g } = await supabase.from('groups').select('*').eq('id', groupId).single()
       if (!g || dead) { router.push('/groups'); return }
       setGroup(g)
-      const { data: mem } = await supabase.from('group_members').select('role,status').eq('group_id', groupId).eq('user_id', u.id).maybeSingle()
-      if (!mem || dead) { router.push('/groups'); return }
-      const role = mem.role === 'host' ? 'owner' : (mem.role || 'member')
-      if (mem.status === 'pending' && role !== 'owner' && role !== 'admin') { router.push('/groups?pending=1'); return }
-      setMyRole(role); setAccess(true)
-      const { data: mems } = await supabase.from('group_members').select('*,users(id,email,full_name,photo_url,role)').eq('group_id', groupId).order('created_at', { ascending: true })
-      if (!dead) { setMembers(mems || []); setPendingCount((mems || []).filter((m: any) => m.status === 'pending').length) }
+
+      // Check if this user is the group creator — they are always owner regardless of member row
+      const isCreator = g.created_by === u.id
+
+      const { data: mem } = await supabase
+        .from('group_members')
+        .select('role,status')
+        .eq('group_id', groupId)
+        .eq('user_id', u.id)
+        .maybeSingle()
+
+      if (isCreator) {
+        // Owner always gets in — ensure their member row exists and is correct
+        if (!mem) {
+          // Row missing — recreate it (edge case: someone deleted it)
+          await supabase.from('group_members').upsert({
+            group_id: groupId, user_id: u.id, role: 'owner', status: 'active'
+          }, { onConflict: 'group_id,user_id' })
+        } else if (mem.status !== 'active' || (mem.role !== 'owner' && mem.role !== 'admin')) {
+          // Row exists but is wrong — fix it
+          await supabase.from('group_members')
+            .update({ role: 'owner', status: 'active' })
+            .eq('group_id', groupId)
+            .eq('user_id', u.id)
+        }
+        if (!dead) { setMyRole('owner'); setAccess(true) }
+      } else {
+        // Non-creator: must have a valid active member row
+        if (!mem || dead) { router.push('/groups'); return }
+        const role = mem.role === 'host' ? 'owner' : (mem.role || 'member')
+        // Pending members get redirected unless they are admin/owner
+        if (mem.status === 'pending' && role !== 'owner' && role !== 'admin') {
+          router.push('/groups?pending=1'); return
+        }
+        // No member row at all → not allowed in
+        if (!mem) { router.push('/groups'); return }
+        if (!dead) { setMyRole(role); setAccess(true) }
+      }
+
+      const { data: mems } = await supabase
+        .from('group_members')
+        .select('*,users(id,email,full_name,photo_url,role)')
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: true })
+
+      if (!dead) {
+        setMembers(mems || [])
+        // Only count pending from non-owners as requests
+        setPendingCount((mems || []).filter((m: any) =>
+          m.status === 'pending' && m.role !== 'owner'
+        ).length)
+      }
       setLoading(false)
     })
     return () => { dead = true }
@@ -799,7 +851,8 @@ export default function GroupRoomPage() {
   const loadMembers = useCallback(async () => {
     const { data } = await supabase.from('group_members').select('*,users(id,email,full_name,photo_url,role)').eq('group_id', groupId).order('created_at', { ascending: true })
     setMembers(data || [])
-    setPendingCount((data || []).filter((m: any) => m.status === 'pending').length)
+    // Only non-owner pending rows count as requests
+    setPendingCount((data || []).filter((m: any) => m.status === 'pending' && m.role !== 'owner').length)
   }, [groupId])
 
   const TABS = useMemo((): { id: Tab; label: string; icon: any; badge?: number }[] => {
@@ -822,7 +875,7 @@ export default function GroupRoomPage() {
   )
   if (!access) return null
 
-  const activeMemberCount = members.filter(m => m.status !== 'pending').length
+  const activeMemberCount = members.filter(m => m.status !== 'pending' || m.role === 'owner').length
 
   return (
     <DashboardLayout>
