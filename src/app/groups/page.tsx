@@ -265,6 +265,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
 // ─── Group card ───────────────────────────────────────────────────────────────
 function GroupCard({ group, uid, onJoin }: { group: any; uid: string; onJoin: (g: any) => void }) {
   const router = useRouter()
+  const isOwner   = group.is_owner
   const isMember  = group.is_member
   const isPending = group.is_pending
   const isFull    = group.member_count >= FREE_MEMBER_LIMIT && !group.is_premium
@@ -302,13 +303,19 @@ function GroupCard({ group, uid, onJoin }: { group: any; uid: string; onJoin: (g
             </span>
           )}
         </div>
-        {isMember && (
+        {isOwner ? (
+          <div style={{ position: 'absolute', top: 8, right: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 6, background: C.goldDim, color: C.gold, fontFamily: 'DM Mono,monospace' }}>
+              <Crown style={{ width: 9, height: 9 }} />Owner
+            </span>
+          </div>
+        ) : isMember ? (
           <div style={{ position: 'absolute', top: 8, right: 8 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 6, background: C.greenDim, color: C.green, fontFamily: 'DM Mono,monospace' }}>
               <Check style={{ width: 9, height: 9 }} />Member
             </span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Body */}
@@ -336,7 +343,14 @@ function GroupCard({ group, uid, onJoin }: { group: any; uid: string; onJoin: (g
 
         {/* CTA */}
         <div style={{ marginTop: 'auto' }}>
-          {isMember ? (
+          {isOwner ? (
+            <button onClick={() => router.push(`/groups/${group.id}`)}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid rgba(255,215,0,0.35)`, background: C.goldDim, color: C.gold, fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,215,0,0.18)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C.goldDim }}>
+              <Crown style={{ width: 12, height: 12 }} /> Manage Circle
+            </button>
+          ) : isMember ? (
             <button onClick={() => router.push(`/groups/${group.id}`)}
               style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid ${C.borderHover}`, background: 'transparent', color: C.text, fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .15s' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.border }}
@@ -350,8 +364,8 @@ function GroupCard({ group, uid, onJoin }: { group: any; uid: string; onJoin: (g
           ) : (
             <button onClick={() => onJoin(group)} disabled={isFull}
               style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid ${isFull ? C.border : 'rgba(255,59,59,0.3)'}`, background: isFull ? C.border : C.redDim, color: isFull ? C.textDim : C.red, fontFamily: 'Syne,sans-serif', fontWeight: 700, fontSize: 12, cursor: isFull ? 'not-allowed' : 'pointer', transition: 'all .15s' }}
-              onMouseEnter={e => { if (!isFull) (e.currentTarget as HTMLElement).style.background = C.red; (e.currentTarget as HTMLElement).style.color = '#fff' }}
-              onMouseLeave={e => { if (!isFull) (e.currentTarget as HTMLElement).style.background = C.redDim; (e.currentTarget as HTMLElement).style.color = C.red }}>
+              onMouseEnter={e => { if (!isFull) { (e.currentTarget as HTMLElement).style.background = C.red; (e.currentTarget as HTMLElement).style.color = '#fff' } }}
+              onMouseLeave={e => { if (!isFull) { (e.currentTarget as HTMLElement).style.background = C.redDim; (e.currentTarget as HTMLElement).style.color = C.red } }}>
               {isFull ? 'Circle Full' : group.is_private ? '🔒 Request Access' : group.require_approval ? '📋 Request to Join' : 'Join Circle'}
             </button>
           )}
@@ -394,16 +408,31 @@ export default function GroupsPage() {
       ? await supabase.from('group_members').select('group_id,status,role').eq('user_id', uid)
       : { data: [] }
 
-    const activeIds  = new Set((mems || []).filter((m: any) => m.status === 'active' || !m.status || m.role === 'owner' || m.role === 'admin').map((m: any) => m.group_id))
-    const pendingIds = new Set((mems || []).filter((m: any) => m.status === 'pending' && m.role !== 'owner' && m.role !== 'admin').map((m: any) => m.group_id))
+    const ownerIds   = new Set((mems || []).filter((m: any) => m.role === 'owner').map((m: any) => m.group_id))
+    const activeIds  = new Set((mems || []).filter((m: any) =>
+      m.status === 'active' || !m.status || m.role === 'owner' || m.role === 'admin'
+    ).map((m: any) => m.group_id))
+    const pendingIds = new Set((mems || []).filter((m: any) =>
+      m.status === 'pending' && m.role !== 'owner' && m.role !== 'admin'
+    ).map((m: any) => m.group_id))
 
-    const enriched = (all || []).map(g => ({ ...g, is_member: activeIds.has(g.id), is_pending: pendingIds.has(g.id) }))
+    // Also mark groups where uid is the creator (created_by) as owner
+    const enriched = (all || []).map(g => ({
+      ...g,
+      is_owner:  ownerIds.has(g.id) || (uid && g.created_by === uid),
+      is_member: activeIds.has(g.id) || ownerIds.has(g.id) || (uid && g.created_by === uid),
+      is_pending: pendingIds.has(g.id),
+    }))
     setGroups(enriched)
-    setMyGroups(enriched.filter(g => activeIds.has(g.id)))
+    setMyGroups(enriched.filter(g => g.is_member))
   }
 
   const handleJoin = async (group: any) => {
     if (!me) { router.push('/auth/login?next=/groups'); return }
+    // Owner should never be able to join their own group as a member
+    if (group.is_owner || group.created_by === me.id) { router.push(`/groups/${group.id}`); return }
+    // Already a member
+    if (group.is_member) { router.push(`/groups/${group.id}`); return }
     if (group.member_count >= FREE_MEMBER_LIMIT && !group.is_premium) { setShowUpgrade(true); return }
 
     const needsApproval = group.is_private || group.require_approval
