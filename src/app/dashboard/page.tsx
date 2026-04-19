@@ -9,10 +9,10 @@ import { Search, Radio, Lock, Globe, X, Loader2, Calendar, Users, Tag, ChevronRi
 const C = {
   bg:         '#0B0B0C', surface:    '#121214', card:       '#121214', cardHover:  '#1C1C1F',
   border:     'rgba(255,255,255,0.06)', borderHover: 'rgba(255,255,255,0.12)',
-  text:       '#FFFFFF', textMuted:  '#C7C7CC', textDim:    '#C7C7CC',
-  blue:       '#C7C7CC', blueLight:  '#C7C7CC', blueDim:    'rgba(255,255,255,0.06)',
-  gold:       '#C7C7CC', goldDim:    'rgba(199,199,204,0.08)',
-  red:        '#FF453A', redDim:     'rgba(239,68,68,0.1)',
+  text:       '#FFFFFF', textMuted:  '#C7C7CC', textDim:    '#8A8A8F',
+  blue:       '#FF453A', blueLight:  '#FF6B61', blueDim:    'rgba(255,69,58,0.1)',
+  gold:       '#FFD700', goldDim:    'rgba(255,215,0,0.1)',
+  red:        '#FF453A', redDim:     'rgba(255,69,58,0.1)',
   green:      '#32D74B', greenDim:   'rgba(52,211,153,0.12)',
 }
 
