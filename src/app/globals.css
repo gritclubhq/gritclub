@@ -7,14 +7,14 @@
   --bg-sec:      #111113;
   --card:        #121214;
   --card-el:     #1C1C1F;
-  --border:      rgba(255,255,255,0.06);
+  --border:      rgba(255,255,255,0.07);
   --border-str:  rgba(255,255,255,0.12);
   --text:        #FFFFFF;
   --text-muted:  #C7C7CC;
   --text-dim:    #8A8A8F;
   --red:         #FF453A;
   --green:       #32D74B;
-  --gold:        #C7C7CC;
+  --gold:        #FFD700;  /* ← fixed: was grey #C7C7CC */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -25,9 +25,12 @@ html, body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  /* GPU layer for the root */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
-/* Chrome gradient text - used for headings */
+/* Chrome gradient text */
 .chrome-text {
   background: linear-gradient(135deg, #E8E8E8 0%, #CFCFCF 25%, #FFFFFF 50%, #B8B8B8 75%, #EDEDED 100%);
   -webkit-background-clip: text;
@@ -35,6 +38,59 @@ html, body {
   background-clip: text;
 }
 
+/* ── Performance: GPU-promote animated elements ─────────────────────────────*/
+/* Any element with a CSS animation gets its own compositor layer */
+[style*="animation"],
+[class*="animate-"] {
+  will-change: transform, opacity;
+}
+
+/* ── Cards: use transform for hover, not box-shadow/border changes ──────────*/
+.gc-card-hover {
+  transition: transform 0.2s cubic-bezier(0.23,1,0.32,1), box-shadow 0.2s;
+}
+.gc-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+/* ── Nav link hover — CSS instead of JS ─────────────────────────────────────*/
+.gc-nav-link {
+  color: #8A8A8F;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.gc-nav-link:hover { color: #FFFFFF; }
+
+/* ── Button hover — CSS only ─────────────────────────────────────────────────*/
+.gc-btn-primary {
+  transition: opacity 0.15s, transform 0.15s;
+}
+.gc-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+/* ── Active tab / filter button ──────────────────────────────────────────────*/
+/* Reduces JS state updates needed for hover */
+.gc-filter-btn {
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.gc-filter-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.05) !important;
+  color: #FFFFFF !important;
+}
+
+/* ── Ticker: pause when not visible ─────────────────────────────────────────*/
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────────*/
 * {
   scrollbar-width: thin;
   scrollbar-color: #1C1C1F transparent;
@@ -43,5 +99,34 @@ html, body {
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb { background: #1C1C1F; border-radius: 3px; }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+/* ── Keyframes ───────────────────────────────────────────────────────────────*/
+@keyframes spin   { to { transform: rotate(360deg); } }
+@keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Ticker animation ────────────────────────────────────────────────────────*/
+.gc-ticker {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker 30s linear infinite;
+  /* Pause when page is not visible */
+  animation-play-state: running;
+}
+.gc-ticker:hover { animation-play-state: paused; }
+
+/* ── Mobile optimizations ────────────────────────────────────────────────────*/
+@media (max-width: 768px) {
+  /* Disable blur effects on mobile — major perf win */
+  .gc-blur-nav {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  /* Reduce animation distance on mobile */
+  [style*="translateY(-"] {
+    transform: none !important;
+  }
+}
