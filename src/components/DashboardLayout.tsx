@@ -22,8 +22,8 @@ const C = {
   text:         '#FFFFFF',
   textMuted:    '#C7C7CC',
   textDim:      '#8A8A8F',
-  activeBg:     'rgba(255,255,255,0.06)',
-  activeColor:  '#FFFFFF',
+  activeBg:     'rgba(255,69,58,0.1)',    // ← brand red tint, not grey
+  activeColor:  '#FF453A',               // ← brand red text
   red:          '#FF453A',
   redDim:       'rgba(255,69,58,0.08)',
   green:        '#32D74B',
@@ -134,12 +134,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           cursor: 'pointer', transition: 'all 0.15s',
           background: active ? C.activeBg : 'transparent',
           color:      active ? C.activeColor : C.textDim,
-          borderLeft: `2px solid ${active ? 'rgba(255,255,255,0.4)' : 'transparent'}`,
+          borderLeft: `2px solid ${active ? C.red : 'transparent'}`,
           fontFamily: C.fontInter, fontSize: 13, fontWeight: active ? 500 : 400,
         }}
         onMouseEnter={e => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.03)'; el.style.color = C.textMuted } }}
         onMouseLeave={e => { if (!active) { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = C.textDim } }}>
-          <Icon style={{ width: 15, height: 15, flexShrink: 0, opacity: active ? 1 : 0.5 }} />
+          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: active ? C.red : 'inherit', opacity: active ? 1 : 0.5 }} />
           {label}
           {active && <ChevronRight style={{ width: 11, height: 11, marginLeft: 'auto', opacity: 0.3 }} />}
         </div>
@@ -262,8 +262,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               const active = isActive(item.href)
               return (
                 <Link key={item.href} href={item.href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '5px 10px' }}>
-                  <item.icon style={{ width: 18, height: 18, color: active ? '#FFFFFF' : C.textDim }} />
-                  <span style={{ fontSize: 9, color: active ? '#FFFFFF' : C.textDim, fontFamily: C.fontInter, fontWeight: active ? 500 : 400 }}>{item.label}</span>
+                  <item.icon style={{ width: 18, height: 18, color: active ? C.red : C.textDim }} />
+                  <span style={{ fontSize: 9, color: active ? C.red : C.textDim, fontFamily: C.fontInter, fontWeight: active ? 500 : 400 }}>{item.label}</span>
                 </Link>
               )
             })}
